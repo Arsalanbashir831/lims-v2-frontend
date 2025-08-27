@@ -1,5 +1,6 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
+import { AppHeader } from "@/components/app-header"
 
 export default function AppLayout({
   children,
@@ -10,9 +11,7 @@ export default function AppLayout({
     <SidebarProvider>
       <AppSidebar />
       <main className="flex-1">
-        <div className="p-4 border-b sticky top-0 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <SidebarTrigger />
-        </div>
+        <AppHeader />
         <div className="p-6">
           {children}
         </div>
