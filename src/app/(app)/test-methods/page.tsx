@@ -13,14 +13,13 @@ import { PencilIcon, TrashIcon } from "lucide-react"
 import { FilterSearch } from "@/components/ui/filter-search"
 import { ROUTES } from "@/constants/routes"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
+import { Checkbox } from "@/components/ui/checkbox"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { DataTablePagination } from "@/components/ui/data-table-pagination"
 
 export default function TestMethodsPage() {
     const [items, setItems] = useState<TestMethod[]>([])
-    const [query, setQuery] = useState("")
-
 
     const reload = useCallback(() => setItems(listTestMethods()), [])
 
@@ -34,18 +33,36 @@ export default function TestMethodsPage() {
         reload()
     }, [reload])
 
-    const filtered = useMemo(() => {
-        if (!query.trim()) return items
-        const q = query.toLowerCase()
-        return items.filter(m => {
-            const inName = m.name.toLowerCase().includes(q)
-            const inDesc = (m.description ?? "").toLowerCase().includes(q)
-            const inCols = m.columns.join(" ").toLowerCase().includes(q)
-            return inName || inDesc || inCols
-        })
-    }, [items, query])
-
     const columns: ColumnDef<TestMethod>[] = useMemo(() => [
+        {
+            id: "select",
+            header: ({ table }) => (
+
+                <Checkbox
+                    checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            ),
+            cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            ),
+            meta: { className: "w-fit min-w-fit px-4" },
+            enableSorting: false,
+            enableHiding: false,
+        },
+        {
+            id: "serial",
+            header: "S.No",
+            cell: ({ row }) => row.index + 1,
+            meta: { className: "w-fit min-w-fit px-4" },
+            enableSorting: false,
+            enableHiding: false,
+        },
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
@@ -91,25 +108,48 @@ export default function TestMethodsPage() {
                 <CardContent className="p-0">
                     <DataTable
                         columns={columns}
-                        data={filtered}
+                        data={items}
                         empty={<span className="text-muted-foreground">No test methods yet</span>}
                         pageSize={10}
                         tableKey="test-methods"
-                        toolbar={useCallback((table: TanstackTable<TestMethod>) => (
-                            <div className="flex items-center gap-2 w-full">
-                                <FilterSearch
-                                    placeholder="Search name..."
-                                    value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-                                    onChange={(value) => table.getColumn("name")?.setFilterValue(value)}
-                                    className="w-full"
-                                    inputClassName="max-w-md"
-                                />
-                                <DataTableViewOptions table={table} />
-                                <Button asChild size="sm">
-                                    <Link href={ROUTES.APP.TEST_METHODS.NEW}>New Test</Link>
-                                </Button>
-                            </div>
-                        ), [])}
+                        toolbar={useCallback((table: TanstackTable<TestMethod>) => {
+                            const selected = table.getSelectedRowModel().rows
+                            const hasSelected = selected.length > 0
+                            const onBulkDelete = () => {
+                                const ids = selected.map(r => r.original.id)
+                                ids.forEach(id => doDelete(id))
+                                table.resetRowSelection()
+                            }
+                            return (
+                                <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
+                                    <FilterSearch
+                                        placeholder="Search name..."
+                                        value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+                                        onChange={(value) => table.getColumn("name")?.setFilterValue(value)}
+                                        className="w-full"
+                                        inputClassName="max-w-md"
+                                    />
+                                    <div className="flex items-center gap-2 w-full md:w-auto">
+                                    <DataTableViewOptions table={table} />
+                                    {hasSelected && (
+                                        <ConfirmPopover
+                                            title={`Delete ${selected.length} selected item(s)?`}
+                                            confirmText="Delete"
+                                            onConfirm={onBulkDelete}
+                                            trigger={
+                                                <Button variant="destructive" size="sm">
+                                                    Delete selected ({selected.length})
+                                                </Button>
+                                            }
+                                        />
+                                    )}
+                                    <Button asChild size="sm">
+                                        <Link href={ROUTES.APP.TEST_METHODS.NEW}>New Test</Link>
+                                    </Button>
+                                    </div>
+                                </div>
+                            )
+                        }, [doDelete])}
                         footer={useCallback((table: TanstackTable<TestMethod>) => <DataTablePagination table={table} />, [])}
                     />
                 </CardContent>

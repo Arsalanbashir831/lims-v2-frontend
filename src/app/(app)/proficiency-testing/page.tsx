@@ -15,28 +15,16 @@ import { toast } from "sonner"
 import { PencilIcon, TrashIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export default function ProficiencyTestingPage() {
     const [items, setItems] = useState<ProficiencyTest[]>([])
-    const [query, setQuery] = useState("")
-
+  
     const reload = useCallback(() => setItems(listProficiencyTests()), [])
 
     useEffect(() => {
         reload()
     }, [])
-
-    const filtered = useMemo(() => {
-        if (!query.trim()) return items
-        const q = query.toLowerCase()
-        return items.filter((r) =>
-            r.description.toLowerCase().includes(q) ||
-            (r.provider1 ?? "").toLowerCase().includes(q) ||
-            (r.provider2 ?? "").toLowerCase().includes(q) ||
-            (r.status ?? "").toLowerCase().includes(q) ||
-            (r.remarks ?? "").toLowerCase().includes(q)
-        )
-    }, [items, query])
 
     const doDelete = useCallback((id: string) => {
         deleteProficiencyTest(id)
@@ -45,6 +33,36 @@ export default function ProficiencyTestingPage() {
     }, [reload])
 
     const columns: ColumnDef<ProficiencyTest>[] = useMemo(() => [
+        {
+            id: "select",
+            header: ({ table }) => (
+                <Checkbox
+                    className="size-4"
+                    checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox
+                    className="size-4"
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            ),
+            meta: { className: "w-fit min-w-fit px-4" },
+            enableSorting: false,
+            enableHiding: false,
+        },
+        {
+            id: "serial",
+            header: "S.No",
+            cell: ({ row }) => row.index + 1,
+            meta: { className: "w-fit min-w-fit px-4" },
+            enableSorting: false,
+            enableHiding: false,
+        },
         {
             accessorKey: "description",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Description" />,
@@ -84,12 +102,20 @@ export default function ProficiencyTestingPage() {
                 <CardContent className="p-0">
                     <DataTable
                         columns={columns}
-                        data={filtered}
+                        data={items}
                         empty={<span className="text-muted-foreground">No records yet</span>}
                         pageSize={10}
                         tableKey="proficiency-testing"
-                        toolbar={useCallback((table: TanstackTable<ProficiencyTest>) => (
-                            <div className="flex items-center gap-2 w-full">
+                        toolbar={useCallback((table: TanstackTable<ProficiencyTest>) => {
+                            const selected = table.getSelectedRowModel().rows
+                            const hasSelected = selected.length > 0
+                            const onBulkDelete = () => {
+                                const ids = selected.map(r => r.original.id)
+                                ids.forEach(id => doDelete(id))
+                                table.resetRowSelection()
+                            }
+                            return (
+                            <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
                                 <FilterSearch
                                     placeholder="Search description..."
                                     value={(table.getColumn("description")?.getFilterValue() as string) ?? ""}
@@ -97,12 +123,28 @@ export default function ProficiencyTestingPage() {
                                     className="w-full"
                                     inputClassName="max-w-md"
                                 />
+
+                                <div className="flex items-center gap-2 w-full md:w-auto">
                                 <DataTableViewOptions table={table} />
+                                {hasSelected && (
+                                    <ConfirmPopover
+                                    title={`Delete ${selected.length} selected item(s)?`}
+                                    confirmText="Delete"
+                                    onConfirm={onBulkDelete}
+                                    trigger={
+                                        <Button variant="destructive" size="sm">
+                                                Delete selected ({selected.length})
+                                            </Button>
+                                        }
+                                        />
+                                    )}
                                 <Button asChild size="sm">
                                     <Link href={ROUTES.APP.PROFICIENCY_TESTING.NEW}>New Record</Link>
                                 </Button>
+                                    </div>
                             </div>
-                        ), [])}
+                            )
+                        }, [doDelete])}
                         footer={useCallback((table: TanstackTable<ProficiencyTest>) => <DataTablePagination table={table} />, [])}
                     />
                 </CardContent>

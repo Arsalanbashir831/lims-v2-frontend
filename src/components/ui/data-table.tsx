@@ -31,7 +31,7 @@ type DataTableProps<TData, TValue> = {
 
 export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, toolbar, footer, tableKey }: DataTableProps<TData, TValue>) {
   const { state } = useSidebar()
-  const maxWidth = useMemo(() => (state === "expanded" ? "calc(100vw - 20rem)" : "100vw"), [state])
+  const maxWidth = useMemo(() => (state === "expanded" ? "lg:max-w-[calc(100vw-20rem)]" : "lg:max-w-screen"), [state])
 
   const [sorting, setSorting] = useState<SortingState>(() => {
     if (!tableKey || typeof window === "undefined") return []
@@ -111,11 +111,17 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="min-w-[10rem] whitespace-nowrap">
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const meta = header.column.columnDef.meta as { className?: string } | undefined
+                  return (
+                    <TableHead
+                      key={header.id}
+                      className={cn("whitespace-nowrap px-3 min-w-fit", meta?.className)}
+                    >
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  )
+                })}
               </TableRow>
             ))}
           </TableHeader>
@@ -123,13 +129,14 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className={cn("min-w-[10rem] align-middle")}>
-                      <div className="truncate overflow-hidden max-w-[16rem]">
+                  {row.getVisibleCells().map((cell) => {
+                    const meta = cell.column.columnDef.meta as { className?: string } | undefined
+                    return (
+                      <TableCell key={cell.id} className={cn("align-middle px-3", meta?.className)}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </div>
-                    </TableCell>
-                  ))}
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
               ))
             ) : (
