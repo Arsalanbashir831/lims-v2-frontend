@@ -22,6 +22,13 @@ function getPageTitle(pathname: string): string {
     return "Test Methods"
   }
 
+  // Proficiency Testing routes
+  if (pathname.startsWith(ROUTES.APP.PROFICIENCY_TESTING.ROOT)) {
+    if (pathname === ROUTES.APP.PROFICIENCY_TESTING.NEW) return "New Proficiency Testing"
+    if (pathname.endsWith("/edit")) return "Edit Proficiency Testing"
+    return "Proficiency Testing"
+  }
+
   // Fallback: derive from last segment
   const parts = pathname.split("/").filter(Boolean)
   const last = parts[parts.length - 1] ?? ""

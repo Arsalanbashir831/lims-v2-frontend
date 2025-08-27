@@ -25,7 +25,7 @@ const navItems = [
   { href: ROUTES.APP.DASHBOARD, label: "Dashboard", icon: Home },
   { href: ROUTES.APP.TEST_METHODS.ROOT, label: "Test Methods", icon: FlaskConical },
   { href: ROUTES.APP.LAB_EQUIPMENTS, label: "Lab Equipments", icon: Microscope },
-  { href: ROUTES.APP.PROFICIENCY_TESTING, label: "Proficiency Testing", icon: ClipboardList },
+  { href: ROUTES.APP.PROFICIENCY_TESTING.ROOT, label: "Proficiency Testing", icon: ClipboardList },
   { href: ROUTES.APP.CALIBRATION_TESTING, label: "Calibration Testing", icon: ClipboardList },
   { href: ROUTES.APP.SAMPLE_RECEIVING, label: "Sample Receiving", icon: FileText },
   { href: ROUTES.APP.SAMPLE_PREPARATION, label: "Sample Preparation", icon: FileText },

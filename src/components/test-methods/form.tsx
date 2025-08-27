@@ -12,6 +12,7 @@ import { X, Plus } from "lucide-react"
 import { createTestMethod, updateTestMethod, TestMethod } from "@/lib/test-methods"
 import { toast } from "sonner"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
+import { ROUTES } from "@/constants/routes"
 
 type Props = {
   initial?: TestMethod
@@ -29,9 +30,14 @@ export function TestMethodForm({ initial }: Props) {
     if (!columns.length) setColumns([""])
   }, [columns.length])
 
-  const onAddColumn = () => setColumns((c) => [...c, ""]) 
   const onRemoveColumn = (idx: number) => setColumns((c) => c.filter((_, i) => i !== idx))
   const onChangeColumn = (idx: number, value: string) => setColumns((c) => c.map((v, i) => (i === idx ? value : v)))
+  const onInsertColumnAfter = (idx: number) =>
+    setColumns((c) => {
+      const next = [...c]
+      next.splice(idx + 1, 0, "")
+      return next
+    })
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -50,13 +56,13 @@ export function TestMethodForm({ initial }: Props) {
     if (isEditing && initial) {
       updateTestMethod(initial.id, payload)
       toast.success("Test method updated")
-      router.push("/tests/methods")
+      router.push(ROUTES.APP.TEST_METHODS.ROOT)
       return
     }
 
-    const created = createTestMethod(payload)
+    createTestMethod(payload)
     toast.success("Test method created")
-    router.push(`/tests/methods`)
+    router.push(ROUTES.APP.TEST_METHODS.ROOT)
   }
 
   return (
@@ -81,6 +87,16 @@ export function TestMethodForm({ initial }: Props) {
                     value={col}
                     onChange={(e) => onChangeColumn(idx, e.target.value)}
                   />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label={`Insert column after ${idx + 1}`}
+                    onClick={() => onInsertColumnAfter(idx)}
+                    title="Add after"
+                  >
+                    <Plus className="size-4" />
+                  </Button>
                   <ConfirmPopover
                     title={`Remove column ${idx + 1}?`}
                     onConfirm={() => onRemoveColumn(idx)}
@@ -92,9 +108,6 @@ export function TestMethodForm({ initial }: Props) {
                   />
                 </div>
               ))}
-              <Button type="button" variant="secondary" onClick={onAddColumn} className="w-fit">
-                <Plus className="mr-2 size-4" /> Add column
-              </Button>
             </div>
           </div>
           <div className="grid gap-2">
@@ -103,7 +116,7 @@ export function TestMethodForm({ initial }: Props) {
           </div>
           <Separator />
           <div className="flex items-center gap-3">
-            <Button type="submit">{isEditing ? "Save changes" : "Create method"}</Button>
+            <Button type="submit">{isEditing ? "Save changes" : "Add"}</Button>
             <Button type="button" variant="ghost" onClick={() => history.back()}>Cancel</Button>
           </div>
         </CardContent>

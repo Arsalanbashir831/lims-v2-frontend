@@ -13,60 +13,67 @@ function generateId(): string {
   })
 }
 
-export type TestMethod = {
+export type ProficiencyTest = {
   id: string
-  name: string
-  description?: string
-  columns: string[]
-  comments?: string
+  description: string
+  provider1?: string
+  provider2?: string
+  lastTestDate?: string
+  dueDate?: string
+  nextScheduledDate?: string
+  status?: string
+  remarks?: string
   createdAt: string
   updatedAt: string
 }
 
-const STORAGE_KEY = "lims:test-methods"
+const STORAGE_KEY = "lims:proficiency-tests"
 
-function readAll(): TestMethod[] {
+function readAll(): ProficiencyTest[] {
   if (typeof window === "undefined") return []
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as TestMethod[]) : []
+    return raw ? (JSON.parse(raw) as ProficiencyTest[]) : []
   } catch {
     return []
   }
 }
 
-function writeAll(items: TestMethod[]) {
+function writeAll(items: ProficiencyTest[]) {
   if (typeof window === "undefined") return
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
 }
 
-export function listTestMethods(): TestMethod[] {
+export function listProficiencyTests(): ProficiencyTest[] {
   return readAll().sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
 }
 
-export function getTestMethod(id: string): TestMethod | undefined {
+export function getProficiencyTest(id: string): ProficiencyTest | undefined {
   return readAll().find((m) => m.id === id)
 }
 
-export function createTestMethod(data: Omit<TestMethod, "id" | "createdAt" | "updatedAt">): TestMethod {
+export function createProficiencyTest(data: Omit<ProficiencyTest, "id" | "createdAt" | "updatedAt">): ProficiencyTest {
   const now = new Date().toISOString()
-  const method: TestMethod = {
+  const item: ProficiencyTest = {
     ...data,
     id: generateId(),
     createdAt: now,
     updatedAt: now,
   }
+  console.log("Creating proficiency test:", item)
   const items = readAll()
-  items.push(method)
+  console.log("Current items:", items)
+  items.push(item)
   writeAll(items)
-  return method
+  console.log("Items after creation:", items)
+  return item
 }
 
-export function updateTestMethod(id: string, updates: Partial<Omit<TestMethod, "id" | "createdAt">>): TestMethod | undefined {
+export function updateProficiencyTest(id: string, updates: Partial<Omit<ProficiencyTest, "id" | "createdAt">>): ProficiencyTest | undefined {
   const items = readAll()
   const idx = items.findIndex((m) => m.id === id)
   if (idx === -1) return undefined
-  const updated: TestMethod = {
+  const updated: ProficiencyTest = {
     ...items[idx],
     ...updates,
     updatedAt: new Date().toISOString(),
@@ -76,7 +83,7 @@ export function updateTestMethod(id: string, updates: Partial<Omit<TestMethod, "
   return updated
 }
 
-export function deleteTestMethod(id: string): boolean {
+export function deleteProficiencyTest(id: string): boolean {
   const items = readAll()
   const next = items.filter((m) => m.id !== id)
   writeAll(next)

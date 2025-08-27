@@ -1,4 +1,4 @@
-import { TestMethodForm } from "@/components/test-method-form"
+import { TestMethodForm } from "@/components/test-methods/form"
 
 export default function NewTestMethodPage() {
   return (

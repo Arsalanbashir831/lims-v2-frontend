@@ -1,54 +1,154 @@
 "use client"
 
-import * as React from "react"
+import { useEffect, useMemo, useState } from "react"
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  PaginationState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { cn } from "@/lib/utils"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { useSidebar } from "@/components/ui/sidebar"
 
-type ColumnDef<T> = {
-  key: keyof T | string
-  header: React.ReactNode
-  cell?: (row: T) => React.ReactNode
-  className?: string
-}
-
-type DataTableProps<T> = {
-  columns: ColumnDef<T>[]
-  data: T[]
+type DataTableProps<TData, TValue> = {
+  columns: ColumnDef<TData, TValue>[]
+  data: TData[]
   empty?: React.ReactNode
-  getRowKey?: (row: T, index: number) => string
+  pageSize?: number
+  toolbar?: (table: ReturnType<typeof useReactTable<TData>>) => React.ReactNode
+  footer?: (table: ReturnType<typeof useReactTable<TData>>) => React.ReactNode
+  tableKey?: string
 }
 
-export function DataTable<T>({ columns, data, empty, getRowKey }: DataTableProps<T>) {
+export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, toolbar, footer, tableKey }: DataTableProps<TData, TValue>) {
+  const { state } = useSidebar()
+  const maxWidth = useMemo(() => (state === "expanded" ? "calc(100vw - 20rem)" : "100vw"), [state])
+
+  const [sorting, setSorting] = useState<SortingState>(() => {
+    if (!tableKey || typeof window === "undefined") return []
+    try {
+      const raw = window.localStorage.getItem(`lims:dt:sorting:${tableKey}`)
+      return raw ? (JSON.parse(raw) as SortingState) : []
+    } catch {
+      return []
+    }
+  })
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => {
+    if (!tableKey || typeof window === "undefined") return {}
+    try {
+      const raw = window.localStorage.getItem(`lims:dt:visibility:${tableKey}`)
+      return raw ? (JSON.parse(raw) as VisibilityState) : {}
+    } catch {
+      return {}
+    }
+  })
+  const [rowSelection, setRowSelection] = useState({})
+  const initialPageSize = useMemo(() => {
+    if (!tableKey || typeof window === "undefined") return pageSize
+    const raw = window.localStorage.getItem(`lims:dt:pageSize:${tableKey}`)
+    const parsed = raw ? Number(raw) : undefined
+    return parsed && !Number.isNaN(parsed) ? parsed : pageSize
+  }, [tableKey, pageSize])
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: initialPageSize })
+
+  const table = useReactTable({
+    data,
+    columns,
+    state: { sorting, columnFilters, columnVisibility, rowSelection, pagination },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    initialState: { pagination: { pageSize: initialPageSize } },
+  })
+
+  useEffect(() => {
+    if (!tableKey || typeof window === "undefined") return
+    try {
+      window.localStorage.setItem(`lims:dt:visibility:${tableKey}`, JSON.stringify(columnVisibility))
+    } catch { }
+  }, [tableKey, columnVisibility])
+
+  useEffect(() => {
+    if (!tableKey || typeof window === "undefined") return
+    try {
+      window.localStorage.setItem(`lims:dt:sorting:${tableKey}`, JSON.stringify(sorting))
+    } catch { }
+  }, [tableKey, sorting])
+
+  useEffect(() => {
+    if (!tableKey || typeof window === "undefined") return
+    try {
+      const size = table.getState().pagination.pageSize
+      window.localStorage.setItem(`lims:dt:pageSize:${tableKey}`, String(size))
+    } catch { }
+  }, [tableKey, table.getState().pagination.pageSize])
+
   return (
-    <Table className="table-fixed">
-      <TableHeader>
-        <TableRow>
-          {columns.map((col, i) => (
-            <TableHead key={i} className={col.className}>{col.header}</TableHead>
-          ))}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {data.length === 0 ? (
-          <TableRow>
-            <TableCell colSpan={columns.length} className="text-center text-muted-foreground">
-              {empty ?? "No data"}
-            </TableCell>
-          </TableRow>
-        ) : (
-          data.map((row, idx) => (
-            <TableRow key={getRowKey ? getRowKey(row, idx) : String(idx)}>
-              {columns.map((col, i) => (
-                <TableCell key={i} className={`max-w-0 ${col.className ?? ""}`}>
-                  <div className="truncate">
-                    {col.cell ? col.cell(row) : (row as any)[col.key as string]}
-                  </div>
+    <>
+      {toolbar ? (
+        <div className="flex items-center justify-between gap-2 p-2">
+          {toolbar(table)}
+        </div>
+      ) : null}
+      <ScrollArea className={cn("w-full max-w-screen", maxWidth)}>
+        <Table className="min-w-full">
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id} className="min-w-[10rem] whitespace-nowrap">
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className={cn("min-w-[10rem] align-middle")}>
+                      <div className="truncate overflow-hidden max-w-[16rem]">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </div>
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="text-center text-muted-foreground whitespace-nowrap">
+                  {empty ?? "No data"}
                 </TableCell>
-              ))}
-            </TableRow>
-          ))
-        )}
-      </TableBody>
-    </Table>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+      {footer ? (
+        <div className="mt-2">
+          {footer(table)}
+        </div>
+      ) : null}
+    </>
   )
 }
 

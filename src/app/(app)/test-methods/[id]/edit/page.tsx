@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
-import { TestMethodForm } from "@/components/test-method-form"
+import { TestMethodForm } from "@/components/test-methods/form"
 import { getTestMethod, TestMethod } from "@/lib/test-methods"
 
 export default function EditTestMethodPage() {
