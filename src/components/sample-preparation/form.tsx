@@ -25,9 +25,10 @@ export interface SamplePreparationFormData extends Omit<SamplePreparation, "id" 
 interface Props {
   initialData?: Partial<SamplePreparationFormData>
   onSubmit: (data: SamplePreparationFormData) => void
+  readOnly?: boolean
 }
 
-export function SamplePreparationForm({ initialData, onSubmit }: Props) {
+export function SamplePreparationForm({ initialData, onSubmit, readOnly = false }: Props) {
     const {state} = useSidebar();
   const [prepNo, setPrepNo] = useState(initialData?.prepNo ?? generatePrepNo())
   const [sampleReceivingId, setSampleReceivingId] = useState(initialData?.sampleReceivingId ?? "")
@@ -93,8 +94,8 @@ export function SamplePreparationForm({ initialData, onSubmit }: Props) {
         <CardContent className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           <div className="grid gap-2">
             <Label>Sample Receiving</Label>
-            <Select value={sampleReceivingId} onValueChange={setSampleReceivingId}>
-              <SelectTrigger className="w-full h-10">
+            <Select value={sampleReceivingId} onValueChange={setSampleReceivingId} disabled={readOnly}>
+              <SelectTrigger className="w-full h-10" disabled={readOnly}>
                 <SelectValue placeholder="Select a sample..." />
               </SelectTrigger>
               <SelectContent>
@@ -122,7 +123,9 @@ export function SamplePreparationForm({ initialData, onSubmit }: Props) {
               <CardTitle className="text-xl">Testing Items</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">Add one row per distinct test setup.</p>
             </div>
-            <Button type="button" size="sm" onClick={addItem} className="max-w-[120px] justify-self-end"><PlusIcon className="w-4 h-4 mr-1" />Add Row</Button>
+            {!readOnly && (
+              <Button type="button" size="sm" onClick={addItem} className="max-w-[120px] justify-self-end"><PlusIcon className="w-4 h-4 mr-1" />Add Row</Button>
+            )}
           </CardHeader>
           <CardContent className="px-2">
           <ScrollArea className={cn("w-full max-w-screen", maxWidth)}>
@@ -162,8 +165,8 @@ export function SamplePreparationForm({ initialData, onSubmit }: Props) {
                               updateItemField(row.id, "testMethodId", "")
                               updateItemField(row.id, "testMethodName", "")
                             }
-                          }}>
-                            <SelectTrigger className="w-[270px] h-10">
+                          }} disabled={readOnly}>
+                            <SelectTrigger className="w-[270px] h-10" disabled={readOnly}>
                               <SelectValue placeholder="Select sample item..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -176,10 +179,10 @@ export function SamplePreparationForm({ initialData, onSubmit }: Props) {
                           </Select>
                         </TableCell>
                         <TableCell>
-                          <Input className="w-[200px]" placeholder="Item description" value={row.description} onChange={(e) => updateItemField(row.id, "description", e.target.value)} disabled={true}/>
+                          <Input className="w-[200px]" placeholder="Item description" value={row.description} onChange={(e) => updateItemField(row.id, "description", e.target.value)} disabled />
                         </TableCell>
                         <TableCell>
-                          <Input className="w-[100px]" placeholder="Heat no." value={row.heatNo} onChange={(e) => updateItemField(row.id, "heatNo", e.target.value)} disabled={true}/>
+                          <Input className="w-[100px]" placeholder="Heat no." value={row.heatNo} onChange={(e) => updateItemField(row.id, "heatNo", e.target.value)} disabled />
                         </TableCell>
                         <TableCell>
                           <Select
@@ -189,8 +192,9 @@ export function SamplePreparationForm({ initialData, onSubmit }: Props) {
                               updateItemField(row.id, "testMethodId", val)
                               updateItemField(row.id, "testMethodName", m?.name ?? "")
                             }}
+                            disabled={readOnly}
                           >
-                            <SelectTrigger className="w-56 h-10">
+                            <SelectTrigger className="w-56 h-10" disabled={readOnly}>
                               <SelectValue placeholder="Select method" />
                             </SelectTrigger>
                             <SelectContent>
@@ -208,25 +212,27 @@ export function SamplePreparationForm({ initialData, onSubmit }: Props) {
                           </Select>
                         </TableCell>
                         <TableCell>
-                          <Input placeholder="Dimensions/spec & location" value={row.dimensionSpecLocation} onChange={(e) => updateItemField(row.id, "dimensionSpecLocation", e.target.value)} />
+                          <Input placeholder="Dimensions/spec & location" value={row.dimensionSpecLocation} onChange={(e) => updateItemField(row.id, "dimensionSpecLocation", e.target.value)} disabled={readOnly} />
                         </TableCell>
                         <TableCell>
-                          <Input type="number" min={0} value={row.numSpecimens} onChange={(e) => updateItemField(row.id, "numSpecimens", Number(e.target.value))} />
+                          <Input type="number" min={0} value={row.numSpecimens} onChange={(e) => updateItemField(row.id, "numSpecimens", Number(e.target.value))} disabled={readOnly} />
                         </TableCell>
                         <TableCell>
-                          <Input type="date" value={row.plannedTestDate} onChange={(e) => updateItemField(row.id, "plannedTestDate", e.target.value)} />
+                          <Input type="date" value={row.plannedTestDate} onChange={(e) => updateItemField(row.id, "plannedTestDate", e.target.value)} disabled={readOnly} />
                         </TableCell>
                         <TableCell>
-                          <Input className="w-[120px]" placeholder="Requested by" value={row.requestedBy} onChange={(e) => updateItemField(row.id, "requestedBy", e.target.value)} />
+                          <Input className="w-[120px]" placeholder="Requested by" value={row.requestedBy} onChange={(e) => updateItemField(row.id, "requestedBy", e.target.value)} disabled={readOnly} />
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {row.specimenIds.map((sid) => (
                               <Badge key={sid} variant="secondary" className="flex items-center gap-1">
                                 <span>{sid}</span>
-                                <button type="button" onClick={() => removeSpecimenId(row.id, sid)} className="inline-flex items-center justify-center">
-                                  <XIcon className="w-3 h-3" />
-                                </button>
+                                {!readOnly && (
+                                  <button type="button" onClick={() => removeSpecimenId(row.id, sid)} className="inline-flex items-center justify-center">
+                                    <XIcon className="w-3 h-3" />
+                                  </button>
+                                )}
                               </Badge>
                             ))}
                             <Input
@@ -247,23 +253,26 @@ export function SamplePreparationForm({ initialData, onSubmit }: Props) {
                                 const txt = e.clipboardData.getData("text")
                                 if (!txt) return
                                 e.preventDefault()
-                                const tokens = txt.split(/[,\s]+/).map(s => s.trim()).filter(Boolean)
+                                const tokens = txt.split(/[\,\s]+/).map(s => s.trim()).filter(Boolean)
                                 for (const t of tokens) commitSpecimenToken(row.id, t)
                               }}
+                              disabled={readOnly}
                             />
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">Max {row.numSpecimens} unique IDs</div>
                         </TableCell>
                         <TableCell>
-                          <Input className="w-[120px]" placeholder="Remarks" value={row.remarks} onChange={(e) => updateItemField(row.id, "remarks", e.target.value)} />
+                          <Input className="w-[120px]" placeholder="Remarks" value={row.remarks} onChange={(e) => updateItemField(row.id, "remarks", e.target.value)} disabled={readOnly} />
                         </TableCell>
                         <TableCell className="text-right">
-                          <ConfirmPopover
-                            title="Delete this testing item?"
-                            confirmText="Delete"
-                            onConfirm={() => removeItem(row.id)}
-                            trigger={<Button type="button" variant="ghost" size="sm"><TrashIcon className="w-4 h-4" /></Button>}
-                          />
+                          {!readOnly && (
+                            <ConfirmPopover
+                              title="Delete this testing item?"
+                              confirmText="Delete"
+                              onConfirm={() => removeItem(row.id)}
+                              trigger={<Button type="button" variant="ghost" size="sm"><TrashIcon className="w-4 h-4" /></Button>}
+                            />
+                          )}
                         </TableCell>
                       </TableRow>
                     )
@@ -275,11 +284,13 @@ export function SamplePreparationForm({ initialData, onSubmit }: Props) {
           </CardContent>
         </Card>
       )}
-<div className="sticky bottom-0 bg-background/80 dark:bg-background/10 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2">
+      {!readOnly && (
+        <div className="sticky bottom-0 bg-background/80 dark:bg-background/10 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2">
           <div className="flex justify-end">
             <Button type="submit" className="px-6">{initialData ? "Update Preparation" : "Save Preparation"}</Button>
           </div>
         </div>
+      )}
     </form>
   )
 }

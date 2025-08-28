@@ -5,11 +5,14 @@ import { useParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { SamplePreparationForm, type SamplePreparationFormData } from "@/components/sample-preparation/form"
 import { getSamplePreparation, updateSamplePreparation } from "@/lib/sample-preparation"
+import { Button } from "@/components/ui/button"
+import { PencilIcon, XIcon } from "lucide-react"
 
 export default function EditSamplePreparationPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [initial, setInitial] = useState<SamplePreparationFormData | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -31,14 +34,21 @@ export default function EditSamplePreparationPage() {
       items: data.items,
     })
     toast.success("Preparation updated")
-    router.push("/sample-preparation")
+    setIsEditing(false)
   }
 
   return (
     <div className="grid gap-4">
-      <h1 className="text-2xl font-bold">Edit Sample Preparation</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Edit Sample Preparation</h1>
+        {!isEditing ? (
+          <Button size="sm" onClick={() => setIsEditing(true)}><PencilIcon className="w-4 h-4 mr-1" /> Edit</Button>
+        ) : (
+          <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}><XIcon className="w-4 h-4 mr-1" /> Cancel</Button>
+        )}
+      </div>
       {initial ? (
-        <SamplePreparationForm initialData={initial} onSubmit={handleSubmit} />
+        <SamplePreparationForm initialData={initial} onSubmit={handleSubmit} readOnly={!isEditing} />
       ) : (
         <p className="text-sm text-muted-foreground">Loading…</p>
       )}

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
+import { useRouter } from "next/navigation"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { DataTablePagination } from "@/components/ui/data-table-pagination"
@@ -20,6 +21,7 @@ import { ROUTES } from "@/constants/routes"
 export default function SamplePreparationPage() {
   const [items, setItems] = useState<SamplePreparation[]>([])
   const [receivings, setReceivings] = useState<SampleReceiving[]>([])
+  const router = useRouter()
 
   const reload = useCallback(() => setItems(listSamplePreparations()), [])
   useEffect(() => { reload(); setReceivings(listSampleReceivings()) }, [])
@@ -72,6 +74,7 @@ export default function SamplePreparationPage() {
         empty={<span className="text-muted-foreground">No preparations yet</span>}
         pageSize={10}
         tableKey="sample-preparation"
+        onRowClick={(row) => router.push(ROUTES.APP.SAMPLE_PREPARATION.EDIT(row.original.id))}
         toolbar={useCallback((table: TanstackTable<SamplePreparation>) => {
           const selected = table.getSelectedRowModel().rows
           const hasSelected = selected.length > 0
