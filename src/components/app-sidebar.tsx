@@ -32,7 +32,7 @@ const navItems = [
   { href: ROUTES.APP.TEST_REPORTS, label: "Test Reports", icon: FileText },
   { href: ROUTES.APP.MATERIAL_DISCARDS, label: "Material Discards", icon: Archive },
   { href: ROUTES.APP.TRACKING_DATABASE, label: "Tracking Database", icon: Route },
-  { href: ROUTES.APP.PQR_RECORDS, label: "PQR Records", icon: BookOpenText },
+  { href: ROUTES.APP.PQR.ROOT, label: "PQR Records", icon: BookOpenText },
 ]
 
 export function AppSidebar() {

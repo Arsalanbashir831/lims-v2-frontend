@@ -22,6 +22,10 @@ export const ROUTES = {
         TEST_REPORTS: "/test-reports",
         MATERIAL_DISCARDS: "/material-discards",
         TRACKING_DATABASE: "/tracking-database",
-        PQR_RECORDS: "/pqr-records",
+        PQR: {
+            ROOT: "/pqr",
+            NEW: "/pqr/new",
+            EDIT: (id: string) => `/pqr/${id}/edit`,
+        }
     },
 }

@@ -29,6 +29,13 @@ function getPageTitle(pathname: string): string {
     return "Proficiency Testing"
   }
 
+  // PQR routes
+  if (pathname.startsWith(ROUTES.APP.PQR.ROOT)) {
+    if (pathname === ROUTES.APP.PQR.NEW) return "New PQR"
+    if (pathname.endsWith("/edit")) return "Edit PQR"
+    return "PQR"
+  }
+
   // Fallback: derive from last segment
   const parts = pathname.split("/").filter(Boolean)
   const last = parts[parts.length - 1] ?? ""
