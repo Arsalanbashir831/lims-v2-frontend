@@ -10,7 +10,7 @@ export default function AppLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <main className="flex-1">
+      <main className="flex-1 mx-2 my-4 bg-background rounded-2xl overflow-hidden shadow">
         <AppHeader />
         <div className="p-6">
           {children}

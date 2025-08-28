@@ -110,7 +110,7 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
       ) : null}
       <ScrollArea className={cn("w-full max-w-screen", maxWidth)}>
         <Table className="min-w-full">
-      <TableHeader>
+      <TableHeader className="bg-muted">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {

@@ -49,18 +49,18 @@ export function CalibrationTestingForm({ initial }: Props) {
     if (isEditing && initial) {
       updateCalibrationTest(initial.id, payload)
       toast.success("Record updated")
-      router.push(ROUTES.APP.CALIBRATION_TESTING)
+      router.push(ROUTES.APP.CALIBRATION_TESTING.ROOT)
       return
     }
 
     createCalibrationTest(payload)
     toast.success("Record created")
-    router.push(ROUTES.APP.CALIBRATION_TESTING)
+    router.push(ROUTES.APP.CALIBRATION_TESTING.ROOT)
   }
 
   return (
     <form className="grid gap-6" onSubmit={onSubmit}>
-      <Card>
+      <Card className="shadow-none">
         <CardContent className="p-6 grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="equipmentName">Equipment/Instrument Name</Label>

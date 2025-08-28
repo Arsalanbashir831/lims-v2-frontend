@@ -40,7 +40,7 @@ export function AppSidebar() {
   const { theme, setTheme } = useTheme()
 
   return (
-    <Sidebar>
+    <Sidebar className="border-none">
       <SidebarHeader>
       <div className="flex items-center gap-2">
           <Image src="/gripco-logo.webp" alt="Gripco" width={120} height={28} className="h-16 w-auto object-contain mx-auto" />
