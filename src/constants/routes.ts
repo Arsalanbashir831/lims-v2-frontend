@@ -16,7 +16,11 @@ export const ROUTES = {
             NEW: "/proficiency-testing/new",
             EDIT: (id: string) => `/proficiency-testing/${id}/edit`,
         },
-        CALIBRATION_TESTING: "/calibration-testing",
+        CALIBRATION_TESTING: {
+            ROOT: "/calibration-testing",
+            NEW: "/calibration-testing/new",
+            EDIT: (id: string) => `/calibration-testing/${id}/edit`,
+        },
         SAMPLE_RECEIVING: {
             ROOT: "/sample-receiving",
             NEW: "/sample-receiving/new",
@@ -27,7 +31,11 @@ export const ROUTES = {
             NEW: "/sample-preparation/new",
             EDIT: (id: string) => `/sample-preparation/${id}/edit`,
         },
-        TEST_REPORTS: "/test-reports",
+        TEST_REPORTS: {
+            ROOT: "/test-reports",
+            NEW: "/test-reports/new",
+            EDIT: (id: string) => `/test-reports/${id}/edit`,
+        },
         MATERIAL_DISCARDS: "/material-discards",
         TRACKING_DATABASE: "/tracking-database",
         PQR: {

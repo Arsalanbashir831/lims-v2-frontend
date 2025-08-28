@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
@@ -70,8 +69,6 @@ export default function LabEquipmentsPage() {
 
   return (
     <div className="grid gap-4">
-      <Card>
-        <CardContent className="p-0">
           <DataTable
             columns={columns}
             data={filtered}
@@ -109,8 +106,6 @@ export default function LabEquipmentsPage() {
             }, [doDelete])}
             footer={useCallback((table: TanstackTable<Equipment>) => <DataTablePagination table={table} />, [])}
           />
-        </CardContent>
-      </Card>
     </div>
   )
 }

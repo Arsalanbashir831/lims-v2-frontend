@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { listTestMethods, deleteTestMethod, TestMethod } from "@/lib/test-methods"
 import { toast } from "sonner"
 import { DataTable } from "@/components/ui/data-table"
@@ -104,8 +103,6 @@ export default function TestMethodsPage() {
 
     return (
         <div className="grid gap-4">
-            <Card>
-                <CardContent className="p-0">
                     <DataTable
                         columns={columns}
                         data={items}
@@ -152,8 +149,6 @@ export default function TestMethodsPage() {
                         }, [doDelete])}
                         footer={useCallback((table: TanstackTable<TestMethod>) => <DataTablePagination table={table} />, [])}
                     />
-                </CardContent>
-            </Card>
         </div>
     )
 }

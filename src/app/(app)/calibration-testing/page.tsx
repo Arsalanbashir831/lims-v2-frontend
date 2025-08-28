@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
@@ -59,7 +58,7 @@ export default function CalibrationTestingPage() {
       cell: ({ row }) => (
         <div className="text-right space-x-2 inline-flex">
           <Button variant="secondary" size="sm" asChild>
-            <Link href={`${ROUTES.APP.CALIBRATION_TESTING}/${row.original.id}/edit`}><PencilIcon className="w-4 h-4" /></Link>
+            <Link href={ROUTES.APP.CALIBRATION_TESTING.EDIT(row.original.id)}><PencilIcon className="w-4 h-4" /></Link>
           </Button>
           <ConfirmPopover title="Delete this record?" confirmText="Delete" onConfirm={() => doDelete(row.original.id)} trigger={<Button variant="destructive" size="sm"><TrashIcon className="w-4 h-4" /></Button>} />
         </div>
@@ -69,8 +68,6 @@ export default function CalibrationTestingPage() {
 
   return (
     <div className="grid gap-4">
-      <Card>
-        <CardContent className="p-0">
           <DataTable
             columns={columns}
             data={items}
@@ -100,7 +97,7 @@ export default function CalibrationTestingPage() {
                       <ConfirmPopover title={`Delete ${selected.length} selected item(s)?`} confirmText="Delete" onConfirm={onBulkDelete} trigger={<Button variant="destructive" size="sm">Delete selected ({selected.length})</Button>} />
                     )}
                     <Button asChild size="sm">
-                      <Link href={`${ROUTES.APP.CALIBRATION_TESTING}/new`}>New Record</Link>
+                      <Link href={ROUTES.APP.CALIBRATION_TESTING.NEW}>New Record</Link>
                     </Button>
                   </div>
                 </div>
@@ -108,8 +105,6 @@ export default function CalibrationTestingPage() {
             }, [doDelete])}
             footer={useCallback((table: TanstackTable<CalibrationTest>) => <DataTablePagination table={table} />, [])}
           />
-        </CardContent>
-      </Card>
     </div>
   )
 }

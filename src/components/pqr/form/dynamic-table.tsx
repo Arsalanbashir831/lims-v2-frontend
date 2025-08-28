@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 
-export type ColumnType = "input" | "label" | "date" | "numeric"
+export type ColumnType = "input" | "label" | "date" | "numeric" | "textarea"
 
 export interface DynamicColumn {
   id: string
