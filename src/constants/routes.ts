@@ -22,7 +22,11 @@ export const ROUTES = {
             NEW: "/sample-receiving/new",
             EDIT: (id: string) => `/sample-receiving/${id}/edit`,
         },
-        SAMPLE_PREPARATION: "/sample-preparation",
+        SAMPLE_PREPARATION: {
+            ROOT: "/sample-preparation",
+            NEW: "/sample-preparation/new",
+            EDIT: (id: string) => `/sample-preparation/${id}/edit`,
+        },
         TEST_REPORTS: "/test-reports",
         MATERIAL_DISCARDS: "/material-discards",
         TRACKING_DATABASE: "/tracking-database",

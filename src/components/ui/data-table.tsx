@@ -110,7 +110,7 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
       ) : null}
       <ScrollArea className={cn("w-full max-w-screen", maxWidth)}>
         <Table className="min-w-full">
-          <TableHeader>
+      <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
@@ -126,8 +126,8 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
                 })}
               </TableRow>
             ))}
-          </TableHeader>
-          <TableBody>
+      </TableHeader>
+      <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
@@ -146,20 +146,20 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
                     return (
                       <TableCell key={cell.id} className={cn("align-middle px-3", meta?.className)}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
+            </TableCell>
                     )
                   })}
-                </TableRow>
+          </TableRow>
               ))
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="text-center text-muted-foreground whitespace-nowrap">
                   {empty ?? "No data"}
                 </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableRow>
+        )}
+      </TableBody>
+    </Table>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
       {footer ? (
