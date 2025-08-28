@@ -27,7 +27,7 @@ const navItems = [
   { href: ROUTES.APP.LAB_EQUIPMENTS, label: "Lab Equipments", icon: Microscope },
   { href: ROUTES.APP.PROFICIENCY_TESTING.ROOT, label: "Proficiency Testing", icon: ClipboardList },
   { href: ROUTES.APP.CALIBRATION_TESTING, label: "Calibration Testing", icon: ClipboardList },
-  { href: ROUTES.APP.SAMPLE_RECEIVING, label: "Sample Receiving", icon: FileText },
+  { href: ROUTES.APP.SAMPLE_RECEIVING.ROOT, label: "Sample Receiving", icon: FileText },
   { href: ROUTES.APP.SAMPLE_PREPARATION, label: "Sample Preparation", icon: FileText },
   { href: ROUTES.APP.TEST_REPORTS, label: "Test Reports", icon: FileText },
   { href: ROUTES.APP.MATERIAL_DISCARDS, label: "Material Discards", icon: Archive },

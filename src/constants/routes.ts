@@ -17,7 +17,11 @@ export const ROUTES = {
             EDIT: (id: string) => `/proficiency-testing/${id}/edit`,
         },
         CALIBRATION_TESTING: "/calibration-testing",
-        SAMPLE_RECEIVING: "/sample-receiving",
+        SAMPLE_RECEIVING: {
+            ROOT: "/sample-receiving",
+            NEW: "/sample-receiving/new",
+            EDIT: (id: string) => `/sample-receiving/${id}/edit`,
+        },
         SAMPLE_PREPARATION: "/sample-preparation",
         TEST_REPORTS: "/test-reports",
         MATERIAL_DISCARDS: "/material-discards",

@@ -14,6 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
+import type { Row } from "@tanstack/react-table"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
@@ -27,9 +28,10 @@ type DataTableProps<TData, TValue> = {
   toolbar?: (table: ReturnType<typeof useReactTable<TData>>) => React.ReactNode
   footer?: (table: ReturnType<typeof useReactTable<TData>>) => React.ReactNode
   tableKey?: string
+  onRowClick?: (row: Row<TData>) => void
 }
 
-export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, toolbar, footer, tableKey }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, toolbar, footer, tableKey, onRowClick }: DataTableProps<TData, TValue>) {
   const { state } = useSidebar()
   const maxWidth = useMemo(() => (state === "expanded" ? "lg:max-w-[calc(100vw-20rem)]" : "lg:max-w-screen"), [state])
 
@@ -128,7 +130,17 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  className={cn(onRowClick && "cursor-pointer hover:bg-muted/50")}
+                  onClick={(e) => {
+                    if (!onRowClick) return
+                    const target = e.target as HTMLElement
+                    if (target.closest("button, a, input, label, [role='button']")) return
+                    onRowClick(row)
+                  }}
+                >
                   {row.getVisibleCells().map((cell) => {
                     const meta = cell.column.columnDef.meta as { className?: string } | undefined
                     return (
