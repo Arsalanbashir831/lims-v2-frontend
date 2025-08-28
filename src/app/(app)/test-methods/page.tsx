@@ -87,17 +87,17 @@ export default function TestMethodsPage() {
             id: "actions",
             header: () => "Actions",
             cell: ({ row }) => (
-                <div className="text-right space-x-2 inline-flex">
-                    <Button variant="secondary" size="sm" asChild>
+                                    <div className="text-right space-x-2 inline-flex">
+                                        <Button variant="secondary" size="sm" asChild>
                         <Link href={ROUTES.APP.TEST_METHODS.EDIT(row.original.id)}><PencilIcon className="w-4 h-4" /></Link>
-                    </Button>
-                    <ConfirmPopover
-                        title="Delete this test method?"
-                        confirmText="Delete"
+                                        </Button>
+                                        <ConfirmPopover
+                                            title="Delete this test method?"
+                                            confirmText="Delete"
                         onConfirm={() => doDelete(row.original.id)}
-                        trigger={<Button variant="destructive" size="sm"><TrashIcon className="w-4 h-4" /></Button>}
-                    />
-                </div>
+                                            trigger={<Button variant="destructive" size="sm"><TrashIcon className="w-4 h-4" /></Button>}
+                                        />
+                                    </div>
             ),
         },
     ], [doDelete])

@@ -1,3 +1,5 @@
+import { PqrSectionData, PqrSectionDataItem } from "@/types/pqr"
+
 export type PqrRecord = {
   id: string
   contractorName: string
@@ -79,3 +81,26 @@ export function deletePqr(id: string) {
   const all = readAll().filter(r => r.id !== id)
   writeAll(all)
 }
+
+export const getSectionValue = (
+  sectionData: PqrSectionData,
+  labelDescription: string,
+  valueKey: keyof PqrSectionDataItem = 'value'
+) => {
+  if (!sectionData || !sectionData.data || !Array.isArray(sectionData.data)) {
+    return 'N/A';
+  }
+  const item = sectionData.data.find(
+    (d: PqrSectionDataItem) =>
+      d.description === labelDescription ||
+      d.label === labelDescription ||
+      d.parameter === labelDescription
+  );
+  return item ? item[valueKey as keyof PqrSectionDataItem] : 'N/A';
+};
+
+export const getSectionDataByAccessor = (rowData: PqrSectionDataItem, accessorKey: keyof PqrSectionDataItem) => {
+  return rowData && rowData[accessorKey as keyof PqrSectionDataItem] !== undefined
+    ? String(rowData[accessorKey as keyof PqrSectionDataItem])
+    : 'N/A';
+};

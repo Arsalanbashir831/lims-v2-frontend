@@ -26,6 +26,7 @@ export const ROUTES = {
             ROOT: "/pqr",
             NEW: "/pqr/new",
             EDIT: (id: string) => `/pqr/${id}/edit`,
+            VIEW: (id: string) => `/pqr/${id}/view`,
         }
     },
 }

@@ -12,10 +12,11 @@ import { FilterSearch } from "@/components/ui/filter-search"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { PqrRecord, listPqrs, deletePqr } from "@/lib/pqr"
 import { toast } from "sonner"
-import { PencilIcon, TrashIcon } from "lucide-react"
+import { EyeIcon, PencilIcon, TrashIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
+import { savePqrForm } from "@/lib/pqr-form-store"
 
 export default function PQRPage() {
   const [items, setItems] = useState<PqrRecord[]>([])
@@ -42,6 +43,42 @@ export default function PQRPage() {
     reload()
   }, [reload])
 
+  const seedDummy = useCallback((id: string) => {
+    // minimal dummy full form data just to render preview
+    savePqrForm(id, {
+      headerInfo: {
+        columns: [],
+        data: [
+          { id: "s1r1", description: "Contractor Name", value: "ACME Corp" },
+          { id: "s1r3", description: "PQR No.", value: "PQR-001" },
+          { id: "s1r5", description: "Supporting PWPS No.", value: "PWPS-42" },
+          { id: "s1r6", description: "Date of Issue", value: "2025-01-15" },
+          { id: "s1r8", description: "Date of Welding", value: "2025-01-20" },
+          { id: "s1r11", description: "BI #", value: "BI-7788" },
+          { id: "s1r13", description: "Client/End User", value: "Globex" },
+          { id: "s1r14", description: "Date of Testing", value: "2025-01-25" },
+        ],
+      },
+      baseMetals: { columns: [], data: [] },
+      fillerMetals: { columns: [], data: [] },
+      positions: { columns: [], data: [] },
+      preheat: { columns: [], data: [] },
+      pwht: { columns: [], data: [] },
+      gas: { columns: [], data: [] },
+      electrical: { columns: [], data: [] },
+      techniques: { columns: [], data: [] },
+      weldingParameters: { columns: [], data: [] },
+      tensileTest: { columns: [], data: [] },
+      guidedBendTest: { columns: [], data: [] },
+      toughnessTest: { columns: [], data: [] },
+      filletWeldTest: { columns: [], data: [] },
+      otherTests: { columns: [], data: [] },
+      welderTestingInfo: { columns: [], data: [] },
+      certification: { columns: [], data: [{ id: "cert-ref", reference: "ASME SEC IX" }] },
+      signatures: { columns: [], data: [] },
+    })
+  }, [])
+
   const columns: ColumnDef<PqrRecord>[] = useMemo(() => [
     { id: "select", header: ({ table }) => (<Checkbox className="size-4" checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")} onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)} aria-label="Select all" />), cell: ({ row }) => (<Checkbox className="size-4" checked={row.getIsSelected()} onCheckedChange={(v) => row.toggleSelected(!!v)} aria-label="Select row" />), meta: { className: "w-fit min-w-fit px-4" }, enableSorting: false, enableHiding: false },
     { id: "rowNumber", header: "S.No", cell: ({ row }) => row.index + 1, meta: { className: "w-fit min-w-fit px-4" }, enableSorting: false, enableHiding: false },
@@ -61,11 +98,14 @@ export default function PQRPage() {
           <Button variant="secondary" size="sm" asChild>
             <Link href={ROUTES.APP.PQR.EDIT(row.original.id)}><PencilIcon className="w-4 h-4" /></Link>
           </Button>
+          <Button variant="outline" size="sm" asChild onClick={() => seedDummy(row.original.id)}>
+            <Link href={ROUTES.APP.PQR.VIEW(row.original.id)}><EyeIcon className="w-4 h-4" /></Link>
+          </Button>
           <ConfirmPopover title="Delete this record?" confirmText="Delete" onConfirm={() => doDelete(row.original.id)} trigger={<Button variant="destructive" size="sm"><TrashIcon className="w-4 h-4" /></Button>} />
         </div>
       ),
     },
-  ], [doDelete])
+  ], [doDelete, seedDummy])
 
   return (
     <div className="grid gap-4">

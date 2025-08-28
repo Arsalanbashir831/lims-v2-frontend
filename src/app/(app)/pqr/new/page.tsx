@@ -4,9 +4,10 @@ import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PQRForm, PQRFormData } from "@/components/pqr/pqr-form"
+import { PQRForm, PQRFormData } from "@/components/pqr/form/pqr-form"
 import { toast } from "sonner"
 import { createPqr } from "@/lib/pqr"
+import { savePqrForm } from "@/lib/pqr-form-store"
 
 export default function NewPQRPage() {
   const router = useRouter()
@@ -21,7 +22,6 @@ export default function NewPQRPage() {
   }
 
   const handleSubmit = (data: PQRFormData) => {
-    // Map key header fields into a compact record for the list
     const contractorName = extractHeaderValue(data, "Contractor Name")
     const pqrNo = extractHeaderValue(data, "PQR No.")
     const supportingPwpsNo = extractHeaderValue(data, "Supporting PWPS No.")
@@ -31,7 +31,7 @@ export default function NewPQRPage() {
     const clientEndUser = extractHeaderValue(data, "Client/End User")
     const dateOfTesting = extractHeaderValue(data, "Date of Testing")
 
-    createPqr({
+    const rec = createPqr({
       contractorName,
       pqrNo,
       supportingPwpsNo,
@@ -40,18 +40,23 @@ export default function NewPQRPage() {
       biNumber,
       clientEndUser,
       dateOfTesting,
-      createdAt: 0 as unknown as never, // will be set in createPqr
-      updatedAt: 0 as unknown as never, // will be set in createPqr
+      createdAt: 0 as unknown as never,
+      updatedAt: 0 as unknown as never,
     } as any)
+
+    // Persist full form for preview
+    if (rec?.id) {
+      savePqrForm(rec.id, data)
+    }
 
     toast.success("PQR saved")
     router.push("/pqr")
   }
 
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-4">
       <Card>
-        <CardHeader className="">
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between gap-4">
             <CardTitle className="text-xl">New PQR</CardTitle>
             <div className="flex items-center gap-2">
