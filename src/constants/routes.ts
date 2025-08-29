@@ -47,6 +47,9 @@ export const ROUTES = {
             NEW: "/pqr/new",
             EDIT: (id: string) => `/pqr/${id}/edit`,
             VIEW: (id: string) => `/pqr/${id}/view`,
-        }
+        },
     },
+    PUBLIC: {
+        PQR_PREVIEW: (id: string) => `/public/pqr/preview/${id}`,
+    }
 }

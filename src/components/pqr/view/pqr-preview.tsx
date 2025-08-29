@@ -8,6 +8,7 @@ import { jsPDF } from "jspdf";
 import { AlertCircle } from "lucide-react";
 import QRCode from "qrcode";
 import { toast } from "sonner";
+import { ROUTES } from "@/constants/routes";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -254,7 +255,7 @@ const DUMMY_PQR_DATA = {
   },
 
   certification: {
-   data: [{ id: "cert-ref", reference: "ASME SEC IX" }],
+    data: [{ id: "cert-ref", reference: "ASME SEC IX" }],
   },
 
   signatures: {
@@ -295,7 +296,7 @@ interface PqrDataToView {
   signatures: PqrSection;
 }
 
-export default function PQRReportPreview({ showButton = true }) {
+export default function PQRReportPreview({ showButton = true, isPublic = false }) {
   const params = useParams();
   const pqrId = (params as any)?.id as string | undefined;
   const router = useRouter();
@@ -303,6 +304,15 @@ export default function PQRReportPreview({ showButton = true }) {
   const [pqrDataToView, setPqrDataToView] = useState<PqrDataToView | null>(null);
   const [loadingView, setLoadingView] = useState(true);
   const [errorView, setErrorView] = useState<string | null>(null);
+  const [qrSrc, setQrSrc] = useState<string | null>(null);
+
+  const frontendBase =
+    (process.env.NEXT_PUBLIC_FRONTEND_URL as string | undefined) ||
+    (process.env.FRONTEND_URL as string | undefined) ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+  const publicPreviewBase = `${frontendBase}${ROUTES.PUBLIC?.PQR_PREVIEW(pqrId ?? "")}`;
+
+  console.log("publicPreviewBase", publicPreviewBase);
 
   // ref to the entire printable area
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -332,78 +342,101 @@ export default function PQRReportPreview({ showButton = true }) {
       }
     };
     fetchPqrDataForView();
+    // Generate QR for public view URL
+    (async () => {
+      try {
+        const url = `${publicPreviewBase}/${pqrId}`;
+        const dataUrl = await QRCode.toDataURL(url, { margin: 1, width: 120 });
+        setQrSrc(dataUrl);
+      } catch (_e) {
+        setQrSrc(null);
+      }
+    })();
   }, [pqrId]);
+
+  // Notify parent (if embedded in an iframe) when content is fully ready
+  useEffect(() => {
+    if (!loadingView && pqrDataToView) {
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'PQR_PREVIEW_READY', id: pqrId }, '*');
+        }
+      } catch {}
+    }
+  }, [loadingView, pqrDataToView, pqrId]);
 
   // === PDF generation ===
   const generatePdf = async () => {
-    if (!contentRef.current) return;
+    if (!pqrId) return;
 
-    // 1) build the qrcode once
-    const viewUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/pqr/${pqrId}`;
-    const qrCodeDataUrl = await QRCode.toDataURL(viewUrl, {
-      margin: 1,
-      width: 120,
-      color: { dark: "#000000", light: "#ffffff" },
-    });
+    try {
+      const url = new URL(publicPreviewBase);
+      url.searchParams.set('print', '1');
+      const printUrl = url.toString();
 
-    // snapshot the entire DOM node as one big image
-    const canvas = await toCanvas(contentRef.current, {
-      pixelRatio: 2,
-      backgroundColor: "#ffffff",
-    });
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'absolute';
+      iframe.style.left = '-9999px';
+      iframe.style.top = '-9999px';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      iframe.setAttribute('aria-hidden', 'true');
 
-    const logoImg = new Image();
-    logoImg.src = "/gripco_logo_original.png";
-    await new Promise((res) => (logoImg.onload = res));
-    const logoCanvas = document.createElement("canvas");
-    logoCanvas.width = logoImg.width;
-    logoCanvas.height = logoImg.height;
-    const logoCtx = logoCanvas.getContext("2d");
-    if (logoCtx) logoCtx.drawImage(logoImg, 0, 0);
-    const logoDataUrl = logoCanvas.toDataURL("image/png");
+      const cleanup = () => {
+        try {
+          window.removeEventListener('message', onMessage as any);
+        } catch {}
+        try {
+          if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+        } catch {}
+      };
 
-    const pdf = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const margin = 20;
-    const headerH = 40;
-    const gapAfter = 5;
-    const footerH = 30;
+      let printed = false;
+      const tryPrint = () => {
+        if (printed) return;
+        printed = true;
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } catch {}
+        // Cleanup after a short delay
+        setTimeout(cleanup, 500);
+      };
 
-    const contentY = margin + headerH + gapAfter;
-    const contentH = pageH - contentY - footerH;
+      const onMessage = (event: MessageEvent) => {
+        try {
+          const data = event.data as any;
+          if (data && data.type === 'PQR_PREVIEW_READY' && data.id === pqrId) {
+            tryPrint();
+          }
+        } catch {}
+      };
 
-    const fullCanvas = await toCanvas(contentRef.current, { pixelRatio: 2, backgroundColor: "#fff" });
-    const fullW = fullCanvas.width;
-    const fullH = fullCanvas.height;
+      window.addEventListener('message', onMessage as any);
 
-    const drawW = pageW - margin * 2;
-    const fullDrawH = (fullH / fullW) * drawW;
+      // Fallback: if no message arrives in time, attempt to print anyway
+      const fallbackTimer = setTimeout(() => {
+        tryPrint();
+      }, 5000);
 
-    const pagePxH = Math.floor((contentH / fullDrawH) * fullH);
-    const totalPages = Math.ceil(fullH / pagePxH);
+      iframe.onload = () => {
+        // If the child cannot postMessage for some reason, we still have the fallback
+        clearTimeout(fallbackTimer);
+        // Give it a small buffer for any late rendering
+        setTimeout(() => {
+          // We still wait for the READY event; if not received, fallback already handled
+        }, 300);
+      };
 
-    for (let i = 0; i < totalPages; i++) {
-      if (i > 0) pdf.addPage();
+      iframe.src = printUrl;
+      document.body.appendChild(iframe);
 
-      const slicePxH = Math.min(pagePxH, fullH - i * pagePxH);
-      const sliceCanvas = document.createElement("canvas");
-      sliceCanvas.width = fullW;
-      sliceCanvas.height = slicePxH;
-      const ctx = sliceCanvas.getContext("2d");
-      if (!ctx) continue;
-      ctx.drawImage(fullCanvas, 0, i * pagePxH, fullW, slicePxH, 0, 0, fullW, slicePxH);
-      const sliceDataUrl = sliceCanvas.toDataURL("image/png");
-      const sliceDrawH = (slicePxH / fullH) * fullDrawH;
-
-      pdf.addImage(sliceDataUrl, "PNG", margin, contentY, drawW, sliceDrawH);
-      pdf.addImage(logoDataUrl, "PNG", margin, margin, 160, 40);
-      pdf.addImage(qrCodeDataUrl, "PNG", pageW - margin - 40, margin, 40, 40);
-      pdf.setFontSize(10);
-      pdf.text(`Page ${i + 1} of ${totalPages}`, pageW / 2, pageH - margin / 2, { align: "center" });
+      toast.info('Preparing your document...');
+    } catch (error) {
+      console.error('Open print view failed:', error);
+      toast.error('Failed to prepare the document. Please try again.');
     }
-
-    pdf.save(`PQR_${pqrId}.pdf`);
   };
 
   if (loadingView) {
@@ -454,10 +487,22 @@ export default function PQRReportPreview({ showButton = true }) {
 
   return (
     <div className="container mx-auto rounded-2xl p-2 sm:p-4 md:p-8 print:bg-white">
-      <header className="mb-6 flex items-center justify-between sm:mb-8 print:hidden">
+      <header className="mb-6 flex items-center justify-between sm:mb-8">
         <div>
-          <NextJSImage src="/gripco-logo.webp" alt="Logo" width={300} height={50} />
+          <NextJSImage src="/gripco-logo.webp" alt="Logo" width={300} height={60} className="h-24 w-64 bg-background" />
         </div>
+        {isPublic && (
+          <div className="flex items-center gap-2">
+            <div>
+              <NextJSImage src="/ias-logo-vertical.webp" alt="Logo" width={80} height={60} className="h-24 w-20" />
+            </div>
+            <div className="flex items-center gap-2">
+              {qrSrc ? (
+                <NextJSImage src={qrSrc} alt="PQR Public Link" className="h-24 w-24" width={80} height={80} />
+              ) : null}
+            </div>
+          </div>
+        )}
         {showButton && (
           <div className="space-x-2">
             <Button onClick={generatePdf} variant="outline">

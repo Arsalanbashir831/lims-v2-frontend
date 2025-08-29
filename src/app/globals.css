@@ -188,3 +188,33 @@
     letter-spacing: var(--tracking-normal);
   }
 }
+
+/* === Print Styles === */
+@media print {
+  /* Remove unwanted UI (adjust selectors as per your layout) */
+  nav, .no-print, button, .actions {
+    display: none !important;
+  }
+
+  /* Full width content */
+  body {
+    margin: 0;
+    padding: 0;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Ensure the printed page uses the full width */
+  @page {
+    margin: 15mm; /* Adjust margins as needed */
+    size: A4;     /* or "letter" depending on your use case */
+  }
+
+  /* Make text sharp for printing */
+  * {
+    color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
