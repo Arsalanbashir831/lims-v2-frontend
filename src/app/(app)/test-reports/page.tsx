@@ -13,7 +13,7 @@ import { listTestReports, deleteTestReport, type TestReport } from "@/lib/test-r
 import { listSamplePreparations, type SamplePreparation } from "@/lib/sample-preparation"
 import { listSampleReceivings, type SampleReceiving } from "@/lib/sample-receiving"
 import { toast } from "sonner"
-import { PencilIcon, TrashIcon } from "lucide-react"
+import { PencilIcon, TrashIcon, EyeIcon } from "lucide-react"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ROUTES } from "@/constants/routes"
@@ -72,6 +72,9 @@ export default function TestReportsPage() {
           <Button variant="secondary" size="sm" asChild>
             <Link href={`${ROUTES.APP.TEST_REPORTS.EDIT(row.original.id)}`}><PencilIcon className="w-4 h-4" /></Link>
           </Button>
+          <Button variant="secondary" size="sm" asChild>
+            <Link href={`${ROUTES.APP.TEST_REPORTS.VIEW(row.original.id)}`}><EyeIcon className="w-4 h-4" /></Link>
+          </Button>
           <ConfirmPopover title="Delete this record?" confirmText="Delete" onConfirm={() => doDelete(row.original.id)} trigger={<Button variant="destructive" size="sm"><TrashIcon className="w-4 h-4" /></Button>} />
         </div>
       ),
@@ -85,7 +88,7 @@ export default function TestReportsPage() {
       empty={<span className="text-muted-foreground">No test reports yet</span>}
       pageSize={10}
       tableKey="test-reports"
-      onRowClick={(row) => router.push(ROUTES.APP.TEST_REPORTS.EDIT(row.original.id))}
+      onRowClick={(row) => router.push(ROUTES.APP.TEST_REPORTS.VIEW(row.original.id))}
       toolbar={useCallback((table: TanstackTable<TestReport>) => {
         const selected = table.getSelectedRowModel().rows
         const hasSelected = selected.length > 0

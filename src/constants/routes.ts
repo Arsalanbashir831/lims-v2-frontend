@@ -9,12 +9,12 @@ export const ROUTES = {
             ROOT: "/test-methods",
             NEW: "/test-methods/new",
             EDIT: (id: string) => `/test-methods/${id}/edit`,
-            },
-            LAB_EQUIPMENTS: {
-                ROOT: "/lab-equipments",
-                NEW: "/lab-equipments/new",
-                EDIT: (id: string) => `/lab-equipments/${id}/edit`,
-            },
+        },
+        LAB_EQUIPMENTS: {
+            ROOT: "/lab-equipments",
+            NEW: "/lab-equipments/new",
+            EDIT: (id: string) => `/lab-equipments/${id}/edit`,
+        },
         PROFICIENCY_TESTING: {
             ROOT: "/proficiency-testing",
             NEW: "/proficiency-testing/new",
@@ -39,6 +39,7 @@ export const ROUTES = {
             ROOT: "/test-reports",
             NEW: "/test-reports/new",
             EDIT: (id: string) => `/test-reports/${id}/edit`,
+            VIEW: (id: string) => `/test-reports/${id}/view`,
         },
         MATERIAL_DISCARDS: {
             ROOT: "/discarded-materials",
@@ -55,5 +56,6 @@ export const ROUTES = {
     },
     PUBLIC: {
         PQR_PREVIEW: (id: string) => `/public/pqr/preview/${id}`,
+        TEST_REPORT_PREVIEW: (id: string) => `/public/test-report/preview/${id}`,
     }
 }
