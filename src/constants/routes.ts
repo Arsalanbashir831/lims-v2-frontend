@@ -36,7 +36,11 @@ export const ROUTES = {
             NEW: "/test-reports/new",
             EDIT: (id: string) => `/test-reports/${id}/edit`,
         },
-        MATERIAL_DISCARDS: "/material-discards",
+        MATERIAL_DISCARDS: {
+            ROOT: "/discarded-materials",
+            NEW: "/discarded-materials/new",
+            EDIT: (id: string) => `/discarded-materials/${id}/edit`,
+        },
         TRACKING_DATABASE: "/tracking-database",
         PQR: {
             ROOT: "/pqr",

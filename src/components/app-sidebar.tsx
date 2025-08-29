@@ -30,7 +30,7 @@ const navItems = [
   { href: ROUTES.APP.SAMPLE_RECEIVING.ROOT, label: "Sample Receiving", icon: FileText },
   { href: ROUTES.APP.SAMPLE_PREPARATION.ROOT, label: "Sample Preparation", icon: FileText },
   { href: ROUTES.APP.TEST_REPORTS.ROOT, label: "Test Reports", icon: FileText },
-  { href: ROUTES.APP.MATERIAL_DISCARDS, label: "Material Discards", icon: Archive },
+  { href: ROUTES.APP.MATERIAL_DISCARDS.ROOT, label: "Material Discards", icon: Archive },
   { href: ROUTES.APP.TRACKING_DATABASE, label: "Tracking Database", icon: Route },
   { href: ROUTES.APP.PQR.ROOT, label: "PQR Records", icon: BookOpenText },
 ]
