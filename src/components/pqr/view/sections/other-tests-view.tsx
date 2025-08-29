@@ -13,10 +13,10 @@ export const OtherTestsView = ({ otherTestsData }: { otherTestsData: any }) => {
   }
 
   return (
-    <div className="mt-4 overflow-hidden rounded-lg border">
+    <div className="mt-4 overflow-hidden border">
       <table className="w-full text-sm">
         <thead>
-          <tr className="dark:bg-sidebar">
+          <tr className="border-y dark:bg-sidebar">
             <th
               colSpan={cols.length}
               className="p-2 text-left font-semibold"
@@ -24,7 +24,7 @@ export const OtherTestsView = ({ otherTestsData }: { otherTestsData: any }) => {
               Other Tests
             </th>
           </tr>
-          <tr className="border-b dark:bg-sidebar">
+          <tr className="border-y dark:bg-sidebar">
             {cols.map((col: any) => (
               <th
                 key={col.id}

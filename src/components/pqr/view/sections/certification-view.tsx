@@ -8,7 +8,7 @@ export const CertificationView = ({ certificationData }: { certificationData: { 
   }
   const certificationText = certificationData.data[0].reference || 'N/A';
   return (
-    <div className="mt-4 rounded-lg border p-4 text-sm">
+    <div className="mt-4 border p-4 text-sm">
       <p className="mb-2 font-bold">
         We certify that the statements in this record are correct and that the
         test welds were prepared, welded and tested in accordance with the

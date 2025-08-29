@@ -12,13 +12,13 @@ export const SignatureView = ({ signatureData }: { signatureData: any }) => {
   }
   const sigRow = signatureData.data[0] || {};
   return (
-    <div className="mt-4 rounded-lg border">
+    <div className="mt-4 border overflow-hidden">
       <div className="dark:bg-sidebar p-2 text-center text-sm font-semibold">
         GLOBAL RESOURCES INSPECTION CONTRACTING CO.
       </div>
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b dark:bg-sidebar">
+          <tr className="border-y dark:bg-sidebar">
             <th className="w-1/3 border-r p-2 font-medium text-gray-600 dark:text-gray-300">
               Witnessing / Welding Inspector
             </th>

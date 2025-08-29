@@ -9,10 +9,10 @@ export const TensileTestView = ({ tensileTestData, isAsme }: { tensileTestData: 
     );
   const columns = tensileTestData.columns || [];
   return (
-    <div className="mt-4 overflow-hidden rounded-lg border">
+    <div className="mt-4 overflow-hidden border">
       <table className="w-full text-sm">
         <thead>
-          <tr className="dark:bg-sidebar">
+          <tr className="border-y dark:bg-sidebar">
             <th
               colSpan={columns.length || 1}
               className="p-2 text-left font-semibold"
@@ -20,7 +20,7 @@ export const TensileTestView = ({ tensileTestData, isAsme }: { tensileTestData: 
               Tensile Test {isAsme && '(QW-150)'}
             </th>
           </tr>
-          <tr className="border-b dark:bg-sidebar">
+          <tr className="border-y dark:bg-sidebar">
             {columns.map((col: any) => (
               <th
                 key={col.id}

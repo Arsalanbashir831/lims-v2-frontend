@@ -12,10 +12,10 @@ export const FillerMetalsView = ({ fillerMetalsData, isAsme }: { fillerMetalsDat
   const columns = fillerMetalsData.columns || [];
   if (columns.length > 0) {
     return (
-      <div className="mt-4 overflow-hidden rounded-lg border">
+      <div className="mt-4 overflow-hidden border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="dark:bg-sidebar">
+            <tr className="border-y dark:bg-sidebar">
               <th
                 colSpan={columns.length}
                 className="p-2 text-left font-semibold"
@@ -52,10 +52,10 @@ export const FillerMetalsView = ({ fillerMetalsData, isAsme }: { fillerMetalsDat
 
   // Fallback to simple label/value
   return (
-    <div className="mt-4 overflow-hidden rounded-lg border">
+    <div className="mt-4 overflow-hidden border">
       <table className="w-full text-sm">
         <thead>
-          <tr className="dark:bg-sidebar">
+          <tr className="border-y dark:bg-sidebar">
             <th
               colSpan={2 as any}
               className="p-2 text-left font-semibold"

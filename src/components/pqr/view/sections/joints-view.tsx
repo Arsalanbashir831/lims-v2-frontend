@@ -12,7 +12,7 @@ export const JointsView = ({ jointsData, isAsme }) => {
   }
 
   return (
-    <div className="mt-4 overflow-hidden rounded-lg border">
+    <div className="mt-4 overflow-hidden border">
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-gray-100">

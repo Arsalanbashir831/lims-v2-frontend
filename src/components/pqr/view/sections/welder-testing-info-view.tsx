@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import React from 'react';
 
 // utility to split array into chunks of size N
@@ -24,14 +25,14 @@ export const WelderTestingInfoView = ({ welderTestingInfoData }: { welderTesting
   const rows = chunkArray(items, 2);
 
   return (
-    <div className="mt-4 overflow-hidden rounded-lg border">
+    <div className="mt-4 overflow-hidden border">
       <table className="w-full text-sm">
         <tbody>
           {rows.map((pair: any[], rowIndex: number) => (
             <tr key={rowIndex} className="border-b">
-              {pair.map((item: any) => (
+              {pair.map((item: any, colIndex: number) => (
                 <React.Fragment key={item.id}>
-                  <td className="w-1/4 border-r p-2 font-medium text-gray-600 dark:text-gray-300">
+                  <td className={cn("w-1/4 border-r p-2 font-medium text-gray-600 dark:text-gray-300 dark:bg-sidebar")}>
                     {item.label}
                   </td>
                   <td className="w-1/4 border-r p-2">{item.value}</td>

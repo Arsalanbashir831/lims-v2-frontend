@@ -8,10 +8,10 @@ export const PositionsPreheatView = ({
 
   return (
     <div className="mt-4 grid gap-6 sm:gap-8 md:grid-cols-2">
-      <div className="overflow-hidden rounded-lg border">
+      <div className="overflow-hidden border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="dark:bg-sidebar">
+            <tr className="border-y dark:bg-sidebar">
               <th
                 colSpan={posCols.length > 0 ? posCols.length : 2}
                 className="p-2 text-left font-semibold"
@@ -52,10 +52,10 @@ export const PositionsPreheatView = ({
           </tbody>
         </table>
       </div>
-      <div className="overflow-hidden rounded-lg border">
+      <div className="overflow-hidden border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="dark:bg-sidebar">
+            <tr className="border-y dark:bg-sidebar">
               <th
                 colSpan={preCols.length > 0 ? preCols.length : 2}
                 className="p-2 text-left font-semibold"

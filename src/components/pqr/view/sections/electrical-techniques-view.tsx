@@ -8,10 +8,10 @@ export const ElectricalTechniquesView = ({
 
   return (
     <div className="mt-4 grid gap-6 sm:gap-8 md:grid-cols-2">
-      <div className="overflow-hidden rounded-lg border">
+      <div className="overflow-hidden border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="dark:bg-sidebar">
+            <tr className="border-y dark:bg-sidebar">
               <th
                 colSpan={eCols.length > 0 ? eCols.length : 2}
                 className="p-2 text-left font-semibold"
@@ -53,10 +53,10 @@ export const ElectricalTechniquesView = ({
         </table>
         <p className="text-muted-foreground mt-1 p-2 text-xs">Notes:</p>
       </div>
-      <div className="overflow-hidden rounded-lg border">
+      <div className="overflow-hidden border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="dark:bg-sidebar">
+            <tr className="border-y dark:bg-sidebar">
               <th
                 colSpan={tCols.length > 0 ? tCols.length : 2}
                 className="p-2 text-left font-semibold"
