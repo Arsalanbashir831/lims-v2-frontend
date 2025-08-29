@@ -9,8 +9,12 @@ export const ROUTES = {
             ROOT: "/test-methods",
             NEW: "/test-methods/new",
             EDIT: (id: string) => `/test-methods/${id}/edit`,
-        },
-        LAB_EQUIPMENTS: "/lab-equipments",
+            },
+            LAB_EQUIPMENTS: {
+                ROOT: "/lab-equipments",
+                NEW: "/lab-equipments/new",
+                EDIT: (id: string) => `/lab-equipments/${id}/edit`,
+            },
         PROFICIENCY_TESTING: {
             ROOT: "/proficiency-testing",
             NEW: "/proficiency-testing/new",

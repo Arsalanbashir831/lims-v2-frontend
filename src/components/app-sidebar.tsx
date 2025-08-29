@@ -24,7 +24,7 @@ import Image from "next/image"
 const navItems = [
   { href: ROUTES.APP.DASHBOARD, label: "Dashboard", icon: Home },
   { href: ROUTES.APP.TEST_METHODS.ROOT, label: "Test Methods", icon: FlaskConical },
-  { href: ROUTES.APP.LAB_EQUIPMENTS, label: "Lab Equipments", icon: Microscope },
+  { href: ROUTES.APP.LAB_EQUIPMENTS.ROOT, label: "Lab Equipments", icon: Microscope },
   { href: ROUTES.APP.PROFICIENCY_TESTING.ROOT, label: "Proficiency Testing", icon: ClipboardList },
   { href: ROUTES.APP.CALIBRATION_TESTING.ROOT, label: "Calibration Testing", icon: ClipboardList },
   { href: ROUTES.APP.SAMPLE_RECEIVING.ROOT, label: "Sample Receiving", icon: FileText },

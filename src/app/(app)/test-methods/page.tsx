@@ -16,8 +16,10 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { DataTablePagination } from "@/components/ui/data-table-pagination"
+import { useRouter } from "next/navigation"
 
 export default function TestMethodsPage() {
+    const router = useRouter()
     const [items, setItems] = useState<TestMethod[]>([])
 
     const reload = useCallback(() => setItems(listTestMethods()), [])
@@ -108,6 +110,7 @@ export default function TestMethodsPage() {
             empty={<span className="text-muted-foreground">No test methods yet</span>}
             pageSize={10}
             tableKey="test-methods"
+            onRowClick={(row) => router.push(ROUTES.APP.TEST_METHODS.EDIT(row.original.id))}
             toolbar={useCallback((table: TanstackTable<TestMethod>) => {
                 const selected = table.getSelectedRowModel().rows
                 const hasSelected = selected.length > 0

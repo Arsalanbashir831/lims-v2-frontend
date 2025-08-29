@@ -15,8 +15,10 @@ import { PencilIcon, TrashIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useRouter } from "next/navigation"
 
 export default function LabEquipmentsPage() {
+  const router = useRouter()
   const [items, setItems] = useState<Equipment[]>([])
   const [query, setQuery] = useState("")
 
@@ -59,7 +61,7 @@ export default function LabEquipmentsPage() {
       cell: ({ row }) => (
         <div className="text-right space-x-2 inline-flex">
           <Button variant="secondary" size="sm" asChild>
-            <Link href={`${ROUTES.APP.LAB_EQUIPMENTS}/${row.original.id}/edit`}><PencilIcon className="w-4 h-4" /></Link>
+            <Link href={ROUTES.APP.LAB_EQUIPMENTS.EDIT(row.original.id)}><PencilIcon className="w-4 h-4" /></Link>
           </Button>
           <ConfirmPopover title="Delete this record?" confirmText="Delete" onConfirm={() => doDelete(row.original.id)} trigger={<Button variant="destructive" size="sm"><TrashIcon className="w-4 h-4" /></Button>} />
         </div>
@@ -75,6 +77,7 @@ export default function LabEquipmentsPage() {
       empty={<span className="text-muted-foreground">No records yet</span>}
       pageSize={10}
       tableKey="lab-equipments"
+      onRowClick={(row) => router.push(ROUTES.APP.LAB_EQUIPMENTS.EDIT(row.original.id))}
       toolbar={useCallback((table: TanstackTable<Equipment>) => {
         const selected = table.getSelectedRowModel().rows
         const hasSelected = selected.length > 0
@@ -98,7 +101,7 @@ export default function LabEquipmentsPage() {
                 <ConfirmPopover title={`Delete ${selected.length} selected item(s)?`} confirmText="Delete" onConfirm={onBulkDelete} trigger={<Button variant="destructive" size="sm">Delete selected ({selected.length})</Button>} />
               )}
               <Button asChild size="sm">
-                <Link href={`${ROUTES.APP.LAB_EQUIPMENTS}/new`}>New Record</Link>
+                <Link href={ROUTES.APP.LAB_EQUIPMENTS.NEW}>New Record</Link>
               </Button>
             </div>
           </div>

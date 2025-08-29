@@ -15,8 +15,10 @@ import { PencilIcon, TrashIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useRouter } from "next/navigation"
 
 export default function ProficiencyTestingPage() {
+    const router = useRouter()
     const [items, setItems] = useState<ProficiencyTest[]>([])
 
     const reload = useCallback(() => setItems(listProficiencyTests()), [])
@@ -103,6 +105,7 @@ export default function ProficiencyTestingPage() {
             empty={<span className="text-muted-foreground">No records yet</span>}
             pageSize={10}
             tableKey="proficiency-testing"
+            onRowClick={(row) => router.push(ROUTES.APP.PROFICIENCY_TESTING.EDIT(row.original.id))}
             toolbar={useCallback((table: TanstackTable<ProficiencyTest>) => {
                 const selected = table.getSelectedRowModel().rows
                 const hasSelected = selected.length > 0

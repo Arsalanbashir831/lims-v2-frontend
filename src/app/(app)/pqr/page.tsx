@@ -16,12 +16,14 @@ import { EyeIcon, PencilIcon, TrashIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { savePqrForm } from "@/lib/pqr-form-store"
+  import { savePqrForm } from "@/lib/pqr-form-store"
+  import { useRouter } from "next/navigation"
 
 export default function PQRPage() {
+  const router = useRouter()
+
   const [items, setItems] = useState<PqrRecord[]>([])
   const [query, setQuery] = useState("")
-
   const reload = useCallback(() => setItems(listPqrs()), [])
   useEffect(() => { reload() }, [])
 
@@ -98,9 +100,6 @@ export default function PQRPage() {
           <Button variant="secondary" size="sm" asChild>
             <Link href={ROUTES.APP.PQR.EDIT(row.original.id)}><PencilIcon className="w-4 h-4" /></Link>
           </Button>
-          <Button variant="outline" size="sm" asChild onClick={() => seedDummy(row.original.id)}>
-            <Link href={ROUTES.APP.PQR.VIEW(row.original.id)}><EyeIcon className="w-4 h-4" /></Link>
-          </Button>
           <ConfirmPopover title="Delete this record?" confirmText="Delete" onConfirm={() => doDelete(row.original.id)} trigger={<Button variant="destructive" size="sm"><TrashIcon className="w-4 h-4" /></Button>} />
         </div>
       ),
@@ -115,6 +114,7 @@ export default function PQRPage() {
       empty={<span className="text-muted-foreground">No PQRs yet</span>}
       pageSize={10}
       tableKey="pqr"
+      onRowClick={(row) => router.push(ROUTES.APP.PQR.VIEW(row.original.id))}
       toolbar={useCallback((table: TanstackTable<PqrRecord>) => {
         const selected = table.getSelectedRowModel().rows
         const hasSelected = selected.length > 0

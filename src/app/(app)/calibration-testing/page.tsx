@@ -15,8 +15,10 @@ import { PencilIcon, TrashIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useRouter } from "next/navigation"
 
 export default function CalibrationTestingPage() {
+  const router = useRouter()
   const [items, setItems] = useState<CalibrationTest[]>([])
 
   const reload = useCallback(() => setItems(listCalibrationTests()), [])
@@ -74,6 +76,7 @@ export default function CalibrationTestingPage() {
       empty={<span className="text-muted-foreground">No records yet</span>}
       pageSize={10}
       tableKey="calibration-testing"
+      onRowClick={(row) => router.push(ROUTES.APP.CALIBRATION_TESTING.EDIT(row.original.id))}
       toolbar={useCallback((table: TanstackTable<CalibrationTest>) => {
         const selected = table.getSelectedRowModel().rows
         const hasSelected = selected.length > 0

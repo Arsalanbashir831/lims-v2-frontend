@@ -57,10 +57,9 @@ export default function EditPQRPage() {
 
   return (
     <div className="grid gap-4">
-      <Card>
-        <CardHeader className="pb-2">
+        <div className="pb-2">
           <div className="flex items-center justify-between gap-4">
-            <CardTitle className="text-xl">Edit PQR</CardTitle>
+            <h2 className="text-xl font-semibold">Edit PQR</h2>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Form Type</span>
               <Select value={formType} onValueChange={(v: "asme" | "api") => setFormType(v)}>
@@ -74,13 +73,10 @@ export default function EditPQRPage() {
               </Select>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="p-3 sm:p-4">
+        </div>
+        <div>
             <PQRForm isAsme={isAsme} onSubmit={handleSubmit} />
-          </div>
-        </CardContent>
-      </Card>
+        </div>
     </div>
   )
 }

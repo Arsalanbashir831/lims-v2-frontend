@@ -47,13 +47,13 @@ export function EquipmentForm({ initial }: Props) {
     if (isEditing && initial) {
       updateEquipment(initial.id, payload)
       toast.success("Record updated")
-      router.push(ROUTES.APP.LAB_EQUIPMENTS)
+      router.push(ROUTES.APP.LAB_EQUIPMENTS.ROOT)
       return
     }
 
     createEquipment(payload)
     toast.success("Record created")
-    router.push(ROUTES.APP.LAB_EQUIPMENTS)
+    router.push(ROUTES.APP.LAB_EQUIPMENTS.ROOT)
   }
 
   return (
