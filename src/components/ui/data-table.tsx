@@ -17,8 +17,8 @@ import {
 import type { Row } from "@tanstack/react-table"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { useSidebar } from "@/components/ui/sidebar"
+import { ScrollArea, ScrollBar } from "./scroll-area"
 
 type DataTableProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[]
@@ -29,9 +29,10 @@ type DataTableProps<TData, TValue> = {
   footer?: (table: ReturnType<typeof useReactTable<TData>>) => React.ReactNode
   tableKey?: string
   onRowClick?: (row: Row<TData>) => void
+  bodyMaxHeightClassName?: string
 }
 
-export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, toolbar, footer, tableKey, onRowClick }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, toolbar, footer, tableKey, onRowClick, bodyMaxHeightClassName }: DataTableProps<TData, TValue>) {
   const { state } = useSidebar()
   const maxWidth = useMemo(() => (state === "expanded" ? "lg:max-w-[calc(100vw-20rem)]" : "lg:max-w-screen"), [state])
 
@@ -61,7 +62,13 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
     const parsed = raw ? Number(raw) : undefined
     return parsed && !Number.isNaN(parsed) ? parsed : pageSize
   }, [tableKey, pageSize])
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: initialPageSize })
+  const initialPageIndex = useMemo(() => {
+    if (!tableKey || typeof window === "undefined") return 0
+    const raw = window.localStorage.getItem(`lims:dt:pageIndex:${tableKey}`)
+    const parsed = raw ? Number(raw) : undefined
+    return parsed && !Number.isNaN(parsed) ? parsed : 0
+  }, [tableKey])
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: initialPageIndex, pageSize: initialPageSize })
 
   const table = useReactTable({
     data,
@@ -72,6 +79,7 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     onPaginationChange: setPagination,
+    autoResetPageIndex: false,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -101,16 +109,25 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
     } catch { }
   }, [tableKey, table.getState().pagination.pageSize])
 
+  useEffect(() => {
+    if (!tableKey || typeof window === "undefined") return
+    try {
+      const index = table.getState().pagination.pageIndex
+      window.localStorage.setItem(`lims:dt:pageIndex:${tableKey}`, String(index))
+    } catch { }
+  }, [tableKey, table.getState().pagination.pageIndex])
+
   return (
-    <>
+    <div className="flex flex-col gap-2 h-[calc(100vh-10rem)]">
       {toolbar ? (
         <div className="flex items-center justify-between gap-2 p-2">
           {toolbar(table)}
         </div>
       ) : null}
-      <ScrollArea className={cn("w-full max-w-screen", maxWidth)}>
+      <ScrollArea className={cn("relative flex-1 overflow-auto w-full", maxWidth)}>
+        <ScrollBar orientation="horizontal" />
         <Table className="min-w-full">
-      <TableHeader className="bg-muted">
+          <TableHeader className="bg-muted">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
@@ -126,8 +143,8 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
                 })}
               </TableRow>
             ))}
-      </TableHeader>
-      <TableBody>
+          </TableHeader>
+          <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
@@ -146,28 +163,27 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
                     return (
                       <TableCell key={cell.id} className={cn("align-middle px-3", meta?.className)}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </TableCell>
+                      </TableCell>
                     )
                   })}
-          </TableRow>
+                </TableRow>
               ))
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="text-center text-muted-foreground whitespace-nowrap">
                   {empty ?? "No data"}
                 </TableCell>
-            </TableRow>
-        )}
-      </TableBody>
-    </Table>
-        <ScrollBar orientation="horizontal" />
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </ScrollArea>
       {footer ? (
         <div className="mt-2">
           {footer(table)}
         </div>
       ) : null}
-    </>
+    </div>
   )
 }
 

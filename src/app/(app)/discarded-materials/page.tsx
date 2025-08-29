@@ -143,55 +143,53 @@ export default function DiscardedMaterialsPage() {
 
 
     return (
-        <div className="space-y-4">
-            <DataTable
-                data={filteredData}
-                columns={columns}
-                tableKey="discarded-materials"
-                onRowClick={(row) => router.push(ROUTES.APP.MATERIAL_DISCARDS.EDIT(row.original.id))}
-                toolbar={(table) => {
-                    const selected = table.getSelectedRowModel().rows
-                    const hasSelected = selected.length > 0
-                    const onBulkDelete = () => {
-                        const ids = selected.map((r: any) => r.original.id)
-                        if (deleteMultipleDiscardedMaterials(ids)) {
-                            table.resetRowSelection()
-                            window.location.reload()
-                        }
+        <DataTable
+            data={filteredData}
+            columns={columns}
+            tableKey="discarded-materials"
+            onRowClick={(row) => router.push(ROUTES.APP.MATERIAL_DISCARDS.EDIT(row.original.id))}
+            toolbar={(table) => {
+                const selected = table.getSelectedRowModel().rows
+                const hasSelected = selected.length > 0
+                const onBulkDelete = () => {
+                    const ids = selected.map((r: any) => r.original.id)
+                    if (deleteMultipleDiscardedMaterials(ids)) {
+                        table.resetRowSelection()
+                        window.location.reload()
                     }
-                    return (
-                        <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
-                            <FilterSearch
-                                placeholder="Search discarded materials..."
-                                value={globalFilter}
-                                onChange={setGlobalFilter}
-                                className="w-full"
-                                inputClassName="max-w-md"
-                            />
-                            <div className="flex items-center gap-2 w-full md:w-auto">
-                                <DataTableViewOptions table={table} />
-                                {hasSelected && (
-                                    <ConfirmPopover
-                                        title={`Delete ${selected.length} selected item(s)?`}
-                                        confirmText="Delete"
-                                        onConfirm={onBulkDelete}
-                                        trigger={<Button variant="destructive" size="sm">Delete selected ({selected.length})</Button>}
-                                    />
-                                )}
-                                <Link href={ROUTES.APP.MATERIAL_DISCARDS.NEW}>
-                                    <Button size="sm">
-                                        <PlusIcon className="mr-2 h-4 w-4" />
-                                        New Discard Record
-                                    </Button>
-                                </Link>
-                            </div>
+                }
+                return (
+                    <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
+                        <FilterSearch
+                            placeholder="Search discarded materials..."
+                            value={globalFilter}
+                            onChange={setGlobalFilter}
+                            className="w-full"
+                            inputClassName="max-w-md"
+                        />
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                            <DataTableViewOptions table={table} />
+                            {hasSelected && (
+                                <ConfirmPopover
+                                    title={`Delete ${selected.length} selected item(s)?`}
+                                    confirmText="Delete"
+                                    onConfirm={onBulkDelete}
+                                    trigger={<Button variant="destructive" size="sm">Delete selected ({selected.length})</Button>}
+                                />
+                            )}
+                            <Link href={ROUTES.APP.MATERIAL_DISCARDS.NEW}>
+                                <Button size="sm">
+                                    <PlusIcon className="mr-2 h-4 w-4" />
+                                    New Discard Record
+                                </Button>
+                            </Link>
                         </div>
-                    )
-                }}
-                footer={(table) => (
-                    <DataTablePagination table={table} />
-                )}
-            />
-        </div>
+                    </div>
+                )
+            }}
+            footer={(table) => (
+                <DataTablePagination table={table} />
+            )}
+        />
     )
 }

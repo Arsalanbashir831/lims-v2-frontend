@@ -46,11 +46,13 @@ export default function SamplePreparationPage() {
     { id: "client", header: ({ column }) => <DataTableColumnHeader column={column} title="Client" />, cell: ({ row }) => recMap.get(row.original.sampleReceivingId)?.clientName ?? "-" },
     { id: "requestNo", header: ({ column }) => <DataTableColumnHeader column={column} title="Request #" />, cell: ({ row }) => row.original.prepNo },
     { id: "totalSamples", header: ({ column }) => <DataTableColumnHeader column={column} title="Total no. of Samples" />, cell: ({ row }) => recMap.get(row.original.sampleReceivingId)?.numItems ?? 0 },
-    { id: "specimenIds", header: ({ column }) => <DataTableColumnHeader column={column} title="Specimen IDs" />, cell: ({ row }) => {
-      const ids = Array.from(new Set(row.original.items.flatMap(i => i.specimenIds))).filter(Boolean)
-      const preview = ids.slice(0, 5).join(", ")
-      return ids.length > 5 ? `${preview} +${ids.length - 5}` : (preview || "-")
-    } },
+    {
+      id: "specimenIds", header: ({ column }) => <DataTableColumnHeader column={column} title="Specimen IDs" />, cell: ({ row }) => {
+        const ids = Array.from(new Set(row.original.items.flatMap(i => i.specimenIds))).filter(Boolean)
+        const preview = ids.slice(0, 5).join(", ")
+        return ids.length > 5 ? `${preview} +${ids.length - 5}` : (preview || "-")
+      }
+    },
     { id: "requestDate", header: ({ column }) => <DataTableColumnHeader column={column} title="Request Date" />, cell: ({ row }) => recMap.get(row.original.sampleReceivingId)?.receiveDate ?? "-" },
     {
       id: "actions",
@@ -67,46 +69,46 @@ export default function SamplePreparationPage() {
   ], [doDelete, recMap])
 
   return (
-    <div className="grid gap-4">
-      <DataTable
-        columns={columns}
-        data={items}
-        empty={<span className="text-muted-foreground">No preparations yet</span>}
-        pageSize={10}
-        tableKey="sample-preparation"
-        onRowClick={(row) => router.push(ROUTES.APP.SAMPLE_PREPARATION.EDIT(row.original.id))}
-        toolbar={useCallback((table: TanstackTable<SamplePreparation>) => {
-          const selected = table.getSelectedRowModel().rows
-          const hasSelected = selected.length > 0
-          const onBulkDelete = () => {
-            const ids = selected.map(r => r.original.id)
-            ids.forEach(id => doDelete(id))
-            table.resetRowSelection()
-          }
-          return (
-            <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
-              <FilterSearch
-                placeholder="Search preparations..."
-                value={(table.getColumn("prepNo")?.getFilterValue() as string) ?? ""}
-                onChange={(value) => table.getColumn("prepNo")?.setFilterValue(value)}
-                className="w-full"
-                inputClassName="max-w-md"
-              />
-              <div className="flex items-center gap-2 w-full md:w-auto">
-                <DataTableViewOptions table={table} />
-                {hasSelected && (
-                  <ConfirmPopover title={`Delete ${selected.length} selected item(s)?`} confirmText="Delete" onConfirm={onBulkDelete} trigger={<Button variant="destructive" size="sm">Delete selected ({selected.length})</Button>} />
-                )}
-                <Button asChild size="sm">
-                  <Link href={ROUTES.APP.SAMPLE_PREPARATION.NEW}>New Preparation</Link>
-                </Button>
-              </div>
+
+    <DataTable
+      columns={columns}
+      data={items}
+      empty={<span className="text-muted-foreground">No preparations yet</span>}
+      pageSize={10}
+      tableKey="sample-preparation"
+      onRowClick={(row) => router.push(ROUTES.APP.SAMPLE_PREPARATION.EDIT(row.original.id))}
+      toolbar={useCallback((table: TanstackTable<SamplePreparation>) => {
+        const selected = table.getSelectedRowModel().rows
+        const hasSelected = selected.length > 0
+        const onBulkDelete = () => {
+          const ids = selected.map(r => r.original.id)
+          ids.forEach(id => doDelete(id))
+          table.resetRowSelection()
+        }
+        return (
+          <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
+            <FilterSearch
+              placeholder="Search preparations..."
+              value={(table.getColumn("prepNo")?.getFilterValue() as string) ?? ""}
+              onChange={(value) => table.getColumn("prepNo")?.setFilterValue(value)}
+              className="w-full"
+              inputClassName="max-w-md"
+            />
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <DataTableViewOptions table={table} />
+              {hasSelected && (
+                <ConfirmPopover title={`Delete ${selected.length} selected item(s)?`} confirmText="Delete" onConfirm={onBulkDelete} trigger={<Button variant="destructive" size="sm">Delete selected ({selected.length})</Button>} />
+              )}
+              <Button asChild size="sm">
+                <Link href={ROUTES.APP.SAMPLE_PREPARATION.NEW}>New Preparation</Link>
+              </Button>
             </div>
-          )
-        }, [doDelete])}
-        footer={useCallback((table: TanstackTable<SamplePreparation>) => <DataTablePagination table={table} />, [])}
-      />
-    </div>
+          </div>
+        )
+      }, [doDelete])}
+      footer={useCallback((table: TanstackTable<SamplePreparation>) => <DataTablePagination table={table} />, [])}
+    />
+
   )
 }
 
