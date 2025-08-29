@@ -13,22 +13,38 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
-import { Home, FlaskConical, Microscope, ClipboardList, FileText, Archive, Route, BookOpenText } from "lucide-react"
+import { Home, FlaskConical, Microscope, ClipboardList, FileText, Archive, Route, BookOpenText, ChevronDown, ChevronRight } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { ThemeSwitcher } from "@/components/ui/theme-switcher"
 import { useTheme } from "next-themes"
 import { LogoutButton } from "@/components/logout-button"
 import Image from "next/image"
+import { useState } from "react"
 
 const navItems = [
   { href: ROUTES.APP.DASHBOARD, label: "Dashboard", icon: Home },
   { href: ROUTES.APP.TEST_METHODS.ROOT, label: "Test Methods", icon: FlaskConical },
   { href: ROUTES.APP.LAB_EQUIPMENTS.ROOT, label: "Lab Equipments", icon: Microscope },
-  { href: ROUTES.APP.PROFICIENCY_TESTING.ROOT, label: "Proficiency Testing", icon: ClipboardList },
-  { href: ROUTES.APP.CALIBRATION_TESTING.ROOT, label: "Calibration Testing", icon: ClipboardList },
-  { href: ROUTES.APP.SAMPLE_RECEIVING.ROOT, label: "Sample Receiving", icon: FileText },
-  { href: ROUTES.APP.SAMPLE_PREPARATION.ROOT, label: "Sample Preparation", icon: FileText },
+  { 
+    label: "Testing", 
+    icon: ClipboardList,
+    items: [
+      { href: ROUTES.APP.PROFICIENCY_TESTING.ROOT, label: "Proficiency Testing" },
+      { href: ROUTES.APP.CALIBRATION_TESTING.ROOT, label: "Calibration Testing" },
+    ]
+  },
+  { 
+    label: "Sample Management", 
+    icon: FileText,
+    items: [
+      { href: ROUTES.APP.SAMPLE_RECEIVING.ROOT, label: "Sample Receiving" },
+      { href: ROUTES.APP.SAMPLE_PREPARATION.ROOT, label: "Sample Preparation" },
+    ]
+  },
   { href: ROUTES.APP.TEST_REPORTS.ROOT, label: "Test Reports", icon: FileText },
   { href: ROUTES.APP.MATERIAL_DISCARDS.ROOT, label: "Material Discards", icon: Archive },
   { href: ROUTES.APP.TRACKING_DATABASE, label: "Tracking Database", icon: Route },
@@ -38,6 +54,70 @@ const navItems = [
 export function AppSidebar() {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
+  const [expandedSections, setExpandedSections] = useState<string[]>([])
+
+  const toggleSection = (sectionLabel: string) => {
+    setExpandedSections(prev => 
+      prev.includes(sectionLabel) 
+        ? prev.filter(label => label !== sectionLabel)
+        : [...prev, sectionLabel]
+    )
+  }
+
+  const renderNavItem = (item: any) => {
+    if (item.items) {
+      // This is a dropdown item
+      const isActive = item.items.some((subItem: any) => pathname?.startsWith(subItem.href))
+      const isExpanded = expandedSections.includes(item.label)
+      
+      return (
+        <SidebarMenuItem key={item.label}>
+          <SidebarMenuButton 
+            onClick={() => toggleSection(item.label)}
+            isActive={isActive}
+            className="justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <item.icon className="size-4" />
+              <span>{item.label}</span>
+            </div>
+            {isExpanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+          </SidebarMenuButton>
+          
+          {isExpanded && (
+            <SidebarMenuSub>
+              {item.items.map((subItem: any) => {
+                const isSubActive = pathname?.startsWith(subItem.href)
+                return (
+                  <SidebarMenuSubItem key={subItem.href}>
+                    <SidebarMenuSubButton asChild isActive={isSubActive}>
+                      <Link href={subItem.href}>
+                        <span>{subItem.label}</span>
+                      </Link>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                )
+              })}
+            </SidebarMenuSub>
+          )}
+        </SidebarMenuItem>
+      )
+    } else {
+      // This is a regular menu item
+      const Icon = item.icon
+      const isActive = pathname?.startsWith(item.href)
+      return (
+        <SidebarMenuItem key={item.href}>
+          <SidebarMenuButton asChild isActive={isActive}>
+            <Link href={item.href}>
+              <Icon className="size-4" />
+              <span>{item.label}</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      )
+    }
+  }
 
   return (
     <Sidebar className="border-none">
@@ -51,20 +131,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => {
-                const Icon = item.icon
-                const isActive = pathname?.startsWith(item.href)
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={isActive}>
-                      <Link href={item.href}>
-                        <Icon className="size-4" />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              })}
+              {navItems.map(renderNavItem)}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
