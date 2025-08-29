@@ -7,11 +7,12 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { redirect } from "next/navigation"
-import { Eye, EyeOff, Lock, Mail } from "lucide-react"
+import { Eye, EyeOff, Lock, Mail, UserRound, BadgeCheck } from "lucide-react"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [role, setRole] = useState<"supervisor" | "inspector" | null>("supervisor")
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -24,46 +25,31 @@ export default function LoginPage() {
   return (
     <div className="w-full">
       {/* Form Header */}
-      <div className="text-center mb-8">
+      <div className="mb-6 text-left">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Sign In</h1>
-        <p className="text-muted-foreground mt-2">Enter your credentials to access your account</p>
+        <p className="mt-1 text-sm text-muted-foreground">Enter your credentials to access your account</p>
       </div>
 
       {/* Login Form */}
-      <Card className="border-0 shadow-lg">
-        <CardContent className="p-8">
+     
           <form className="space-y-6" onSubmit={onSubmit}>
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
+              <Label htmlFor="userid" className="text-sm font-medium">User ID</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="you@example.com" 
-                  className="pl-10 h-11" 
-                  required 
-                />
+                <UserRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input id="userid" type="text" placeholder="Enter your User ID" className="h-11 pl-10" required />
               </div>
             </div>
             
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-                <Link 
-                  href="/forgot-password" 
-                  className="text-sm text-primary hover:underline transition-colors"
-                >
-                  Forgot password?
-                </Link>
-              </div>
+              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input 
                   id="password" 
                   type={showPassword ? "text" : "password"} 
                   placeholder="Enter your password" 
-                  className="pl-10 pr-10 h-11" 
+                  className="h-11 pl-10 pr-10" 
                   required 
                 />
                 <Button
@@ -84,7 +70,7 @@ export default function LoginPage() {
 
             <Button 
               type="submit" 
-              className="w-full h-11 text-base font-medium" 
+              className="h-11 w-full text-base font-medium" 
               disabled={isLoading}
             >
               {isLoading ? (
@@ -96,19 +82,11 @@ export default function LoginPage() {
                 "Sign In"
               )}
             </Button>
-          </form>
-        </CardContent>
-      </Card>
 
-      {/* Footer */}
-      {/* <div className="text-center mt-6">
-        <p className="text-sm text-muted-foreground">
-          Need help?{" "}
-          <Link href="/support" className="text-primary hover:underline transition-colors">
-            Contact support
-          </Link>
-        </p>
-      </div> */}
+            <div className="text-center text-sm">
+              <Link href="/forgot-password" className="text-primary hover:underline">Forgot Password?</Link>
+            </div>
+          </form>
     </div>
   )
 }
