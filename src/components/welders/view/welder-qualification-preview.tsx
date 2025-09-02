@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { WelderQualificationForm, type WelderQualificationData } from "@/components/welders/welder-qualification-form"
-import { ArrowLeft, Printer } from "lucide-react"
+import { Printer } from "lucide-react"
 import QRCode from "qrcode"
 import { ROUTES } from "@/constants/routes"
 import { generatePdf } from "@/lib/pdf-utils"
@@ -140,14 +140,7 @@ export default function WelderQualificationPreview({
     }
   }
 
-  const handleBack = () => {
-    if (isPublic) {
-      // For public pages, you might want to redirect to a different page
-      router.push("/")
-    } else {
-      router.back()
-    }
-  }
+
 
   if (loading) {
     return (
@@ -166,10 +159,7 @@ export default function WelderQualificationPreview({
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Certificate Not Found</h2>
           <p className="text-gray-600 mb-4">The welder qualification certificate you're looking for doesn't exist.</p>
-          <Button onClick={handleBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Go Back
-          </Button>
+          <BackButton label='Go Back' />
         </div>
       </div>
     )
@@ -180,7 +170,7 @@ export default function WelderQualificationPreview({
       {/* Header */}
       {showButton && (
         <div className="mb-6 flex items-center justify-between">
-          <BackButton onBack={handleBack} />
+          <BackButton />
           
           <div className="flex gap-2">
             <Button onClick={handlePrint}>

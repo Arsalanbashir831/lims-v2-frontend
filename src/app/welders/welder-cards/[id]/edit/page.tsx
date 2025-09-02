@@ -1,13 +1,12 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
+import { PencilIcon, XIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
+import { FormHeader } from "@/components/common/form-header"
+import { WelderCardData, WelderCardForm } from "@/components/welders/welder-card-form"
 
 interface EditWelderCardPageProps {
   params: {
@@ -15,97 +14,83 @@ interface EditWelderCardPageProps {
   }
 }
 
+// Mock data - replace with actual data fetching
+const mockData: WelderCardData = {
+  id: "1",
+  company: "GULF HEAVY INDUSTRIES COMPANY",
+  welderImage: null,
+  welderName: "NASIR MAHMOOD",
+  wpsNo: "GHI-259-01 Rev.00",
+  iqamaId: "2542297615",
+  welderId: "ASME SEC IX(2023)",
+  cardNo: "SA-516 Gr.70NN to SA-334 Gr.6",
+  process: "GROOVE + SEAL WELD",
+  jointType: "W-533",
+  verticalProgression: "2025-08-18",
+  testPosition: "2025-08-18",
+  positionQualified: "2025-08-18",
+  testThickness: "2025-08-18",
+  testDia: "2025-08-18",
+  thicknessQualified: "2025-08-18",
+  pNoQualified: "2025-08-18",
+  diameterQualified: "2025-08-18",
+  fNoQualified: "2025-08-18",
+  fillerMetalElectrodeClassUsed: "2025-08-18",
+  placeOfIssue: "2025-08-18",
+  testMethod: "2025-08-18",
+  dateOfTest: "2025-08-18",
+  dateOfExp: "2025-08-18",
+  authorisedBy: "2025-08-18",
+  weldingInspector: "2025-08-18",
+  certificationStatement: "ASME SEC IX Ed(2023).",
+}
+
 export default function EditWelderCardPage({ params }: EditWelderCardPageProps) {
+  const router = useRouter()
+  const [isEditing, setIsEditing] = useState(false)
+  const [data, setData] = useState<WelderCardData | null>(null)
+
+  useEffect(() => {
+    // TODO: Fetch actual data based on params.id
+    setData(mockData)
+  }, [params.id])
+
+  const handleSubmit = (formData: WelderCardData) => {
+    // TODO: Save to localStorage or API
+    console.log('Updating welder card data:', formData)
+    
+    setIsEditing(false)
+    // Optionally update local state or refetch data
+    setData(formData)
+  }
+
+  const handleCancel = () => {
+    if (isEditing) {
+      setIsEditing(false)
+    } else {
+      router.push(ROUTES.APP.WELDERS.WELDER_CARDS.ROOT)
+    }
+  }
+
+  if (!data) {
+    return <div>Loading...</div>
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" asChild>
-          <Link href={ROUTES.APP.WELDERS.WELDER_CARDS.ROOT}>
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edit Welder Card</h1>
-          <p className="text-muted-foreground">
-            Update the welder card details
-          </p>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Card Information</CardTitle>
-          <CardDescription>
-            Update the details for card ID: {params.id}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="welderName">Welder Name</Label>
-              <Input id="welderName" placeholder="Enter welder name" defaultValue="Mike Wilson" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cardNumber">Card Number</Label>
-              <Input id="cardNumber" placeholder="Enter card number" defaultValue="WC-2024-001" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="employeeId">Employee ID</Label>
-              <Input id="employeeId" placeholder="Enter employee ID" defaultValue="EMP-001" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="department">Department</Label>
-              <Input id="department" placeholder="Enter department" defaultValue="Fabrication" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="issueDate">Issue Date</Label>
-              <Input id="issueDate" type="date" defaultValue="2024-03-01" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="expiryDate">Expiry Date</Label>
-              <Input id="expiryDate" type="date" defaultValue="2025-03-01" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="certificationLevel">Certification Level</Label>
-              <Input id="certificationLevel" placeholder="e.g., Certified, Advanced, Expert" defaultValue="Advanced" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="contactNumber">Contact Number</Label>
-              <Input id="contactNumber" placeholder="Enter contact number" defaultValue="+1234567890" />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="specializations">Specializations</Label>
-            <Input id="specializations" placeholder="e.g., GTAW, SMAW, Structural Welding" defaultValue="GTAW, SMAW, Structural Welding" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="remarks">Remarks</Label>
-            <Textarea id="remarks" placeholder="Enter any additional remarks" defaultValue="Experienced welder with excellent track record" />
-          </div>
-
-          <div className="flex justify-end gap-4">
-            <Button variant="outline" asChild>
-              <Link href={ROUTES.APP.WELDERS.WELDER_CARDS.ROOT}>
-                Cancel
-              </Link>
-            </Button>
-            <Button type="submit">
-              Update Card
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <FormHeader title="Edit Welder Card" description="Edit the welder card" label={null} href={ROUTES.APP.WELDERS.WELDER_CARDS.ROOT}>
+        {!isEditing ? (
+          <Button size="sm" onClick={() => setIsEditing(true)}><PencilIcon className="w-4 h-4 mr-1" /> Edit</Button>
+        ) : (
+          <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}><XIcon className="w-4 h-4 mr-1" /> Cancel</Button>
+        )}
+      </FormHeader>
+      <WelderCardForm
+        initialData={data}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        readOnly={!isEditing}
+      />
     </div>
   )
 }
