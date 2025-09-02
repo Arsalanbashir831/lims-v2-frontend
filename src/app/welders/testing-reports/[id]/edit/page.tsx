@@ -1,116 +1,101 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
+import { TestingReportForm, type TestingReportFormData } from "@/components/welders/testing-report-form"
 import { ROUTES } from "@/constants/routes"
+import { FormHeader } from "@/components/common/form-header"
+import { PencilIcon, XIcon } from "lucide-react"
+import { useParams } from "next/navigation"
+import { useState } from "react"
 
-interface EditTestingReportPageProps {
-  params: {
-    id: string
-  }
+const mock: TestingReportFormData = {
+  rows: [
+    {
+      welderId: "1",
+      welderName: "John Doe",
+      iqamaNumber: "1234567890",
+      testCouponId: "1",
+      dateOfInspection: "2021-01-01",
+      weldingProcesses: "1",
+      weldingType: "1",
+      backing: "1",
+      weldJointType: "1",
+      thicknessProductType: "1",
+      pipeDiameter: "1",
+      baseMetalPNumber: "1",
+      fillerMetalSpecSfa: "1",
+      fillerMetalFNumber: "1",
+      fillerMetalAdditionDeletion: "1",
+      depositThicknessEachProcess: "1",
+      weldingPositions: "1",
+      verticalProgressions: "1",
+      fuelGasTypeOfw: "1",
+      inertGasBacking: "1",
+      transferMode: "1",
+      currentTypePolarity: "1",
+      voltage: "1",
+      current: "1",
+      travelSpeed: "1",
+      interPassTemperature: "1",
+      preHeat: "1",
+      postWeldHeatTreatment: "1",
+      resultStatus: "1",
+    },
+    {
+      welderId: "2",
+      welderName: "John Doe",
+      iqamaNumber: "1234567890",
+      testCouponId: "2",
+      dateOfInspection: "2021-01-01",
+      weldingProcesses: "2",
+      weldingType: "2",
+      backing: "2",
+      weldJointType: "2",
+      thicknessProductType: "2",
+      pipeDiameter: "2",
+      baseMetalPNumber: "2",
+      fillerMetalSpecSfa: "2",
+      fillerMetalFNumber: "2",
+      fillerMetalAdditionDeletion: "2",
+      depositThicknessEachProcess: "2",
+      weldingPositions: "2",
+      verticalProgressions: "2",
+      fuelGasTypeOfw: "2",
+      inertGasBacking: "2",
+      transferMode: "2",
+      currentTypePolarity: "2",
+      voltage: "2",
+      current: "2",
+      travelSpeed: "2",
+      interPassTemperature: "2",
+      preHeat: "2",
+      postWeldHeatTreatment: "2",
+      resultStatus: "2",
+    }
+  ],
+  preparedBy: "John Doe",
+  projectDetails: "Project Details",
+  contractDetails: "Contract Details",
+  client: "Client",
 }
 
-export default function EditTestingReportPage({ params }: EditTestingReportPageProps) {
+export default function EditTestingReportPage() {
+  const { id } = useParams<{ id: string }>()
+  const [isEditing, setIsEditing] = useState(false)
+  const handleSubmit = (data: TestingReportFormData) => {
+    // TODO: persist update
+    console.log("Testing report updated", id, data)
+  }
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" asChild>
-          <Link href={ROUTES.APP.WELDERS.TESTING_REPORTS.ROOT}>
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edit Testing Report</h1>
-          <p className="text-muted-foreground">
-            Update the testing report details
-          </p>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Report Information</CardTitle>
-          <CardDescription>
-            Update the details for report ID: {params.id}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="reportNumber">Report Number</Label>
-              <Input id="reportNumber" placeholder="Enter report number" defaultValue="TR-2024-001" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="welderName">Welder Name</Label>
-              <Input id="welderName" placeholder="Enter welder name" defaultValue="John Smith" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="testType">Test Type</Label>
-              <Input id="testType" placeholder="e.g., Qualification Test, Performance Test" defaultValue="Qualification Test" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="testDate">Test Date</Label>
-              <Input id="testDate" type="date" defaultValue="2024-04-15" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="processUsed">Process Used</Label>
-              <Input id="processUsed" placeholder="e.g., GTAW, SMAW, GMAW" defaultValue="GTAW" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="position">Position</Label>
-              <Input id="position" placeholder="e.g., 1G, 2G, 3G, 4G" defaultValue="1G, 2G" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="testResult">Test Result</Label>
-              <Input id="testResult" placeholder="e.g., Pass, Fail, Conditional Pass" defaultValue="Pass" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="inspector">Inspector</Label>
-              <Input id="inspector" placeholder="Enter inspector name" defaultValue="Mike Wilson" />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="materialSpecification">Material Specification</Label>
-            <Input id="materialSpecification" placeholder="Enter material specification" defaultValue="A36 Carbon Steel" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="testObservations">Test Observations</Label>
-            <Textarea id="testObservations" placeholder="Enter detailed test observations" defaultValue="Excellent weld quality with proper penetration and no defects observed." />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="recommendations">Recommendations</Label>
-            <Textarea id="recommendations" placeholder="Enter any recommendations" defaultValue="Welder demonstrates proficiency and is recommended for certification." />
-          </div>
-
-          <div className="flex justify-end gap-4">
-            <Button variant="outline" asChild>
-              <Link href={ROUTES.APP.WELDERS.TESTING_REPORTS.ROOT}>
-                Cancel
-              </Link>
-            </Button>
-            <Button type="submit">
-              Update Report
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <FormHeader title="Edit Testing Report" description="Update the testing report details" label={null} href={ROUTES.APP.WELDERS.TESTING_REPORTS.ROOT}>
+        {!isEditing ? (
+          <Button size="sm" onClick={() => setIsEditing(true)}><PencilIcon className="w-4 h-4 mr-1" /> Edit</Button>
+        ) : (
+          <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}><XIcon className="w-4 h-4 mr-1" /> Cancel</Button>
+        )}
+      </FormHeader>
+      <TestingReportForm initialData={mock} onSubmit={handleSubmit} readOnly={!isEditing} />
     </div>
   )
 }

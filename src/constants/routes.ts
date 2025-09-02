@@ -77,7 +77,6 @@ export const ROUTES = {
                 ROOT: "/welders/testing-reports",
                 NEW: "/welders/testing-reports/new",
                 EDIT: (id: string) => `/welders/testing-reports/${id}/edit`,
-                VIEW: (id: string) => `/welders/testing-reports/${id}/view`,
             },
         },
     },
@@ -85,7 +84,6 @@ export const ROUTES = {
         PQR_PREVIEW: (id: string) => `/public/pqr/preview/${id}`,
         TEST_REPORT_PREVIEW: (id: string) => `/public/test-report/preview/${id}`,
         WELDER_QUALIFICATION_PREVIEW: (id: string) => `/public/welder-qualification/preview/${id}`,
-        WELDER_TESTING_REPORT_PREVIEW: (id: string) => `/public/welder-testing-report/preview/${id}`,
         WELDER_OPERATOR_PERFORMANCE_PREVIEW: (id: string) => `/public/welder-operator-performance/preview/${id}`,
         WELDER_CARDS_PREVIEW: (id: string) => `/public/welder-cards/preview/${id}`,
     }
