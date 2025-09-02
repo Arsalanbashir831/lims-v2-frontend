@@ -190,7 +190,7 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
         if (!loading && data) {
             try {
                 if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: "TEST_REPORT_PREVIEW_READY", id }, "*");
+                    window.parent.postMessage({ type: "DOCUMENT_READY", id }, "*");
                 }
             } catch {}
         }
@@ -236,7 +236,7 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
             const onMessage = (event: MessageEvent) => {
                 try {
                     const dataMsg = event.data as any;
-                    if (dataMsg && dataMsg.type === "TEST_REPORT_PREVIEW_READY" && dataMsg.id === id) {
+                    if (dataMsg && dataMsg.type === "DOCUMENT_READY" && dataMsg.id === id) {
                         tryPrint();
                     }
                 } catch {}

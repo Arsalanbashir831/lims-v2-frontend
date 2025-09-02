@@ -358,7 +358,7 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
     if (!loadingView && pqrDataToView) {
       try {
         if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type: 'PQR_PREVIEW_READY', id: pqrId }, '*');
+          window.parent.postMessage({ type: 'DOCUMENT_READY', id: pqrId }, '*');
         }
       } catch { }
     }

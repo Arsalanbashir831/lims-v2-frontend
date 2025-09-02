@@ -80,11 +80,11 @@ const defaultTestsConducted: TestConducted[] = [
   { id: "3", testType: "Mechanical Test", reportNo: "", results: "", isReportChecked: false },
 ]
 
-export function WelderQualificationForm({ 
-  initialData, 
-  onSubmit, 
-  onCancel, 
-  readOnly = false 
+export function WelderQualificationForm({
+  initialData,
+  onSubmit,
+  onCancel,
+  readOnly = false
 }: WelderQualificationFormProps) {
   const [formData, setFormData] = useState<WelderQualificationData>({
     clientName: "",
@@ -153,14 +153,14 @@ export function WelderQualificationForm({
   }
 
   const updateWelderVariable = (id: string, field: keyof WelderVariable, value: string) => {
-    const updatedVariables = formData.welderVariables.map(variable => 
+    const updatedVariables = formData.welderVariables.map(variable =>
       variable.id === id ? { ...variable, [field]: value } : variable
     )
     handleInputChange('welderVariables', updatedVariables)
   }
 
   const updateTestConducted = (id: string, field: keyof TestConducted, value: string | boolean) => {
-    const updatedTests = formData.testsConducted.map(test => 
+    const updatedTests = formData.testsConducted.map(test =>
       test.id === id ? { ...test, [field]: value } : test
     )
     handleInputChange('testsConducted', updatedTests)
@@ -188,7 +188,7 @@ export function WelderQualificationForm({
               Welder / Welder operator performance Qualification Record
             </h2>
             {readOnly ? (
-              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+              <h3 className="text-lg font-bold">
                 {formData.clientName || "CLIENT NAME"}
               </h3>
             ) : (
@@ -205,11 +205,11 @@ export function WelderQualificationForm({
           <div className="flex-1 flex justify-end">
             <div className="w-40 h-24 border-2  overflow-hidden bg-gray-100 dark:bg-sidebar">
               {formData.welderImage ? (
-                <Image 
-                  src={formData.welderImage} 
-                  alt="Welder" 
-                  width={128} 
-                  height={160} 
+                <Image
+                  src={formData.welderImage}
+                  alt="Welder"
+                  width={128}
+                  height={160}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -397,7 +397,7 @@ export function WelderQualificationForm({
             <div className="p-3 font-medium text-sm text-center border-r">Actual Values</div>
             <div className="p-3 font-medium text-sm text-center border-r">Range Qualified</div>
           </div>
-          
+
           {formData.welderVariables.map((variable, index) => (
             <div key={variable.id} className={`grid grid-cols-3 ${index % 2 === 0 ? 'bg-white dark:bg-background' : 'bg-background dark:bg-sidebar'}`}>
               <div className="p-3 border-r ">
@@ -438,7 +438,7 @@ export function WelderQualificationForm({
               </div>
             </div>
           ))}
-          
+
           {!readOnly && (
             <div className="p-3 border-t ">
               <Button type="button" variant="outline" size="sm" onClick={addWelderVariable}>
@@ -450,58 +450,57 @@ export function WelderQualificationForm({
         </div>
 
         {/* Test Conducted Table */}
-        <div className="border  mb-6">
-          <div className="grid grid-cols-3 border-b  bg-background dark:bg-sidebar">
+        <div className="border mb-6 text-center">
+          <div className="grid grid-cols-4 border-b bg-background dark:bg-sidebar">
             <div className="p-3 font-medium text-sm border-r">Test Conducted/ Type of Test</div>
-            <div className="p-3 font-medium text-sm text-center border-r">Report No</div>
+            <div className="p-3 font-medium text-sm text-center border-r">Test Performed</div>
             <div className="p-3 font-medium text-sm text-center border-r">Results</div>
+            <div className="p-3 font-medium text-sm text-center border-r">Report No</div>
           </div>
-          
+
           {formData.testsConducted.map((test, index) => (
-            <div key={test.id} className={`grid grid-cols-3 ${index % 2 === 0 ? 'bg-white dark:bg-background' : 'bg-background dark:bg-sidebar'}`}>
+            <div key={test.id} className={`grid grid-cols-4 ${index % 2 === 0 ? 'bg-white dark:bg-background' : 'bg-background dark:bg-sidebar'}`}>
+              <div className="p-3 border-r ">
+                <span className="text-sm">{test.testType}</span>
+              </div>
               <div className="p-3 border-r ">
                 {readOnly ? (
-                  <span className="text-sm">{test.testType}</span>
+                  <div className="flex items-center justify-center gap-2">
+                    <Checkbox checked={test.isReportChecked} disabled className="w-4 h-4" />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <Checkbox
+                      checked={test.isReportChecked}
+                      onCheckedChange={(checked) => updateTestConducted(test.id, 'isReportChecked', checked)}
+                      className="w-4 h-4"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="p-3 border-r ">
+                {readOnly ? (
+
+                  <span className="text-sm text-center">{test.isReportChecked ? "N/A" : test.reportNo}</span>
+
                 ) : (
                   <Input
-                    value={test.testType}
-                    onChange={(e) => updateTestConducted(test.id, 'testType', e.target.value)}
-                    placeholder="Enter test type"
-                    className="border-0 p-0 h-auto text-sm"
+                    value={test.reportNo}
+                    onChange={(e) => updateTestConducted(test.id, 'reportNo', e.target.value)}
+                    placeholder="Enter report number"
+                    className="border-0 p-0 h-auto text-sm flex-1 text-center"
                   />
                 )}
               </div>
-                               <div className="p-3 border-r ">
-                  {readOnly ? (
-                    <div className="flex items-center gap-2">
-                      <Checkbox checked={test.isReportChecked} disabled className="w-4 h-4" />
-                      <span className="text-sm">{test.isReportChecked ? "N/A" : test.reportNo}</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Checkbox 
-                        checked={test.isReportChecked} 
-                        onCheckedChange={(checked) => updateTestConducted(test.id, 'isReportChecked', checked)}
-                        className="w-4 h-4"
-                      />
-                      <Input
-                        value={test.reportNo}
-                        onChange={(e) => updateTestConducted(test.id, 'reportNo', e.target.value)}
-                        placeholder="Enter report number"
-                        className="border-0 p-0 h-auto text-sm flex-1"
-                      />
-                    </div>
-                  )}
-                </div>
-               <div className="p-3">
+              <div className="p-3">
                 {readOnly ? (
-                  <span className="text-sm">{test.results}</span>
+                  <span className="text-sm text-center">{test.results}</span>
                 ) : (
                   <Input
                     value={test.results}
                     onChange={(e) => updateTestConducted(test.id, 'results', e.target.value)}
                     placeholder="Enter results"
-                    className="border-0 p-0 h-auto text-sm"
+                    className="border-0 p-0 h-auto text-sm text-center"
                   />
                 )}
               </div>
@@ -535,7 +534,7 @@ export function WelderQualificationForm({
             <h3 className="text-lg font-bold mb-4">GRIPCO LIMS</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="font-bold mb-2">Testing Witnessed / Welder Inspector</p>
+                <p className="font-semibold mb-2 text-sm">Testing Witnessed / Welder Inspector</p>
                 <div className="underline text-right">
                   {readOnly ? (
                     <p className="text-sm font-medium">{formData.testingWitnessed}</p>
@@ -550,7 +549,7 @@ export function WelderQualificationForm({
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <p className="font-bold mb-2">Test Supervisor / Technical Manager</p>
+                <p className="font-semibold mb-2 text-sm">Test Supervisor / Technical Manager</p>
                 <div className="underline text-right">
                   {readOnly ? (
                     <p className="text-sm font-medium">{formData.testSupervisor}</p>
@@ -570,16 +569,16 @@ export function WelderQualificationForm({
           {/* Right Side - Client Details and QR Code */}
           <div>
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-sm mb-2">Client Name:</p>
+              <p className="text-sm mb-2 text-sm">Client Name:</p>
               <p className="text-sm font-medium underline">{formData.clientName}</p>
             </div>
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-sm mb-2">Client Signature:</p>
+              <p className="text-sm mb-2 text-sm">Client Signature:</p>
               <div className="border-b-2 border-gray-400 pb-1 min-w-32"></div>
             </div>
-            
+
             {/* QR Code Verification Area */}
-            <div className="bg-gray-20 dark:bg-sidebar p-4 relative">
+            <div className="bg-gray-200 dark:bg-sidebar p-4 relative">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <p className="text-xs">
@@ -588,11 +587,11 @@ export function WelderQualificationForm({
                 </div>
                 <div className="w-16 h-16 bg-white dark:bg-sidebar flex items-center justify-center">
                   {formData.id && qrSrc ? (
-                    <Image 
-                      src={qrSrc} 
-                      alt="QR Code" 
-                      width={64} 
-                      height={64} 
+                    <Image
+                      src={qrSrc}
+                      alt="QR Code"
+                      width={64}
+                      height={64}
                       className="w-full h-full object-contain"
                     />
                   ) : (

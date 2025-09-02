@@ -3,11 +3,10 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Edit } from "lucide-react"
-import Link from "next/link"
+import { PencilIcon, XIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { WelderQualificationForm, type WelderQualificationData } from "@/components/welders/welder-qualification-form"
-import { BackButton } from "@/components/ui/back-button"
+import { FormHeader } from "@/components/common/form-header"
 
 interface EditWelderQualificationPageProps {
   params: {
@@ -93,27 +92,13 @@ export default function EditWelderQualificationPage({ params }: EditWelderQualif
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <BackButton size="icon" label={null} href={ROUTES.APP.WELDERS.WELDER_QUALIFICATION.ROOT} />
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {isEditing ? 'Edit' : 'View'} Welder Qualification Certificate
-            </h1>
-            <p className="text-muted-foreground">
-              Certificate ID: {params.id}
-            </p>
-          </div>
-        </div>
-        
-        {!isEditing && (
-          <Button onClick={() => setIsEditing(true)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
-          </Button>
+      <FormHeader title="Edit Welder Qualification Certificate" description="Edit the welder qualification certificate" label={null} href={ROUTES.APP.WELDERS.WELDER_QUALIFICATION.ROOT}>
+        {!isEditing ? (
+          <Button size="sm" onClick={() => setIsEditing(true)}><PencilIcon className="w-4 h-4 mr-1" /> Edit</Button>
+        ) : (
+          <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}><XIcon className="w-4 h-4 mr-1" /> Cancel</Button>
         )}
-      </div>
-
+      </FormHeader>
       <WelderQualificationForm
         initialData={data}
         onSubmit={handleSubmit}

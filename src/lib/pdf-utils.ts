@@ -16,10 +16,10 @@ export const generatePdf = async (pageUrl: string, documentId?: string, document
     const cleanup = () => {
       try {
         window.removeEventListener('message', onMessage as any);
-      } catch {}
+      } catch { }
       try {
         if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-      } catch {}
+      } catch { }
     };
 
     let printed = false;
@@ -29,7 +29,7 @@ export const generatePdf = async (pageUrl: string, documentId?: string, document
       try {
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
-      } catch {}
+      } catch { }
       // Cleanup after a short delay
       setTimeout(cleanup, 500);
     };
@@ -38,13 +38,11 @@ export const generatePdf = async (pageUrl: string, documentId?: string, document
       try {
         const data = event.data as any;
         // Support both PQR and generic document ready messages
-        if (data && 
-            ((data.type === 'PQR_PREVIEW_READY' && data.id === documentId) ||
-             (data.type === 'DOCUMENT_READY' && data.id === documentId) ||
-             (data.type === 'WELDER_QUALIFICATION_READY' && data.id === documentId))) {
+        if (data &&
+          (data.type === 'DOCUMENT_READY' && data.id === documentId)) {
           tryPrint();
         }
-      } catch {}
+      } catch { }
     };
 
     window.addEventListener('message', onMessage as any);

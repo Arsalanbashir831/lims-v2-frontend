@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { WelderQualificationForm, type WelderQualificationData } from "@/components/welders/welder-qualification-form"
-import { ArrowLeft, Download, Printer } from "lucide-react"
+import { ArrowLeft, Printer } from "lucide-react"
 import QRCode from "qrcode"
 import { ROUTES } from "@/constants/routes"
 import { generatePdf } from "@/lib/pdf-utils"
@@ -98,7 +97,7 @@ export default function WelderQualificationPreview({
       // Send message that the document is ready for printing
       if (typeof window !== "undefined") {
         window.parent.postMessage({
-          type: 'WELDER_QUALIFICATION_READY',
+          type: 'DOCUMENT_READY',
           id: params.id
         }, '*');
       }

@@ -1,100 +1,84 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { OperatorPerformanceForm, type OperatorPerformanceData } from "@/components/welders/operator-performance-form"
 import { ROUTES } from "@/constants/routes"
+import { FormHeader } from "@/components/common/form-header"
+import { Button } from "@/components/ui/button"
+import { PencilIcon, XIcon } from "lucide-react"
 
 interface EditOperatorPerformancePageProps {
-  params: {
-    id: string
-  }
+  params: { id: string }
 }
 
 export default function EditOperatorPerformancePage({ params }: EditOperatorPerformancePageProps) {
+  const router = useRouter()
+  const [isEditing, setIsEditing] = useState(false)
+
+  const mock: OperatorPerformanceData = {
+    id: params.id,
+    operatorImage: null,
+    operatorName: "Sarah Johnson",
+    operatorIdNo: "OP-2024-002",
+    wpsFollowed: "WPS-OP-2024-002",
+    jointWeldType: "Butt Weld",
+    baseMetalSpec: "ASTM A36",
+    fillerSpec: "SFA-5.18 ER70S-6",
+    testCouponSize: "150 x 75 x 10 mm",
+    certificateRefNo: "OPQ-2024-002",
+    iqamaId: "2233445566",
+    dateOfIssued: "2024-03-10",
+    dateOfWelding: "2024-03-08",
+    baseMetalPNumber: "P1",
+    fillerClass: "E7018",
+    positions: "2G / 3G",
+    automaticWeldingEquipmentVariables: [
+      { id: "1", name: "Type of Welding (Automatic)", actualValue: "GMAW", rangeQualified: "GMAW" },
+      { id: "2", name: "Welding Process", actualValue: "Short Circuit", rangeQualified: "Short / Spray" },
+      { id: "3", name: "Filler Metal Used (EBW/LBW)", actualValue: "N/A", rangeQualified: "N/A" },
+      { id: "4", name: "Type of Laser (LBW)", actualValue: "N/A", rangeQualified: "N/A" },
+      { id: "5", name: "Continuous Drive / Inertia (FW)", actualValue: "N/A", rangeQualified: "N/A" },
+      { id: "6", name: "Vacuum / Out of Vacuum (EBW)", actualValue: "N/A", rangeQualified: "N/A" },
+    ],
+    machineWeldingEquipmentVariables: [
+      { id: "1", name: "Type of Welding (Machine)", actualValue: "GTAW", rangeQualified: "GTAW" },
+      { id: "2", name: "Welding Process", actualValue: "Pulsed GTAW", rangeQualified: "Pulsed / Constant" },
+      { id: "3", name: "Direct or Remote Visual Control", actualValue: "Direct", rangeQualified: "Direct/Remote" },
+      { id: "4", name: "Automatic Arc Voltage Control (GTAW)", actualValue: "Enabled", rangeQualified: "Enabled/Disabled" },
+      { id: "5", name: "Automatic Joint Tracking", actualValue: "Enabled", rangeQualified: "Enabled/Disabled" },
+      { id: "6", name: "Position(s)", actualValue: "2G", rangeQualified: "2G/3G" },
+      { id: "7", name: "Base Material Thickness", actualValue: "10 mm", rangeQualified: "6–16 mm" },
+      { id: "8", name: "Consumable Insert (GTAW/PAW)", actualValue: "No", rangeQualified: "With/Without" },
+      { id: "9", name: "Backing (With or Without)", actualValue: "Without", rangeQualified: "With/Without" },
+      { id: "10", name: "Single/Multiple Passes Per Side", actualValue: "Multiple", rangeQualified: "Single/Multiple" },
+    ],
+    testsConducted: [
+      { id: "1", testType: "Visual Inspection", reportNo: "VI-2024-051", results: "ACCEPTED", testPerformed: true },
+      { id: "2", testType: "Liquid Penetrant Examination (PT)", reportNo: "PT-2024-017", results: "ACCEPTED", testPerformed: true },
+      { id: "3", testType: "Ultrasonic Testing (UT)", reportNo: "UT-2024-009", results: "ACCEPTED", testPerformed: false },
+      { id: "4", testType: "Bend Test", reportNo: "BT-2024-004", results: "ACCEPTED", testPerformed: true },
+    ],
+    certificationStatement: "ASME SEC IX Ed(2023)",
+    testingWitnessed: "Inspector X",
+    testSupervisor: "Manager Y",
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" asChild>
-          <Link href={ROUTES.APP.WELDERS.OPERATOR_PERFORMANCE.ROOT}>
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edit Operator Performance Certificate</h1>
-          <p className="text-muted-foreground">
-            Update the operator performance certificate details
-          </p>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Certificate Information</CardTitle>
-          <CardDescription>
-            Update the details for certificate ID: {params.id}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="operatorName">Operator Name</Label>
-              <Input id="operatorName" placeholder="Enter operator name" defaultValue="Sarah Johnson" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="certificateNumber">Certificate Number</Label>
-              <Input id="certificateNumber" placeholder="Enter certificate number" defaultValue="OP-2024-001" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="performanceLevel">Performance Level</Label>
-              <Input id="performanceLevel" placeholder="e.g., Level 1, Level 2, Advanced" defaultValue="Level 2" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="evaluationScore">Evaluation Score</Label>
-              <Input id="evaluationScore" type="number" placeholder="Enter score (0-100)" defaultValue="85" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="evaluationDate">Evaluation Date</Label>
-              <Input id="evaluationDate" type="date" defaultValue="2024-02-10" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="validUntil">Valid Until</Label>
-              <Input id="validUntil" type="date" defaultValue="2025-02-10" />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="evaluatorName">Evaluator Name</Label>
-            <Input id="evaluatorName" placeholder="Enter evaluator name" defaultValue="Mike Wilson" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="remarks">Remarks</Label>
-            <Textarea id="remarks" placeholder="Enter any additional remarks" defaultValue="Excellent performance in all evaluated areas" />
-          </div>
-
-          <div className="flex justify-end gap-4">
-            <Button variant="outline" asChild>
-              <Link href={ROUTES.APP.WELDERS.OPERATOR_PERFORMANCE.ROOT}>
-                Cancel
-              </Link>
-            </Button>
-            <Button type="submit">
-              Update Certificate
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+     <FormHeader title="Edit Operator Performance Certificate" description="Edit the operator performance certificate" label={null} href={ROUTES.APP.WELDERS.OPERATOR_PERFORMANCE.ROOT}>
+      {!isEditing ? (
+          <Button size="sm" onClick={() => setIsEditing(true)}><PencilIcon className="w-4 h-4 mr-1" /> Edit</Button>
+        ) : (
+          <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}><XIcon className="w-4 h-4 mr-1" /> Cancel</Button>
+        )}
+      </FormHeader>
+      <OperatorPerformanceForm
+        initialData={mock}
+        readOnly={!isEditing}
+        onSubmit={(data) => router.push(ROUTES.APP.WELDERS.OPERATOR_PERFORMANCE.ROOT)}
+        onCancel={() => router.push(ROUTES.APP.WELDERS.OPERATOR_PERFORMANCE.ROOT)}
+      />
     </div>
   )
 }
