@@ -53,9 +53,40 @@ export const ROUTES = {
             EDIT: (id: string) => `/pqr/${id}/edit`,
             VIEW: (id: string) => `/pqr/${id}/view`,
         },
+        WELDERS: {
+            DASHBOARD: "/welders/dashboard",
+            WELDER_QUALIFICATION: {
+                ROOT: "/welders/welder-qualification",
+                NEW: "/welders/welder-qualification/new",
+                EDIT: (id: string) => `/welders/welder-qualification/${id}/edit`,
+                VIEW: (id: string) => `/welders/welder-qualification/${id}/view`,
+            },
+            OPERATOR_PERFORMANCE: {
+                ROOT: "/welders/operator-performance",
+                NEW: "/welders/operator-performance/new",
+                EDIT: (id: string) => `/welders/operator-performance/${id}/edit`,
+                VIEW: (id: string) => `/welders/operator-performance/${id}/view`,
+            },
+            WELDER_CARDS: {
+                ROOT: "/welders/welder-cards",
+                NEW: "/welders/welder-cards/new",
+                EDIT: (id: string) => `/welders/welder-cards/${id}/edit`,
+                VIEW: (id: string) => `/welders/welder-cards/${id}/view`,
+            },
+            TESTING_REPORTS: {
+                ROOT: "/welders/testing-reports",
+                NEW: "/welders/testing-reports/new",
+                EDIT: (id: string) => `/welders/testing-reports/${id}/edit`,
+                VIEW: (id: string) => `/welders/testing-reports/${id}/view`,
+            },
+        },
     },
     PUBLIC: {
         PQR_PREVIEW: (id: string) => `/public/pqr/preview/${id}`,
         TEST_REPORT_PREVIEW: (id: string) => `/public/test-report/preview/${id}`,
+        WELDER_QUALIFICATION_PREVIEW: (id: string) => `/public/welder-qualification/preview/${id}`,
+        WELDER_TESTING_REPORT_PREVIEW: (id: string) => `/public/welder-testing-report/preview/${id}`,
+        WELDER_OPERATOR_PERFORMANCE_PREVIEW: (id: string) => `/public/welder-operator-performance/preview/${id}`,
+        WELDER_CARDS_PREVIEW: (id: string) => `/public/welder-cards/preview/${id}`,
     }
 }

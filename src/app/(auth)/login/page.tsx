@@ -7,19 +7,27 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { redirect } from "next/navigation"
-import { Eye, EyeOff, Lock, Mail, UserRound, BadgeCheck } from "lucide-react"
+import { Eye, EyeOff, Lock, Mail, UserRound, BadgeCheck, Users } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [role, setRole] = useState<"supervisor" | "inspector" | null>("supervisor")
+  const [role, setRole] = useState<"supervisor" | "inspector" | "welder" | null>("supervisor")
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
     // TODO: integrate Django auth endpoint
-    setTimeout(() => setIsLoading(false), 1000)
-    redirect("/dashboard")
+    setTimeout(() => {
+      setIsLoading(false)
+      // Redirect based on role
+      if (role === "welder") {
+        window.location.href = "/welders/dashboard"
+      } else {
+        window.location.href = "/dashboard"
+      }
+    }, 1000)
   }
 
   return (
@@ -66,6 +74,23 @@ export default function LoginPage() {
                   )}
                 </Button>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="role" className="text-sm font-medium">Role</Label>
+              <Select value={role || ""} onValueChange={(value) => setRole(value as "supervisor" | "inspector" | "welder")}>
+                <SelectTrigger className="h-11">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <SelectValue placeholder="Select your role" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="supervisor">Supervisor</SelectItem>
+                  <SelectItem value="inspector">Inspector</SelectItem>
+                  <SelectItem value="welder">Welder</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <Button 

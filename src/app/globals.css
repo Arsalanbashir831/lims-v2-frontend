@@ -207,8 +207,8 @@
 
   /* Ensure the printed page uses the full width */
   @page {
-    margin: 15mm; /* Adjust margins as needed */
-    size: A4;     /* or "letter" depending on your use case */
+    margin: 10mm !important; /* Adjust margins as needed */
+    size: A4 !important;     /* or "letter" depending on your use case */
   }
 
   /* Make text sharp for printing */

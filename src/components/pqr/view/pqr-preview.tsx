@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import NextJSImage from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import { toCanvas } from "html-to-image";
-import { jsPDF } from "jspdf";
 import { AlertCircle } from "lucide-react";
 import QRCode from "qrcode";
 import { toast } from "sonner";
@@ -30,6 +28,7 @@ import { ToughnessTestView } from "./sections/toughness-test-view";
 import { WelderTestingInfoView } from "./sections/welder-testing-info-view";
 import { WeldingParametersView } from "./sections/welding-parameters-view";
 import { DynamicColumn, DynamicRow } from "../form/dynamic-table";
+import { generatePdf } from "@/lib/pdf-utils";
 
 const DUMMY_PQR_DATA = {
   headerInfo: {
@@ -366,75 +365,18 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
   }, [loadingView, pqrDataToView, pqrId]);
 
   // === PDF generation ===
-  const generatePdf = async () => {
+  const handleGeneratePdf = async () => {
     if (!pqrId) return;
 
     try {
-      const url = new URL(publicPreviewBase);
-      url.searchParams.set('print', '1');
-      const printUrl = url.toString();
-
-      const iframe = document.createElement('iframe');
-      iframe.style.position = 'absolute';
-      iframe.style.left = '-9999px';
-      iframe.style.top = '-9999px';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = '0';
-      iframe.setAttribute('aria-hidden', 'true');
-
-      const cleanup = () => {
-        try {
-          window.removeEventListener('message', onMessage as any);
-        } catch {}
-        try {
-          if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-        } catch {}
-      };
-
-      let printed = false;
-      const tryPrint = () => {
-        if (printed) return;
-        printed = true;
-        try {
-          iframe.contentWindow?.focus();
-          iframe.contentWindow?.print();
-        } catch {}
-        // Cleanup after a short delay
-        setTimeout(cleanup, 500);
-      };
-
-      const onMessage = (event: MessageEvent) => {
-        try {
-          const data = event.data as any;
-          if (data && data.type === 'PQR_PREVIEW_READY' && data.id === pqrId) {
-            tryPrint();
-          }
-        } catch {}
-      };
-
-      window.addEventListener('message', onMessage as any);
-
-      // Fallback: if no message arrives in time, attempt to print anyway
-      const fallbackTimer = setTimeout(() => {
-        tryPrint();
-      }, 5000);
-
-      iframe.onload = () => {
-        // If the child cannot postMessage for some reason, we still have the fallback
-        clearTimeout(fallbackTimer);
-        // Give it a small buffer for any late rendering
-        setTimeout(() => {
-          // We still wait for the READY event; if not received, fallback already handled
-        }, 300);
-      };
-
-      iframe.src = printUrl;
-      document.body.appendChild(iframe);
-
-      toast.info('Preparing your document...');
+      const success = await generatePdf(publicPreviewBase, pqrId);
+      if (success) {
+        toast.info('Preparing your document...');
+      } else {
+        toast.error('Failed to prepare the document. Please try again.');
+      }
     } catch (error) {
-      console.error('Open print view failed:', error);
+      console.error('PDF generation failed:', error);
       toast.error('Failed to prepare the document. Please try again.');
     }
   };
@@ -486,7 +428,7 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
   const isAsme = true; // preview layout only depends on provided section data in this project
 
   return (
-    <div className="container mx-auto rounded-2xl p-2 sm:p-4 md:p-8 print:bg-white">
+    <div className="container mx-auto rounded-2xl p-2 sm:p-4 md:p-8 print:bg-white print:p-0">
       <header className="mb-6 flex items-center justify-between sm:mb-8">
         <div>
           <NextJSImage src="/gripco-logo.webp" alt="Logo" width={300} height={60} className="h-24 w-64 bg-background" />
@@ -505,7 +447,7 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
         )}
         {showButton && (
           <div className="space-x-2">
-            <Button onClick={generatePdf} variant="outline">
+                            <Button onClick={handleGeneratePdf} variant="outline">
               Export PDF
             </Button>
             <Button onClick={() => router.back()}>Back to List</Button>
