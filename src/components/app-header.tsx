@@ -31,7 +31,7 @@ function getBreadcrumbs(pathname: string): Array<{ label: string; href?: string 
   const routeMappings: Record<string, { label: string; root: string }> = {
     "test-methods": { label: "Test Methods", root: ROUTES.APP.TEST_METHODS.ROOT },
     "proficiency-testing": { label: "Proficiency Testing", root: ROUTES.APP.PROFICIENCY_TESTING.ROOT },
-    "pqr": { label: "PQR", root: ROUTES.APP.PQR.ROOT },
+    "pqr": { label: "PQR", root: ROUTES.APP.WELDERS.PQR.ROOT },
     "test-reports": { label: "Test Reports", root: ROUTES.APP.TEST_REPORTS.ROOT },
     "sample-receiving": { label: "Sample Receiving", root: ROUTES.APP.SAMPLE_RECEIVING.ROOT },
     "sample-preparation": { label: "Sample Preparation", root: ROUTES.APP.SAMPLE_PREPARATION.ROOT },

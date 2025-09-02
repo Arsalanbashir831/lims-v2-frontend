@@ -407,7 +407,7 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
           <AlertTitle>Error Loading PQR</AlertTitle>
           <AlertDescription>{errorView}</AlertDescription>
         </Alert>
-        <BackButton variant="default" label="Go Back" href={ROUTES.APP.PQR.ROOT} />
+        <BackButton variant="default" label="Go Back" href={ROUTES.APP.WELDERS.PQR.ROOT} />
       </div>
     );
   }
@@ -416,7 +416,7 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
     return (
       <div className="container mx-auto p-6 text-center">
         <p>No data available for this PQR record.</p>
-        <BackButton variant="default" label="Go Back" href={ROUTES.APP.PQR.ROOT} />
+        <BackButton variant="default" label="Go Back" href={ROUTES.APP.WELDERS.PQR.ROOT} />
       </div>
     );
   }
@@ -446,7 +446,7 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
             <Button onClick={handleGeneratePdf} variant="outline">
               Export PDF
             </Button>
-            <BackButton variant="default" label="Back to List" href={ROUTES.APP.PQR.ROOT} />
+            <BackButton variant="default" label="Back to List" href={ROUTES.APP.WELDERS.PQR.ROOT} />
           </div>
         )}
       </header>

@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { Home, Award, Users, CreditCard, FileText } from "lucide-react"
+import { Home, Award, Users, CreditCard, FileText, BookOpenText } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { ThemeSwitcher } from "@/components/ui/theme-switcher"
 import { useTheme } from "next-themes"
@@ -23,6 +23,7 @@ import Image from "next/image"
 
 const navItems = [
   { href: ROUTES.APP.WELDERS.DASHBOARD, label: "Dashboard", icon: Home },
+  { href: ROUTES.APP.WELDERS.PQR.ROOT, label: "PQR Records", icon: BookOpenText },
   { href: ROUTES.APP.WELDERS.WELDER_QUALIFICATION.ROOT, label: "Welder Qualification Certificate", icon: Award },
   { href: ROUTES.APP.WELDERS.OPERATOR_PERFORMANCE.ROOT, label: "Operator Performance Certificate", icon: Users },
   { href: ROUTES.APP.WELDERS.WELDER_CARDS.ROOT, label: "Welder Card", icon: CreditCard },
@@ -42,7 +43,7 @@ export function WeldersSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Welders Dashboard</SidebarGroupLabel>
+          <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {

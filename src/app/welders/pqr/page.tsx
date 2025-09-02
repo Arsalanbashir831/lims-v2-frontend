@@ -98,7 +98,7 @@ export default function PQRPage() {
       cell: ({ row }) => (
         <div className="text-right space-x-2 inline-flex">
           <Button variant="secondary" size="sm" asChild>
-            <Link href={ROUTES.APP.PQR.EDIT(row.original.id)}><PencilIcon className="w-4 h-4" /></Link>
+            <Link href={ROUTES.APP.WELDERS.PQR.EDIT(row.original.id)}><PencilIcon className="w-4 h-4" /></Link>
           </Button>
           <ConfirmPopover title="Delete this record?" confirmText="Delete" onConfirm={() => doDelete(row.original.id)} trigger={<Button variant="destructive" size="sm"><TrashIcon className="w-4 h-4" /></Button>} />
         </div>
@@ -114,7 +114,7 @@ export default function PQRPage() {
       empty={<span className="text-muted-foreground">No PQRs yet</span>}
       pageSize={10}
       tableKey="pqr"
-      onRowClick={(row) => router.push(ROUTES.APP.PQR.VIEW(row.original.id))}
+      onRowClick={(row) => router.push(ROUTES.APP.WELDERS.PQR.VIEW(row.original.id))}
       toolbar={useCallback((table: TanstackTable<PqrRecord>) => {
         const selected = table.getSelectedRowModel().rows
         const hasSelected = selected.length > 0
@@ -138,7 +138,7 @@ export default function PQRPage() {
                 <ConfirmPopover title={`Delete ${selected.length} selected item(s)?`} confirmText="Delete" onConfirm={onBulkDelete} trigger={<Button variant="destructive" size="sm">Delete selected ({selected.length})</Button>} />
               )}
               <Button asChild size="sm">
-                <Link href={ROUTES.APP.PQR.NEW}>New PQR</Link>
+                <Link href={ROUTES.APP.WELDERS.PQR.NEW}>New PQR</Link>
               </Button>
             </div>
           </div>

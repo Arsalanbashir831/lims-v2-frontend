@@ -47,14 +47,15 @@ export const ROUTES = {
             EDIT: (id: string) => `/discarded-materials/${id}/edit`,
         },
         TRACKING_DATABASE: "/tracking-database",
-        PQR: {
-            ROOT: "/pqr",
-            NEW: "/pqr/new",
-            EDIT: (id: string) => `/pqr/${id}/edit`,
-            VIEW: (id: string) => `/pqr/${id}/view`,
-        },
+       
         WELDERS: {
             DASHBOARD: "/welders/dashboard",
+            PQR: {
+                ROOT: "/welders/pqr",
+                NEW: "/welders/pqr/new",
+                EDIT: (id: string) => `/welders/pqr/${id}/edit`,
+                VIEW: (id: string) => `/welders/pqr/${id}/view`,
+            },
             WELDER_QUALIFICATION: {
                 ROOT: "/welders/welder-qualification",
                 NEW: "/welders/welder-qualification/new",
