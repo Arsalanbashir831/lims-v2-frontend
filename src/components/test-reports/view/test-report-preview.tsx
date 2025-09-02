@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,8 +15,8 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Separator } from "@/components/ui/separator";
 import { ROUTES } from "@/constants/routes";
+import { BackButton } from "@/components/ui/back-button";
 
 interface CertificateInfo {
     clientName: string;
@@ -158,7 +158,6 @@ const DUMMY: TestReportData = {
 export default function TestReportPreview({ showButton = true, isPublic = true }) {
     const params = useParams();
     const id = (params as any)?.id as string | undefined;
-    const router = useRouter();
     const [data, setData] = useState<TestReportData | null>(null);
     const [loading, setLoading] = useState(true);
     const [qr, setQr] = useState<string | null>(null);
@@ -275,9 +274,7 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
         return (
             <div className="container mx-auto p-6 text-center">
                 <p>No test report found.</p>
-                <Button onClick={() => router.back()} className="mt-4">
-                    Go Back
-                </Button>
+                <BackButton variant="default" label="Back to List" href={ROUTES.APP.TEST_REPORTS.ROOT} />
             </div>
         );
     }
@@ -296,11 +293,11 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
                     </div>
                 )}
                 {showButton && (
-                    <div className="space-x-2 print:hidden">
+                    <div className="space-x-2 flex items-center print:hidden">
                         <Button variant="outline" onClick={exportPdf}>
                             Export PDF
                         </Button>
-                        <Button onClick={() => router.back()}>Back to List</Button>
+                        <BackButton variant="default" label="Back to List" href={ROUTES.APP.TEST_REPORTS.ROOT} />
                     </div>
                 )}
             </header>

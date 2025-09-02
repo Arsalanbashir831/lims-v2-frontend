@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PQRForm, PQRFormData } from "@/components/pqr/form/pqr-form"
 import { toast } from "sonner"
 import { createPqr } from "@/lib/pqr"
 import { savePqrForm } from "@/lib/pqr-form-store"
+import { BackButton } from "@/components/ui/back-button"
+import { ROUTES } from "@/constants/routes"
+import { FormHeader } from "@/components/common/form-header"
 
 export default function NewPQRPage() {
   const router = useRouter()
@@ -50,31 +52,29 @@ export default function NewPQRPage() {
     }
 
     toast.success("PQR saved")
-    router.push("/pqr")
+    router.push(ROUTES.APP.PQR.ROOT)
   }
 
   return (
     <div className="grid gap-4">
-      <div className="pb-2">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-xl font-semibold">New PQR</h2>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Form Type</span>
-              <Select value={formType} onValueChange={(v: "asme" | "api") => setFormType(v)}>
-                <SelectTrigger className="w-44 h-9">
-                  <SelectValue placeholder="Select form type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="asme">ASME SEC IX</SelectItem>
-                  <SelectItem value="api">API 1104</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+      <FormHeader title="New PQR" description="Create a new PQR" label={null} href={ROUTES.APP.PQR.ROOT}>
+      <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Form Type</span>
+          <Select value={formType} onValueChange={(v: "asme" | "api") => setFormType(v)}>
+            <SelectTrigger className="w-44 h-9">
+              <SelectValue placeholder="Select form type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="asme">ASME SEC IX</SelectItem>
+              <SelectItem value="api">API 1104</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-          <div>
-            <PQRForm isAsme={isAsme} onSubmit={handleSubmit} />
-          </div>
+      </FormHeader>
+     
+      <div>
+        <PQRForm isAsme={isAsme} onSubmit={handleSubmit} />
+      </div>
     </div>
   )
 }

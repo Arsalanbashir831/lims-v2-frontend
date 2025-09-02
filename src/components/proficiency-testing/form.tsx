@@ -12,9 +12,9 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
 
-type Props = { initial?: ProficiencyTest }
+type Props = { initial?: ProficiencyTest, readOnly?: boolean }
 
-export function ProficiencyTestingForm({ initial }: Props) {
+export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
   const router = useRouter()
   const isEditing = useMemo(() => Boolean(initial), [initial])
 
@@ -66,49 +66,51 @@ export function ProficiencyTestingForm({ initial }: Props) {
         <CardContent className="p-6 grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="description">Description of Testing Scope</Label>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} required />
+            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} required disabled={readOnly} />
           </div>
           <div className="grid gap-2 md:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="provider1">PT Provider 1</Label>
-              <Input id="provider1" value={provider1} onChange={(e) => setProvider1(e.target.value)} />
+              <Input id="provider1" value={provider1} onChange={(e) => setProvider1(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="provider2">PT Provider 2</Label>
-              <Input id="provider2" value={provider2} onChange={(e) => setProvider2(e.target.value)} />
+              <Input id="provider2" value={provider2} onChange={(e) => setProvider2(e.target.value)} disabled={readOnly} />
             </div>
           </div>
           <div className="grid gap-2 md:grid-cols-3">
             <div className="grid gap-2">
               <Label htmlFor="lastTestDate">Last Test Date</Label>
-              <Input id="lastTestDate" type="date" value={lastTestDate} onChange={(e) => setLastTestDate(e.target.value)} />
+              <Input id="lastTestDate" type="date" value={lastTestDate} onChange={(e) => setLastTestDate(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="dueDate">Due Date</Label>
-              <Input id="dueDate" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+              <Input id="dueDate" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="nextScheduledDate">Next Scheduled Date</Label>
-              <Input id="nextScheduledDate" type="date" value={nextScheduledDate} onChange={(e) => setNextScheduledDate(e.target.value)} />
+              <Input id="nextScheduledDate" type="date" value={nextScheduledDate} onChange={(e) => setNextScheduledDate(e.target.value)} disabled={readOnly} />
             </div>
           </div>
           <div className="grid gap-2 md:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="status">Status</Label>
-              <Input id="status" value={status} onChange={(e) => setStatus(e.target.value)} placeholder="e.g., Pending, Completed" />
+              <Input id="status" value={status} onChange={(e) => setStatus(e.target.value)} placeholder="e.g., Pending, Completed" disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="remarks">Remarks</Label>
-              <Input id="remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
+              <Input id="remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} disabled={readOnly} />
             </div>
-          </div>
-          <Separator />
-          <div className="flex items-center gap-3">
-            <Button type="submit">{isEditing ? "Save changes" : "Add"}</Button>
-            <Button type="button" variant="ghost" onClick={() => history.back()}>Cancel</Button>
           </div>
         </CardContent>
       </Card>
+      {!readOnly && (
+        <div className="sticky bottom-0 bg-background/80 dark:bg-background/10 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2">
+          <div className="flex justify-end">
+            <Button type="submit" className="px-6">{initial ? "Update Proficiency Testing" : "Save Proficiency Testing"}</Button>
+          </div>
+        </div>
+      )}
     </form>
   )
 }

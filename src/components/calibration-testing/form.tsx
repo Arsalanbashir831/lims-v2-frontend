@@ -12,9 +12,9 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
 
-type Props = { initial?: CalibrationTest }
+type Props = { initial?: CalibrationTest, readOnly?: boolean }
 
-export function CalibrationTestingForm({ initial }: Props) {
+export function CalibrationTestingForm({ initial, readOnly = false }: Props) {
   const router = useRouter()
   const isEditing = useMemo(() => Boolean(initial), [initial])
 
@@ -64,53 +64,55 @@ export function CalibrationTestingForm({ initial }: Props) {
         <CardContent className="p-6 grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="equipmentName">Equipment/Instrument Name</Label>
-            <Input id="equipmentName" value={equipmentName} onChange={(e) => setEquipmentName(e.target.value)} required />
+            <Input id="equipmentName" value={equipmentName} onChange={(e) => setEquipmentName(e.target.value)} required disabled={readOnly} />
           </div>
           <div className="grid gap-2 md:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="equipmentSerial">Equipment Serial #</Label>
-              <Input id="equipmentSerial" value={equipmentSerial} onChange={(e) => setEquipmentSerial(e.target.value)} />
+              <Input id="equipmentSerial" value={equipmentSerial} onChange={(e) => setEquipmentSerial(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="vendor">Calibration Vendor</Label>
-              <Input id="vendor" value={vendor} onChange={(e) => setVendor(e.target.value)} />
+              <Input id="vendor" value={vendor} onChange={(e) => setVendor(e.target.value)} disabled={readOnly} />
             </div>
           </div>
           <div className="grid gap-2 md:grid-cols-3">
             <div className="grid gap-2">
               <Label htmlFor="calibrationDate">Calibration Date</Label>
-              <Input id="calibrationDate" type="date" value={calibrationDate} onChange={(e) => setCalibrationDate(e.target.value)} />
+              <Input id="calibrationDate" type="date" value={calibrationDate} onChange={(e) => setCalibrationDate(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="calibrationDueDate">Calibration Due Date</Label>
-              <Input id="calibrationDueDate" type="date" value={calibrationDueDate} onChange={(e) => setCalibrationDueDate(e.target.value)} />
+              <Input id="calibrationDueDate" type="date" value={calibrationDueDate} onChange={(e) => setCalibrationDueDate(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="certification">Calibration Certification</Label>
-              <Input id="certification" value={certification} onChange={(e) => setCertification(e.target.value)} />
+              <Input id="certification" value={certification} onChange={(e) => setCertification(e.target.value)} disabled={readOnly} />
             </div>
           </div>
           <div className="grid gap-2 md:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="createdBy">Created by</Label>
-              <Input id="createdBy" value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} />
+              <Input id="createdBy" value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="updatedBy">Updated by</Label>
-              <Input id="updatedBy" value={updatedBy} onChange={(e) => setUpdatedBy(e.target.value)} />
+              <Input id="updatedBy" value={updatedBy} onChange={(e) => setUpdatedBy(e.target.value)} disabled={readOnly} />
             </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="remarks">Remarks</Label>
-            <Textarea id="remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={3} />
-          </div>
-          <Separator />
-          <div className="flex items-center gap-3">
-            <Button type="submit">{isEditing ? "Save changes" : "Add"}</Button>
-            <Button type="button" variant="ghost" onClick={() => history.back()}>Cancel</Button>
+            <Textarea id="remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={3} disabled={readOnly} />
           </div>
         </CardContent>
       </Card>
+      {!readOnly && (
+        <div className="sticky bottom-0 bg-background/80 dark:bg-background/10 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2">
+          <div className="flex justify-end">
+            <Button type="submit" className="px-6">{initial ? "Update Calibration Testing" : "Save Calibration Testing"}</Button>
+          </div>
+        </div>
+      )}
     </form>
   )
 }

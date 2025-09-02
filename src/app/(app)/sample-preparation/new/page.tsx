@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { SamplePreparationForm, type SamplePreparationFormData } from "@/components/sample-preparation/form"
 import { createSamplePreparation, generatePrepNo } from "@/lib/sample-preparation"
+import { ROUTES } from "@/constants/routes"
+import { FormHeader } from "@/components/common/form-header"
 
 export default function NewSamplePreparationPage() {
   const router = useRouter()
@@ -20,7 +22,7 @@ export default function NewSamplePreparationPage() {
 
   return (
     <div className="grid gap-4">
-      <h1 className="text-2xl font-bold">New Sample Preparation</h1>
+      <FormHeader title="New Sample Preparation" description="Create a new sample preparation" label={null} href={ROUTES.APP.SAMPLE_PREPARATION.ROOT}/>
       <SamplePreparationForm onSubmit={handleSubmit} />
     </div>
   )

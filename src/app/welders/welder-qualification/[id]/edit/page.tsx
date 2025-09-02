@@ -7,6 +7,7 @@ import { ArrowLeft, Edit } from "lucide-react"
 import Link from "next/link"
 import { ROUTES } from "@/constants/routes"
 import { WelderQualificationForm, type WelderQualificationData } from "@/components/welders/welder-qualification-form"
+import { BackButton } from "@/components/ui/back-button"
 
 interface EditWelderQualificationPageProps {
   params: {
@@ -94,11 +95,7 @@ export default function EditWelderQualificationPage({ params }: EditWelderQualif
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" asChild>
-            <Link href={ROUTES.APP.WELDERS.WELDER_QUALIFICATION.ROOT}>
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
+          <BackButton size="icon" label={null} href={ROUTES.APP.WELDERS.WELDER_QUALIFICATION.ROOT} />
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
               {isEditing ? 'Edit' : 'View'} Welder Qualification Certificate

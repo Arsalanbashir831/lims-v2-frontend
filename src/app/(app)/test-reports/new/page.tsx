@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { TestReportForm, type TestReportFormData } from "@/components/test-reports/form"
 import { createTestReport } from "@/lib/test-reports"
+import { ROUTES } from "@/constants/routes"
+import { FormHeader } from "@/components/common/form-header"
 
 export default function NewTestReportPage() {
   const router = useRouter()
@@ -11,12 +13,12 @@ export default function NewTestReportPage() {
   const handleSubmit = (data: TestReportFormData) => {
     createTestReport(data)
     toast.success("Report saved")
-    router.push("/test-reports")
+    router.push(ROUTES.APP.TEST_REPORTS.ROOT)
   }
 
   return (
     <div className="grid gap-4">
-      <h1 className="text-2xl font-bold">New Test Report</h1>
+      <FormHeader title="New Test Report" description="Create a new test report." label={null} href={ROUTES.APP.TEST_REPORTS.ROOT}/> 
       <TestReportForm onSubmit={handleSubmit} />
     </div>
   )

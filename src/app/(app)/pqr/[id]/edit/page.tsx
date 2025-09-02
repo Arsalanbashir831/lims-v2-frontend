@@ -7,6 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PQRForm, PQRFormData } from "@/components/pqr/form/pqr-form"
 import { toast } from "sonner"
 import { getPqr, updatePqr } from "@/lib/pqr"
+import { ROUTES } from "@/constants/routes"
+import { BackButton } from "@/components/ui/back-button"
+import { FormHeader } from "@/components/common/form-header"
 
 export default function EditPQRPage() {
   const router = useRouter()
@@ -52,31 +55,28 @@ export default function EditPQRPage() {
     })
 
     toast.success("PQR updated")
-    router.push("/pqr")
+    router.push(ROUTES.APP.PQR.ROOT)
   }
 
   return (
     <div className="grid gap-4">
-        <div className="pb-2">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-xl font-semibold">Edit PQR</h2>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Form Type</span>
-              <Select value={formType} onValueChange={(v: "asme" | "api") => setFormType(v)}>
-                <SelectTrigger className="w-44 h-9" disabled={true}>
-                  <SelectValue placeholder="Select form type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="asme">ASME SEC IX</SelectItem>
-                  <SelectItem value="api">API 1104</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      <FormHeader title="Edit PQR" description="Update the PQR details" label={null} href={ROUTES.APP.PQR.ROOT}>
+      <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Form Type</span>
+            <Select value={formType} onValueChange={(v: "asme" | "api") => setFormType(v)}>
+              <SelectTrigger className="w-44 h-9" disabled={true}>
+                <SelectValue placeholder="Select form type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="asme">ASME SEC IX</SelectItem>
+                <SelectItem value="api">API 1104</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </div>
-        <div>
-            <PQRForm isAsme={isAsme} onSubmit={handleSubmit} />
-        </div>
+      </FormHeader>
+      <div>
+        <PQRForm isAsme={isAsme} onSubmit={handleSubmit} />
+      </div>
     </div>
   )
 }

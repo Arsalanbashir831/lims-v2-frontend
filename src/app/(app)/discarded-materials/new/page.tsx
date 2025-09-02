@@ -5,6 +5,8 @@ import { DiscardedMaterialForm } from "@/components/discarded-materials/form"
 import { createDiscardedMaterial } from "@/lib/discarded-materials"
 import type { CreateDiscardedMaterialData } from "@/lib/discarded-materials"
 import { ROUTES } from "@/constants/routes"
+import { BackButton } from "@/components/ui/back-button"
+import { FormHeader } from "@/components/common/form-header"
 
 export default function NewDiscardedMaterialPage() {
   const router = useRouter()
@@ -16,13 +18,7 @@ export default function NewDiscardedMaterialPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">New Discard Record</h1>
-        <p className="text-muted-foreground">
-          Create a new record for discarded materials.
-        </p>
-      </div>
-
+      <FormHeader title="New Discard Record" description="Create a new record for discarded materials." label={null} href={ROUTES.APP.MATERIAL_DISCARDS.ROOT}/>  
       <DiscardedMaterialForm onSubmit={handleSubmit} />
     </div>
   )

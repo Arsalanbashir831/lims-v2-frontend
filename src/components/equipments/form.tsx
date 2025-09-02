@@ -12,9 +12,9 @@ import { toast } from "sonner"
 import { Equipment, createEquipment, updateEquipment } from "@/lib/equipments"
 import { ROUTES } from "@/constants/routes"
 
-type Props = { initial?: Equipment }
+type Props = { initial?: Equipment, readOnly?: boolean }
 
-export function EquipmentForm({ initial }: Props) {
+export function EquipmentForm({ initial, readOnly = false }: Props) {
   const router = useRouter()
   const isEditing = useMemo(() => Boolean(initial), [initial])
 
@@ -62,47 +62,49 @@ export function EquipmentForm({ initial }: Props) {
         <CardContent className="p-6 grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="name">Equipment Name</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required disabled={readOnly} />
           </div>
           <div className="grid gap-2 md:grid-cols-3">
             <div className="grid gap-2">
               <Label htmlFor="serial">Equipment Serial</Label>
-              <Input id="serial" value={serial} onChange={(e) => setSerial(e.target.value)} />
+              <Input id="serial" value={serial} onChange={(e) => setSerial(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="status">Status</Label>
-              <Input id="status" value={status} onChange={(e) => setStatus(e.target.value)} placeholder="e.g., Active, Inactive" />
+              <Input id="status" value={status} onChange={(e) => setStatus(e.target.value)} placeholder="e.g., Active, Inactive" disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="lastIVD">Last Internal Verification Date</Label>
-              <Input id="lastIVD" type="date" value={lastInternalVerificationDate} onChange={(e) => setLastInternalVerificationDate(e.target.value)} />
+              <Input id="lastIVD" type="date" value={lastInternalVerificationDate} onChange={(e) => setLastInternalVerificationDate(e.target.value)} disabled={readOnly} />
             </div>
           </div>
           <div className="grid gap-2 md:grid-cols-3">
             <div className="grid gap-2">
               <Label htmlFor="dueIVD">Internal Verification Due Date</Label>
-              <Input id="dueIVD" type="date" value={internalVerificationDueDate} onChange={(e) => setInternalVerificationDueDate(e.target.value)} />
+              <Input id="dueIVD" type="date" value={internalVerificationDueDate} onChange={(e) => setInternalVerificationDueDate(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="createdBy">Created By</Label>
-              <Input id="createdBy" value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} />
+              <Input id="createdBy" value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="updatedBy">Updated By</Label>
-              <Input id="updatedBy" value={updatedBy} onChange={(e) => setUpdatedBy(e.target.value)} />
+              <Input id="updatedBy" value={updatedBy} onChange={(e) => setUpdatedBy(e.target.value)} disabled={readOnly} />
             </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="remarks">Remarks</Label>
-            <Textarea id="remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={3} />
-          </div>
-          <Separator />
-          <div className="flex items-center gap-3">
-            <Button type="submit">{isEditing ? "Save changes" : "Add"}</Button>
-            <Button type="button" variant="ghost" onClick={() => history.back()}>Cancel</Button>
+            <Textarea id="remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={3} disabled={readOnly} />
           </div>
         </CardContent>
       </Card>
+      {!readOnly && (
+        <div className="sticky bottom-0 bg-background/80 dark:bg-background/10 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2">
+          <div className="flex justify-end">
+            <Button type="submit" className="px-6">{initial ? "Update Equipment" : "Save Equipment"}</Button>
+          </div>
+        </div>
+      )}
     </form>
   )
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import NextJSImage from "next/image";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { AlertCircle } from "lucide-react";
 import QRCode from "qrcode";
 import { toast } from "sonner";
@@ -29,6 +29,7 @@ import { WelderTestingInfoView } from "./sections/welder-testing-info-view";
 import { WeldingParametersView } from "./sections/welding-parameters-view";
 import { DynamicColumn, DynamicRow } from "../form/dynamic-table";
 import { generatePdf } from "@/lib/pdf-utils";
+import { BackButton } from "@/components/ui/back-button";
 
 const DUMMY_PQR_DATA = {
   headerInfo: {
@@ -298,7 +299,6 @@ interface PqrDataToView {
 export default function PQRReportPreview({ showButton = true, isPublic = false }) {
   const params = useParams();
   const pqrId = (params as any)?.id as string | undefined;
-  const router = useRouter();
 
   const [pqrDataToView, setPqrDataToView] = useState<PqrDataToView | null>(null);
   const [loadingView, setLoadingView] = useState(true);
@@ -360,7 +360,7 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
         if (window.parent && window.parent !== window) {
           window.parent.postMessage({ type: 'PQR_PREVIEW_READY', id: pqrId }, '*');
         }
-      } catch {}
+      } catch { }
     }
   }, [loadingView, pqrDataToView, pqrId]);
 
@@ -407,9 +407,7 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
           <AlertTitle>Error Loading PQR</AlertTitle>
           <AlertDescription>{errorView}</AlertDescription>
         </Alert>
-        <Button onClick={() => router.back()} className="mt-4">
-          Go Back
-        </Button>
+        <BackButton variant="default" label="Go Back" href={ROUTES.APP.PQR.ROOT} />
       </div>
     );
   }
@@ -418,9 +416,7 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
     return (
       <div className="container mx-auto p-6 text-center">
         <p>No data available for this PQR record.</p>
-        <Button onClick={() => router.back()} className="mt-4">
-          Go Back
-        </Button>
+        <BackButton variant="default" label="Go Back" href={ROUTES.APP.PQR.ROOT} />
       </div>
     );
   }
@@ -446,11 +442,11 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
           </div>
         )}
         {showButton && (
-          <div className="space-x-2">
-                            <Button onClick={handleGeneratePdf} variant="outline">
+          <div className="space-x-2 flex items-center print:hidden">
+            <Button onClick={handleGeneratePdf} variant="outline">
               Export PDF
             </Button>
-            <Button onClick={() => router.back()}>Back to List</Button>
+            <BackButton variant="default" label="Back to List" href={ROUTES.APP.PQR.ROOT} />
           </div>
         )}
       </header>

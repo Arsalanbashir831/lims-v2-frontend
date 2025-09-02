@@ -9,6 +9,7 @@ import { ArrowLeft, Download, Printer } from "lucide-react"
 import QRCode from "qrcode"
 import { ROUTES } from "@/constants/routes"
 import { generatePdf } from "@/lib/pdf-utils"
+import { BackButton } from "@/components/ui/back-button"
 
 interface WelderQualificationPreviewProps {
   showButton?: boolean
@@ -180,10 +181,7 @@ export default function WelderQualificationPreview({
       {/* Header */}
       {showButton && (
         <div className="mb-6 flex items-center justify-between">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
+          <BackButton onBack={handleBack} />
           
           <div className="flex gap-2">
             <Button onClick={handlePrint}>

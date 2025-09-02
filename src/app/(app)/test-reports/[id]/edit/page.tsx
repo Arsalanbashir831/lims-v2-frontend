@@ -7,6 +7,8 @@ import { TestReportForm, type TestReportFormData } from "@/components/test-repor
 import { getTestReport, updateTestReport } from "@/lib/test-reports"
 import { Button } from "@/components/ui/button"
 import { PencilIcon, XIcon } from "lucide-react"
+import { FormHeader } from "@/components/common/form-header"
+import { ROUTES } from "@/constants/routes"
 
 export default function EditTestReportPage() {
   const { id } = useParams<{ id: string }>()
@@ -28,14 +30,13 @@ export default function EditTestReportPage() {
 
   return (
     <div className="grid gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Edit Test Report</h1>
-        {!isEditing ? (
+      <FormHeader title="Edit Test Report" description="Update the test report details" label={null} href={ROUTES.APP.TEST_REPORTS.ROOT}>
+      {!isEditing ? (
           <Button size="sm" onClick={() => setIsEditing(true)}><PencilIcon className="w-4 h-4 mr-1" /> Edit</Button>
         ) : (
           <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}><XIcon className="w-4 h-4 mr-1" /> Cancel</Button>
         )}
-      </div>
+      </FormHeader>
       {initial ? (
         <TestReportForm initialData={initial} onSubmit={handleSubmit} readOnly={!isEditing} />
       ) : (
