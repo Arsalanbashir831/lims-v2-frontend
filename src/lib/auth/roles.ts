@@ -1,5 +1,5 @@
 import { ROUTES } from "@/constants/routes"
-import type { UserRole } from "./store"
+export type UserRole = "supervisor" | "inspector" | "welder" | "lab_manager" | string
 
 export const ROLES = {
   SUPERVISOR: "supervisor",

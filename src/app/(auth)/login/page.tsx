@@ -10,8 +10,8 @@ import { Eye, EyeOff, Lock, UserRound } from "lucide-react"
 import { useMutation } from "@tanstack/react-query"
 import { login as loginApi } from "@/lib/api/auth"
 import { toast } from "sonner"
-import { useAuthStore } from "@/lib/auth/store"
 import { getHomeRouteForRole } from "@/lib/auth/roles"
+import { getUser } from "@/lib/auth/storage"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -32,7 +32,7 @@ export default function LoginPage() {
     try {
       await doLogin({ email, password })
       toast.success("Signed in")
-      const role = useAuthStore.getState().user?.role
+      const role = getUser<{ role?: string }>()?.role as any
       router.push(getHomeRouteForRole(role))
     } catch (err: any) {
       toast.error(err.message || "Invalid credentials")
