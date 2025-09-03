@@ -47,7 +47,11 @@ export const ROUTES = {
             EDIT: (id: string) => `/discarded-materials/${id}/edit`,
         },
         TRACKING_DATABASE: "/tracking-database",
-       
+        CLIENTS: {
+            ROOT: "/clients",
+            NEW: "/clients/new",
+            EDIT: (id: string) => `/clients/${id}/edit`,
+        },
         WELDERS: {
             DASHBOARD: "/welders/dashboard",
             WELDERS: "/welders/welders",

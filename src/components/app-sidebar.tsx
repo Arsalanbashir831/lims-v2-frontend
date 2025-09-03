@@ -17,7 +17,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
-import { Home, FlaskConical, Microscope, ClipboardList, FileText, Archive, Route, BookOpenText, ChevronDown, ChevronRight } from "lucide-react"
+import { Home, FlaskConical, Microscope, ClipboardList, FileText, Archive, Route, BookOpenText, ChevronDown, ChevronRight, Users } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { ThemeSwitcher } from "@/components/ui/theme-switcher"
 import { useTheme } from "next-themes"
@@ -46,6 +46,7 @@ const navItems = [
     ]
   },
   { href: ROUTES.APP.TEST_REPORTS.ROOT, label: "Test Reports", icon: FileText },
+  { href: ROUTES.APP.CLIENTS.ROOT, label: "Clients", icon: Users },
   { href: ROUTES.APP.MATERIAL_DISCARDS.ROOT, label: "Material Discards", icon: Archive },
   { href: ROUTES.APP.TRACKING_DATABASE, label: "Tracking Database", icon: Route },
 ]
