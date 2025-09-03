@@ -50,6 +50,9 @@ export const ROUTES = {
        
         WELDERS: {
             DASHBOARD: "/welders/dashboard",
+            WELDERS: "/welders/welders",
+            WELDER_NEW: "/welders/welders/new",
+            WELDER_EDIT: (id: string) => `/welders/welders/${id}/edit`,
             PQR: {
                 ROOT: "/welders/pqr",
                 NEW: "/welders/pqr/new",
@@ -87,5 +90,6 @@ export const ROUTES = {
         WELDER_QUALIFICATION_PREVIEW: (id: string) => `/public/welder-qualification/preview/${id}`,
         WELDER_OPERATOR_PERFORMANCE_PREVIEW: (id: string) => `/public/welder-operator-performance/preview/${id}`,
         WELDER_CARDS_PREVIEW: (id: string) => `/public/welder-cards/preview/${id}`,
+        WELDER_PREVIEW: (id: string) => `/public/welder/preview/${id}`,
     }
 }
