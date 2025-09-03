@@ -1,4 +1,6 @@
 import Image from "next/image"
+import { QueryProvider } from "@/components/ui/query-provider"
+import { RedirectIfAuthenticated } from "@/components/auth/redirect-if-auth"
 
 export default function AuthLayout({
   children,
@@ -6,6 +8,8 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
+    <QueryProvider>
+      <RedirectIfAuthenticated>
     <div className="min-h-screen w-full flex items-center justify-center bg-muted/20 p-4">
       <div className="mx-auto grid w-full max-w-5xl min-h-[600px] grid-cols-1 overflow-hidden rounded-3xl bg-background shadow-xl md:grid-cols-2">
         {/* Left Side - Branding */}
@@ -37,6 +41,8 @@ export default function AuthLayout({
         </div>
       </div>
     </div>
+    </RedirectIfAuthenticated>
+    </QueryProvider>
   )
 }
 

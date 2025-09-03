@@ -3,18 +3,14 @@
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { logout } from "@/lib/api/auth"
 
 export function LogoutButton() {
   const router = useRouter()
 
   const onLogout = () => {
-    // Clear client-side auth/session placeholders
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem("lims:test-methods")
-        window.localStorage.removeItem("lims:auth")
-      }
-    } catch {}
+    logout()
+    try { window.localStorage.removeItem("lims:test-methods") } catch {}
     router.push("/login")
   }
 
