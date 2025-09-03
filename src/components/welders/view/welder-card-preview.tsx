@@ -149,7 +149,7 @@ export default function WelderCardPreview({
   }
 
   return (
-    <div className="container mx-auto p-2 sm:p-4 md:p-8 print:bg-white print:p-0">
+    <div className="max-w-7xl mx-auto p-2 sm:p-4 md:p-8 print:bg-white print:p-0">
       {/* Header */}
       {showButton && (
         <div className="mb-6 flex items-center justify-between">

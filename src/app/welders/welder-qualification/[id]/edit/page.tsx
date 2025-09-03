@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { PencilIcon, XIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
@@ -59,7 +59,8 @@ const mockData: WelderQualificationData = {
   testSupervisor: "MUHAMMED IRSHAD ALI"
 }
 
-export default function EditWelderQualificationPage({ params }: EditWelderQualificationPageProps) {
+export default function EditWelderQualificationPage() {
+  const params = useParams<{ id: string }>()
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [data, setData] = useState<WelderQualificationData | null>(null)

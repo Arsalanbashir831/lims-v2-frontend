@@ -424,7 +424,7 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
   const isAsme = true; // preview layout only depends on provided section data in this project
 
   return (
-    <div className="container mx-auto rounded-2xl p-2 sm:p-4 md:p-8 print:bg-white print:p-0">
+    <div className="max-w-7xl mx-auto rounded-2xl p-2 sm:p-4 md:p-8 print:bg-white print:p-0">
       <header className="mb-6 flex items-center justify-between sm:mb-8">
         <div>
           <NextJSImage src="/gripco-logo.webp" alt="Logo" width={300} height={60} className="h-24 w-64 bg-background" />

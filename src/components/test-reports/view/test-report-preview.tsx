@@ -280,7 +280,7 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
     }
 
     return (
-        <div className="container mx-auto rounded-2xl p-2 sm:p-4 md:p-8 print:bg-white print:text-black print:border-0">
+        <div className="max-w-7xl mx-auto rounded-2xl p-2 sm:p-4 md:p-8 print:bg-white print:text-black print:border-0">
             {/* Header */}
             <header className="mb-6 flex items-center justify-between sm:mb-8 print:mb-4">
                 <div>

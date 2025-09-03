@@ -1,18 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { PencilIcon, XIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { FormHeader } from "@/components/common/form-header"
 import { WelderCardData, WelderCardForm } from "@/components/welders/welder-card-form"
 
-interface EditWelderCardPageProps {
-  params: {
-    id: string
-  }
-}
+
 
 // Mock data - replace with actual data fetching
 const mockData: WelderCardData = {
@@ -45,7 +41,8 @@ const mockData: WelderCardData = {
   certificationStatement: "ASME SEC IX Ed(2023).",
 }
 
-export default function EditWelderCardPage({ params }: EditWelderCardPageProps) {
+export default function EditWelderCardPage() {
+  const params = useParams<{ id: string }>()
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [data, setData] = useState<WelderCardData | null>(null)
@@ -58,7 +55,7 @@ export default function EditWelderCardPage({ params }: EditWelderCardPageProps) 
   const handleSubmit = (formData: WelderCardData) => {
     // TODO: Save to localStorage or API
     console.log('Updating welder card data:', formData)
-    
+
     setIsEditing(false)
     // Optionally update local state or refetch data
     setData(formData)

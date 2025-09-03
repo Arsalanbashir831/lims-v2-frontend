@@ -1,18 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { OperatorPerformanceForm, type OperatorPerformanceData } from "@/components/welders/operator-performance-form"
 import { ROUTES } from "@/constants/routes"
 import { FormHeader } from "@/components/common/form-header"
 import { Button } from "@/components/ui/button"
 import { PencilIcon, XIcon } from "lucide-react"
 
-interface EditOperatorPerformancePageProps {
-  params: { id: string }
-}
-
-export default function EditOperatorPerformancePage({ params }: EditOperatorPerformancePageProps) {
+export default function EditOperatorPerformancePage() {
+  const params = useParams<{ id: string }>()
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
 

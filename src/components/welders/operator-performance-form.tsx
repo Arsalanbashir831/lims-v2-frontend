@@ -4,11 +4,12 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Upload, Plus, QrCode } from "lucide-react"
+import { Upload, Plus, QrCode, Trash2 } from "lucide-react"
 import Image from "next/image"
 import { ROUTES } from "@/constants/routes"
 import QRCode from "qrcode"
 import { Checkbox } from "../ui/checkbox"
+import { ConfirmPopover } from "../ui/confirm-popover"
 
 interface WelderVariable {
     id: string
@@ -93,7 +94,7 @@ export function OperatorPerformanceForm({
     onCancel,
     readOnly = false
 }: OperatorPerformanceFormProps) {
-    const [formData, setFormData] = useState<OperatorPerformanceData>({
+    const createInitialFormData = (): OperatorPerformanceData => ({
         operatorName: "",
         operatorImage: null,
         operatorIdNo: "",
@@ -109,16 +110,25 @@ export function OperatorPerformanceForm({
         baseMetalPNumber: "",
         fillerClass: "",
         positions: "",
-        automaticWeldingEquipmentVariables: defaultAutomaticWeldingEquipmentVariables,
-        machineWeldingEquipmentVariables: defaultMachineWeldingEquipmentVariables,
-        testsConducted: defaultTestsConducted,
+        automaticWeldingEquipmentVariables: JSON.parse(JSON.stringify(defaultAutomaticWeldingEquipmentVariables)),
+        machineWeldingEquipmentVariables: JSON.parse(JSON.stringify(defaultMachineWeldingEquipmentVariables)),
+        testsConducted: JSON.parse(JSON.stringify(defaultTestsConducted)),
         certificationStatement: "",
         testingWitnessed: "",
         testSupervisor: "",
         ...initialData
     })
 
+    const [formData, setFormData] = useState<OperatorPerformanceData>(createInitialFormData())
+    const [originalFormData, setOriginalFormData] = useState<OperatorPerformanceData>(createInitialFormData())
     const [qrSrc, setQrSrc] = useState<string | null>(null)
+
+    useEffect(() => {
+        // Update both form data and original data when initialData changes
+        const updatedData = createInitialFormData()
+        setFormData(updatedData)
+        setOriginalFormData(updatedData)
+    }, [initialData])
 
     useEffect(() => {
         // Generate QR code for existing forms (when we have an ID)
@@ -173,11 +183,18 @@ export function OperatorPerformanceForm({
         handleInputChange('machineWeldingEquipmentVariables', formData.machineWeldingEquipmentVariables.filter(variable => variable.id !== id))
     }
 
-    const updateWelderVariable = (id: string, field: keyof WelderVariable, value: string) => {
+    const updateAutomaticWeldingEquipmentVariable = (id: string, field: keyof WelderVariable, value: string) => {
         const updatedVariables = formData.automaticWeldingEquipmentVariables.map(variable =>
             variable.id === id ? { ...variable, [field]: value } : variable
         )
         handleInputChange('automaticWeldingEquipmentVariables', updatedVariables)
+    }
+
+    const updateMachineWeldingEquipmentVariable = (id: string, field: keyof WelderVariable, value: string) => {
+        const updatedVariables = formData.machineWeldingEquipmentVariables.map(variable =>
+            variable.id === id ? { ...variable, [field]: value } : variable
+        )
+        handleInputChange('machineWeldingEquipmentVariables', updatedVariables)
     }
 
     const updateTestConducted = (id: string, field: keyof TestConducted, value: string | boolean) => {
@@ -190,6 +207,15 @@ export function OperatorPerformanceForm({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         onSubmit(formData)
+    }
+
+    const revertToOriginal = () => {
+        setFormData(JSON.parse(JSON.stringify(originalFormData)))
+    }
+
+    const handleCancel = () => {
+        revertToOriginal()
+        onCancel()
     }
 
     return (
@@ -260,11 +286,11 @@ export function OperatorPerformanceForm({
 
                 {/* Basic Information Table */}
                 <div className="border mb-6">
-                    <div className="p-3 bg-background dark:bg-sidebar font-semibold text-sm border-b text-center">Welding Operator Data & Test Description</div>
+                    <div className="p-1 bg-background dark:bg-sidebar font-semibold text-sm border-b text-center">Welding Operator Data & Test Description</div>
                     {/* Row 1 */}
                     <div className="grid grid-cols-4 border-b ">
-                        <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Operator Name</div>
-                        <div className="p-3 border-x">
+                        <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Operator Name</div>
+                        <div className="p-1 border-x">
                             {readOnly ? (
                                 <span className="text-sm">{formData.operatorName}</span>
                             ) : (
@@ -276,8 +302,8 @@ export function OperatorPerformanceForm({
                                 />
                             )}
                         </div>
-                        <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Certificate No</div>
-                        <div className="p-3 border-x">
+                        <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Certificate No</div>
+                        <div className="p-1 border-x">
                             {readOnly ? (
                                 <span className="text-sm">{formData.certificateRefNo}</span>
                             ) : (
@@ -293,8 +319,8 @@ export function OperatorPerformanceForm({
 
                     {/* Row 2 */}
                     <div className="grid grid-cols-4 border-b">
-                        <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Operator ID / Symbol</div>
-                        <div className="p-3 border-x">
+                        <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Operator ID / Symbol</div>
+                        <div className="p-1 border-x">
                             {readOnly ? (
                                 <span className="text-sm">{formData.operatorIdNo}</span>
                             ) : (
@@ -306,8 +332,8 @@ export function OperatorPerformanceForm({
                                 />
                             )}
                         </div>
-                        <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Iqama / Passport</div>
-                        <div className="p-3 border-x">
+                        <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Iqama / Passport</div>
+                        <div className="p-1 border-x">
                             {readOnly ? (
                                 <span className="text-sm">{formData.iqamaId}</span>
                             ) : (
@@ -323,8 +349,8 @@ export function OperatorPerformanceForm({
 
                     {/* Row 3 */}
                     <div className="grid grid-cols-4 border-b ">
-                        <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">WPS Followed</div>
-                        <div className="p-3 border-x">
+                        <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">WPS Followed</div>
+                        <div className="p-1 border-x">
                             {readOnly ? (
                                 <span className="text-sm">{formData.wpsFollowed}</span>
                             ) : (
@@ -336,8 +362,8 @@ export function OperatorPerformanceForm({
                                 />
                             )}
                         </div>
-                        <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Date of Issue</div>
-                        <div className="p-3 border-x">
+                        <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Date of Issue</div>
+                        <div className="p-1 border-x">
                             {readOnly ? (
                                 <span className="text-sm">{formData.dateOfIssued}</span>
                             ) : (
@@ -353,8 +379,8 @@ export function OperatorPerformanceForm({
 
                     {/* Row 4 */}
                     <div className="grid grid-cols-4">
-                        <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Joint / Weld Type</div>
-                        <div className="p-3 border-x">
+                        <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Joint / Weld Type</div>
+                        <div className="p-1 border-x">
                             {readOnly ? (
                                 <span className="text-sm">{formData.jointWeldType}</span>
                             ) : (
@@ -366,8 +392,8 @@ export function OperatorPerformanceForm({
                                 />
                             )}
                         </div>
-                        <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Date of Welding</div>
-                        <div className="p-3 border-x">
+                        <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Date of Welding</div>
+                        <div className="p-1 border-x">
                             {readOnly ? (
                                 <span className="text-sm">{formData.dateOfWelding}</span>
                             ) : (
@@ -383,8 +409,8 @@ export function OperatorPerformanceForm({
 
                     {/* Row 5 */}
                     <div className="grid grid-cols-4 border-t ">
-                        <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Base Metal Spec.</div>
-                        <div className="p-3 border-x">
+                        <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Base Metal Spec.</div>
+                        <div className="p-1 border-x">
                             {readOnly ? (
                                 <span className="text-sm">{formData.baseMetalSpec}</span>
                             ) : (
@@ -396,8 +422,8 @@ export function OperatorPerformanceForm({
                                 />
                             )}
                         </div>
-                        <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Base Metal P-No.</div>
-                        <div className="p-3 border-x">
+                        <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Base Metal P-No.</div>
+                        <div className="p-1 border-x">
                             {readOnly ? (
                                 <span className="text-sm">{formData.baseMetalPNumber}</span>
                             ) : (
@@ -413,8 +439,8 @@ export function OperatorPerformanceForm({
 
                     {/* Row 6 */}
                     <div className="grid grid-cols-4 border-t ">
-                        <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Filler (SFA) Spec.</div>
-                        <div className="p-3 border-x">
+                        <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Filler (SFA) Spec.</div>
+                        <div className="p-1 border-x">
                             {readOnly ? (
                                 <span className="text-sm">{formData.fillerSpec}</span>
                             ) : (
@@ -426,8 +452,8 @@ export function OperatorPerformanceForm({
                                 />
                             )}
                         </div>
-                        <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Filler Class. (AWS)</div>
-                        <div className="p-3 border-x">
+                        <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Filler Class. (AWS)</div>
+                        <div className="p-1 border-x">
                             {readOnly ? (
                                 <span className="text-sm">{formData.fillerClass}</span>
                             ) : (
@@ -443,8 +469,8 @@ export function OperatorPerformanceForm({
 
                     {/* Row 7 */}
                     <div className="grid grid-cols-4 border-t ">
-                        <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Test Coupon Size</div>
-                        <div className="p-3 border-x">
+                        <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Test Coupon Size</div>
+                        <div className="p-1 border-x">
                             {readOnly ? (
                                 <span className="text-sm">{formData.testCouponSize}</span>
                             ) : (
@@ -456,8 +482,8 @@ export function OperatorPerformanceForm({
                                 />
                             )}
                         </div>
-                        <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Position(s)</div>
-                        <div className="p-3 border-x">
+                        <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Position(s)</div>
+                        <div className="p-1 border-x">
                             {readOnly ? (
                                 <span className="text-sm">{formData.positions}</span>
                             ) : (
@@ -474,58 +500,75 @@ export function OperatorPerformanceForm({
 
                 {/* Automatic Welding Equipment Variables Table */}
                 <div className="border">
-                    <div className="p-3 bg-background dark:bg-sidebar font-semibold text-sm border-b text-center">Testing Variables and Qualification Limits</div>
-                    <div className="p-3 bg-background dark:bg-sidebar font-semibold text-sm border-b text-center">Testing Variables and Qualification Limits When Using Automatic Welding Equipment</div>
+                    <div className="p-1 bg-background dark:bg-sidebar font-semibold text-sm border-b text-center">Testing Variables and Qualification Limits</div>
+                    <div className="p-1 bg-background dark:bg-sidebar font-semibold text-sm border-b text-center">Testing Variables and Qualification Limits When Using Automatic Welding Equipment</div>
 
                     <div className="grid grid-cols-3 border-b  bg-background dark:bg-sidebar">
-                        <div className="p-3 font-medium text-sm border-r">Welder variables</div>
-                        <div className="p-3 font-medium text-sm text-center border-r">Actual Values</div>
-                        <div className="p-3 font-medium text-sm text-center border-r">Range Qualified</div>
+                        <div className="p-1 font-medium text-sm border-r">Welder variables</div>
+                        <div className="p-1 font-medium text-sm text-center border-r">Actual Values</div>
+                        <div className="p-1 font-medium text-sm text-center border-r">Range Qualified</div>
                     </div>
 
                     {formData.automaticWeldingEquipmentVariables.map((variable, index) => (
                         <div key={variable.id} className={`grid grid-cols-3 ${index % 2 === 0 ? 'bg-white dark:bg-background' : 'bg-background dark:bg-sidebar'}`}>
-                            <div className="p-3 border-r ">
+                            <div className="p-1 border-r ">
                                 {readOnly ? (
                                     <span className="text-sm">{variable.name}</span>
                                 ) : (
                                     <Input
                                         value={variable.name}
-                                        onChange={(e) => updateWelderVariable(variable.id, 'name', e.target.value)}
+                                        onChange={(e) => updateAutomaticWeldingEquipmentVariable(variable.id, 'name', e.target.value)}
                                         placeholder="Enter variable name"
                                         className="border-0 p-0 h-auto text-sm"
                                     />
                                 )}
                             </div>
-                            <div className="p-3 border-r ">
+                            <div className="p-1 border-r ">
                                 {readOnly ? (
                                     <span className="text-sm">{variable.actualValue}</span>
                                 ) : (
                                     <Input
                                         value={variable.actualValue}
-                                        onChange={(e) => updateWelderVariable(variable.id, 'actualValue', e.target.value)}
+                                        onChange={(e) => updateAutomaticWeldingEquipmentVariable(variable.id, 'actualValue', e.target.value)}
                                         placeholder="Actual value"
                                         className="border-0 p-0 h-auto text-sm"
                                     />
                                 )}
                             </div>
-                            <div className="p-3">
+                            <div className="p-1 flex items-center gap-2">
                                 {readOnly ? (
-                                    <span className="text-sm">{variable.rangeQualified}</span>
+                                    <span className="text-sm flex-1">{variable.rangeQualified}</span>
                                 ) : (
-                                    <Input
-                                        value={variable.rangeQualified}
-                                        onChange={(e) => updateWelderVariable(variable.id, 'rangeQualified', e.target.value)}
-                                        placeholder="Range qualified"
-                                        className="border-0 p-0 h-auto text-sm"
-                                    />
+                                    <>
+                                        <Input
+                                            value={variable.rangeQualified}
+                                            onChange={(e) => updateAutomaticWeldingEquipmentVariable(variable.id, 'rangeQualified', e.target.value)}
+                                            placeholder="Range qualified"
+                                            className="border-0 p-0 h-auto text-sm flex-1"
+                                        />
+                                        <ConfirmPopover
+                                            trigger={
+                                                <Button
+                                                    type="button"
+                                                    variant="destructive"
+                                                    size="icon"
+                                                    className="h-7 w-7 p-0 shrink-0"
+                                                >
+                                                    <Trash2 className="h-3 w-3" />
+                                                </Button>
+                                            }
+                                            title="Confirm Deletion"
+                                            description="Are you sure you want to delete this automatic welding equipment variable?"
+                                            onConfirm={() => removeAutomaticWeldingEquipmentVariable(variable.id)}
+                                        />
+                                    </>
                                 )}
                             </div>
                         </div>
                     ))}
 
                     {!readOnly && (
-                        <div className="p-3 border-t ">
+                        <div className="p-1 border-t ">
                             <Button type="button" variant="outline" size="sm" onClick={addAutomaticWeldingEquipmentVariable}>
                                 <Plus className="mr-2 h-4 w-4" />
                                 Add Welder Variable
@@ -536,57 +579,74 @@ export function OperatorPerformanceForm({
 
                 {/* Machine Welding Equipment Variables Table */}
                 <div className="border mb-6">
-                    <div className="p-3 bg-background dark:bg-sidebar font-semibold text-sm border-b text-center">Testing Variables and Qualification Limits When Using Machine Welding Equipment</div>
+                    <div className="p-1 bg-background dark:bg-sidebar font-semibold text-sm border-b text-center">Testing Variables and Qualification Limits When Using Machine Welding Equipment</div>
 
                     <div className="grid grid-cols-3 border-b  bg-background dark:bg-sidebar">
-                        <div className="p-3 font-medium text-sm border-r">Welder variables</div>
-                        <div className="p-3 font-medium text-sm text-center border-r">Actual Values</div>
-                        <div className="p-3 font-medium text-sm text-center border-r">Range Qualified</div>
+                        <div className="p-1 font-medium text-sm border-r">Welder variables</div>
+                        <div className="p-1 font-medium text-sm text-center border-r">Actual Values</div>
+                        <div className="p-1 font-medium text-sm text-center border-r">Range Qualified</div>
                     </div>
 
                     {formData.machineWeldingEquipmentVariables.map((variable, index) => (
                         <div key={variable.id} className={`grid grid-cols-3 ${index % 2 === 0 ? 'bg-white dark:bg-background' : 'bg-background dark:bg-sidebar'}`}>
-                            <div className="p-3 border-r ">
+                            <div className="p-1 border-r ">
                                 {readOnly ? (
                                     <span className="text-sm">{variable.name}</span>
                                 ) : (
                                     <Input
                                         value={variable.name}
-                                        onChange={(e) => updateWelderVariable(variable.id, 'name', e.target.value)}
+                                        onChange={(e) => updateMachineWeldingEquipmentVariable(variable.id, 'name', e.target.value)}
                                         placeholder="Enter variable name"
                                         className="border-0 p-0 h-auto text-sm"
                                     />
                                 )}
                             </div>
-                            <div className="p-3 border-r ">
+                            <div className="p-1 border-r ">
                                 {readOnly ? (
                                     <span className="text-sm">{variable.actualValue}</span>
                                 ) : (
                                     <Input
                                         value={variable.actualValue}
-                                        onChange={(e) => updateWelderVariable(variable.id, 'actualValue', e.target.value)}
+                                        onChange={(e) => updateMachineWeldingEquipmentVariable(variable.id, 'actualValue', e.target.value)}
                                         placeholder="Actual value"
                                         className="border-0 p-0 h-auto text-sm"
                                     />
                                 )}
                             </div>
-                            <div className="p-3">
+                            <div className="p-1 flex items-center gap-2">
                                 {readOnly ? (
-                                    <span className="text-sm">{variable.rangeQualified}</span>
+                                    <span className="text-sm flex-1">{variable.rangeQualified}</span>
                                 ) : (
-                                    <Input
-                                        value={variable.rangeQualified}
-                                        onChange={(e) => updateWelderVariable(variable.id, 'rangeQualified', e.target.value)}
-                                        placeholder="Range qualified"
-                                        className="border-0 p-0 h-auto text-sm"
-                                    />
+                                    <>
+                                        <Input
+                                            value={variable.rangeQualified}
+                                            onChange={(e) => updateMachineWeldingEquipmentVariable(variable.id, 'rangeQualified', e.target.value)}
+                                            placeholder="Range qualified"
+                                            className="border-0 p-0 h-auto text-sm flex-1"
+                                        />
+                                        <ConfirmPopover
+                                            trigger={
+                                                <Button
+                                                    type="button"
+                                                    variant="destructive"
+                                                    size="icon"
+                                                    className="h-7 w-7 p-0 shrink-0"
+                                                >
+                                                    <Trash2 className="h-3 w-3" />
+                                                </Button>
+                                            }
+                                            title="Confirm Deletion"
+                                            description="Are you sure you want to delete this machine welding equipment variable?"
+                                            onConfirm={() => removeMachineWeldingEquipmentVariable(variable.id)}
+                                        />
+                                    </>
                                 )}
                             </div>
                         </div>
                     ))}
 
                     {!readOnly && (
-                        <div className="p-3 border-t ">
+                        <div className="p-1 border-t ">
                             <Button type="button" variant="outline" size="sm" onClick={addAutomaticWeldingEquipmentVariable}>
                                 <Plus className="mr-2 h-4 w-4" />
                                 Add Welder Variable
@@ -598,18 +658,18 @@ export function OperatorPerformanceForm({
                 {/* Test Conducted Table */}
                 <div className="border mb-6 text-center">
                     <div className="grid grid-cols-4 border-b  bg-background dark:bg-sidebar">
-                        <div className="p-3 font-medium text-sm border-r">Test Conducted/ Type of Test</div>
-                        <div className="p-3 font-medium text-sm text-center border-r">Test Performed</div>
-                        <div className="p-3 font-medium text-sm text-center border-r">Results</div>
-                        <div className="p-3 font-medium text-sm text-center border-r">Report No</div>
+                        <div className="p-1 font-medium text-sm border-r">Test Conducted/ Type of Test</div>
+                        <div className="p-1 font-medium text-sm text-center border-r">Test Performed</div>
+                        <div className="p-1 font-medium text-sm text-center border-r">Results</div>
+                        <div className="p-1 font-medium text-sm text-center border-r">Report No</div>
                     </div>
 
                     {formData.testsConducted.map((test, index) => (
                         <div key={test.id} className={`grid grid-cols-4 ${index % 2 === 0 ? 'bg-white dark:bg-background' : 'bg-background dark:bg-sidebar'}`}>
-                            <div className="p-3 border-r ">
+                            <div className="p-1 border-r ">
                                 <span className="text-sm">{test.testType}</span>
                             </div>
-                            <div className="p-3 border-r">
+                            <div className="p-1 border-r">
                                 {readOnly ? (
                                     <div className="flex items-center justify-center gap-2">
                                         <Checkbox checked={test.testPerformed} disabled className="w-4 h-4" />
@@ -624,7 +684,7 @@ export function OperatorPerformanceForm({
                                     </div>
                                 )}
                             </div>
-                            <div className="p-3 border-r ">
+                            <div className="p-1 border-r ">
                                 {readOnly ? (
                                     <div className="flex items-center justify-center gap-2">
                                         <span className="text-sm">{test.testPerformed ? "N/A" : test.reportNo}</span>
@@ -638,7 +698,7 @@ export function OperatorPerformanceForm({
                                         />
                                 )}
                             </div>
-                            <div className="p-3">
+                            <div className="p-1">
                                 {readOnly ? (
                                     <span className="text-sm text-center">{test.results}</span>
                                 ) : (
@@ -760,7 +820,7 @@ export function OperatorPerformanceForm({
             {/* Actions */}
             {!readOnly && (
                 <div className="flex justify-end gap-4">
-                    <Button type="button" variant="outline" onClick={onCancel}>
+                    <Button type="button" variant="outline" onClick={handleCancel}>
                         Cancel
                     </Button>
                     <Button type="submit">

@@ -4,11 +4,12 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Upload, Plus, QrCode } from "lucide-react"
+import { Upload, Plus, QrCode, Trash2 } from "lucide-react"
 import Image from "next/image"
 import { ROUTES } from "@/constants/routes"
 import QRCode from "qrcode"
 import { Checkbox } from "../ui/checkbox"
+import { ConfirmPopover } from "../ui/confirm-popover"
 
 interface WelderVariable {
   id: string
@@ -86,7 +87,7 @@ export function WelderQualificationForm({
   onCancel,
   readOnly = false
 }: WelderQualificationFormProps) {
-  const [formData, setFormData] = useState<WelderQualificationData>({
+  const createInitialFormData = (): WelderQualificationData => ({
     clientName: "",
     welderImage: null,
     welderName: "",
@@ -99,15 +100,24 @@ export function WelderQualificationForm({
     jointType: "",
     dateOfTest: "",
     certificateRefNo: "",
-    welderVariables: defaultWelderVariables,
-    testsConducted: defaultTestsConducted,
+    welderVariables: JSON.parse(JSON.stringify(defaultWelderVariables)),
+    testsConducted: JSON.parse(JSON.stringify(defaultTestsConducted)),
     certificationStatement: "",
     testingWitnessed: "",
     testSupervisor: "",
     ...initialData
   })
 
+  const [formData, setFormData] = useState<WelderQualificationData>(createInitialFormData())
+  const [originalFormData, setOriginalFormData] = useState<WelderQualificationData>(createInitialFormData())
   const [qrSrc, setQrSrc] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Update both form data and original data when initialData changes
+    const updatedData = createInitialFormData()
+    setFormData(updatedData)
+    setOriginalFormData(updatedData)
+  }, [initialData])
 
   useEffect(() => {
     // Generate QR code for existing forms (when we have an ID)
@@ -152,6 +162,10 @@ export function WelderQualificationForm({
     handleInputChange('welderVariables', formData.welderVariables.filter(variable => variable.id !== id))
   }
 
+  const revertToOriginal = () => {
+    setFormData(JSON.parse(JSON.stringify(originalFormData)))
+  }
+
   const updateWelderVariable = (id: string, field: keyof WelderVariable, value: string) => {
     const updatedVariables = formData.welderVariables.map(variable =>
       variable.id === id ? { ...variable, [field]: value } : variable
@@ -169,6 +183,11 @@ export function WelderQualificationForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSubmit(formData)
+  }
+
+  const handleCancel = () => {
+    revertToOriginal()
+    onCancel()
   }
 
   return (
@@ -241,8 +260,8 @@ export function WelderQualificationForm({
         <div className="border mb-6">
           {/* Row 1 */}
           <div className="grid grid-cols-4 border-b ">
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Welder's/Welder Operator's Name</div>
-            <div className="p-3 border-x">
+            <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Welder's/Welder Operator's Name</div>
+            <div className="p-1 border-x">
               {readOnly ? (
                 <span className="text-sm">{formData.welderName}</span>
               ) : (
@@ -254,8 +273,8 @@ export function WelderQualificationForm({
                 />
               )}
             </div>
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Iqama / ID No</div>
-            <div className="p-3 border-x">
+            <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Iqama / ID No</div>
+            <div className="p-1 border-x">
               {readOnly ? (
                 <span className="text-sm">{formData.iqamaId}</span>
               ) : (
@@ -271,8 +290,8 @@ export function WelderQualificationForm({
 
           {/* Row 2 */}
           <div className="grid grid-cols-4 border-b">
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Welder ID No</div>
-            <div className="p-3 border-x">
+            <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Welder ID No</div>
+            <div className="p-1 border-x">
               {readOnly ? (
                 <span className="text-sm">{formData.welderIdNo}</span>
               ) : (
@@ -284,25 +303,16 @@ export function WelderQualificationForm({
                 />
               )}
             </div>
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Certificate Ref No</div>
-            <div className="p-3 border-x">
-              {readOnly ? (
+            <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Certificate Ref No</div>
+            <div className="p-1 border-x">
                 <span className="text-sm">{formData.certificateRefNo}</span>
-              ) : (
-                <Input
-                  value={formData.certificateRefNo}
-                  onChange={(e) => handleInputChange('certificateRefNo', e.target.value)}
-                  placeholder="Enter certificate reference number"
-                  className="border-0 p-0 h-auto text-sm"
-                />
-              )}
             </div>
           </div>
 
           {/* Row 3 */}
           <div className="grid grid-cols-4 border-b ">
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Date of Test</div>
-            <div className="p-3 border-x">
+            <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Date of Test</div>
+            <div className="p-1 border-x">
               {readOnly ? (
                 <span className="text-sm">{formData.dateOfTest}</span>
               ) : (
@@ -314,8 +324,8 @@ export function WelderQualificationForm({
                 />
               )}
             </div>
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Identification of WPS/PQR</div>
-            <div className="p-3 border-x">
+            <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Identification of WPS/PQR</div>
+            <div className="p-1 border-x">
               {readOnly ? (
                 <span className="text-sm">{formData.wpsIdentification}</span>
               ) : (
@@ -331,8 +341,8 @@ export function WelderQualificationForm({
 
           {/* Row 4 */}
           <div className="grid grid-cols-4">
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Qualification Standard</div>
-            <div className="p-3 border-x">
+            <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Qualification Standard</div>
+            <div className="p-1 border-x">
               {readOnly ? (
                 <span className="text-sm">{formData.qualificationStandard}</span>
               ) : (
@@ -344,8 +354,8 @@ export function WelderQualificationForm({
                 />
               )}
             </div>
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Base Metal Specification</div>
-            <div className="p-3 border-x">
+            <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Base Metal Specification</div>
+            <div className="p-1 border-x">
               {readOnly ? (
                 <span className="text-sm">{formData.baseMetalSpec}</span>
               ) : (
@@ -361,8 +371,8 @@ export function WelderQualificationForm({
 
           {/* Row 5 */}
           <div className="grid grid-cols-4 border-t ">
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Joint Type</div>
-            <div className="p-3 border-x">
+            <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Joint Type</div>
+            <div className="p-1 border-x">
               {readOnly ? (
                 <span className="text-sm">{formData.jointType}</span>
               ) : (
@@ -374,8 +384,8 @@ export function WelderQualificationForm({
                 />
               )}
             </div>
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border-x">Weld Type</div>
-            <div className="p-3 border-x">
+            <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Weld Type</div>
+            <div className="p-1 border-x">
               {readOnly ? (
                 <span className="text-sm">{formData.weldType}</span>
               ) : (
@@ -393,14 +403,14 @@ export function WelderQualificationForm({
         {/* Welder Variables Table */}
         <div className="border  mb-6">
           <div className="grid grid-cols-3 border-b  bg-background dark:bg-sidebar">
-            <div className="p-3 font-medium text-sm border-r">Welder variables</div>
-            <div className="p-3 font-medium text-sm text-center border-r">Actual Values</div>
-            <div className="p-3 font-medium text-sm text-center border-r">Range Qualified</div>
+            <div className="p-1 font-medium text-sm border-r">Welder variables</div>
+            <div className="p-1 font-medium text-sm text-center border-r">Actual Values</div>
+            <div className="p-1 font-medium text-sm text-center border-r">Range Qualified</div>
           </div>
 
           {formData.welderVariables.map((variable, index) => (
             <div key={variable.id} className={`grid grid-cols-3 ${index % 2 === 0 ? 'bg-white dark:bg-background' : 'bg-background dark:bg-sidebar'}`}>
-              <div className="p-3 border-r ">
+              <div className="p-1 border-r ">
                 {readOnly ? (
                   <span className="text-sm">{variable.name}</span>
                 ) : (
@@ -412,7 +422,7 @@ export function WelderQualificationForm({
                   />
                 )}
               </div>
-              <div className="p-3 border-r ">
+              <div className="p-1 border-r ">
                 {readOnly ? (
                   <span className="text-sm">{variable.actualValue}</span>
                 ) : (
@@ -424,23 +434,42 @@ export function WelderQualificationForm({
                   />
                 )}
               </div>
-              <div className="p-3">
+              <div className="p-1">
                 {readOnly ? (
                   <span className="text-sm">{variable.rangeQualified}</span>
                 ) : (
-                  <Input
-                    value={variable.rangeQualified}
-                    onChange={(e) => updateWelderVariable(variable.id, 'rangeQualified', e.target.value)}
-                    placeholder="Range qualified"
-                    className="border-0 p-0 h-auto text-sm"
-                  />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={variable.rangeQualified}
+                      onChange={(e) => updateWelderVariable(variable.id, 'rangeQualified', e.target.value)}
+                      placeholder="Range qualified"
+                      className="border-0 p-0 h-auto text-sm flex-1"
+                    />
+                    {!readOnly && (
+                      <ConfirmPopover
+                        trigger={
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="text-xs h-7 w-7"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        }
+                        title="Confirm Deletion"
+                        description="Are you sure you want to delete this welder variable?"
+                        onConfirm={() => removeWelderVariable(variable.id)}
+                      />
+                    )}
+                  </div>
                 )}
               </div>
             </div>
           ))}
 
           {!readOnly && (
-            <div className="p-3 border-t ">
+            <div className="p-1 border-t ">
               <Button type="button" variant="outline" size="sm" onClick={addWelderVariable}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Welder Variable
@@ -452,18 +481,18 @@ export function WelderQualificationForm({
         {/* Test Conducted Table */}
         <div className="border mb-6 text-center">
           <div className="grid grid-cols-4 border-b bg-background dark:bg-sidebar">
-            <div className="p-3 font-medium text-sm border-r">Test Conducted/ Type of Test</div>
-            <div className="p-3 font-medium text-sm text-center border-r">Test Performed</div>
-            <div className="p-3 font-medium text-sm text-center border-r">Results</div>
-            <div className="p-3 font-medium text-sm text-center border-r">Report No</div>
+            <div className="p-1 font-medium text-sm border-r">Test Conducted/ Type of Test</div>
+            <div className="p-1 font-medium text-sm text-center border-r">Test Performed</div>
+            <div className="p-1 font-medium text-sm text-center border-r">Results</div>
+            <div className="p-1 font-medium text-sm text-center border-r">Report No</div>
           </div>
 
           {formData.testsConducted.map((test, index) => (
             <div key={test.id} className={`grid grid-cols-4 ${index % 2 === 0 ? 'bg-white dark:bg-background' : 'bg-background dark:bg-sidebar'}`}>
-              <div className="p-3 border-r ">
+              <div className="p-1 border-r ">
                 <span className="text-sm">{test.testType}</span>
               </div>
-              <div className="p-3 border-r ">
+              <div className="p-1 border-r ">
                 {readOnly ? (
                   <div className="flex items-center justify-center gap-2">
                     <Checkbox checked={test.isReportChecked} disabled className="w-4 h-4" />
@@ -478,7 +507,7 @@ export function WelderQualificationForm({
                   </div>
                 )}
               </div>
-              <div className="p-3 border-r ">
+              <div className="p-1 border-r ">
                 {readOnly ? (
 
                   <span className="text-sm text-center">{test.isReportChecked ? "N/A" : test.reportNo}</span>
@@ -492,7 +521,7 @@ export function WelderQualificationForm({
                   />
                 )}
               </div>
-              <div className="p-3">
+              <div className="p-1">
                 {readOnly ? (
                   <span className="text-sm text-center">{test.results}</span>
                 ) : (
@@ -614,7 +643,7 @@ export function WelderQualificationForm({
       {/* Actions */}
       {!readOnly && (
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
           <Button type="submit">
