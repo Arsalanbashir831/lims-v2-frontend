@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useMemo, useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useSidebar } from "../ui/sidebar"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { ClientSelector } from "@/components/common/client-selector"
+import { Client, clientService } from "@/lib/clients"
 
 export interface SampleReceivingFormData extends Omit<SampleReceiving, "id" | "createdAt" | "updatedAt"> {}
 
@@ -36,9 +38,9 @@ export function SampleReceivingForm({ initialData, onSubmit, readOnly = false }:
   const { state } = useSidebar()
   const [projectName, setProjectName] = useState(initialData?.projectName ?? "")
   const [sampleId] = useState(initialData?.sampleId ?? generateSampleCode())
-  const [clientName, setClientName] = useState(initialData?.clientName ?? "")
+  const [clientId, setClientId] = useState(initialData?.clientId ?? "")
+  const [selectedClient, setSelectedClient] = useState<Client | undefined>()
   const [endUser, setEndUser] = useState(initialData?.endUser ?? "")
-  const [phone, setPhone] = useState(initialData?.phone ?? "")
   const [receiveDate, setReceiveDate] = useState(initialData?.receiveDate ?? "")
   const [storageLocation, setStorageLocation] = useState(initialData?.storageLocation ?? "")
   const [remarks, setRemarks] = useState(initialData?.remarks ?? "")
@@ -46,6 +48,24 @@ export function SampleReceivingForm({ initialData, onSubmit, readOnly = false }:
 
   const numItems = useMemo(() => items.length, [items])
   const maxWidth = useMemo(() => (state === "expanded" ? "lg:max-w-[calc(100vw-24.5rem)]" : "lg:max-w-screen"), [state])
+
+  // Load selected client when clientId is available (for edit mode)
+  useEffect(() => {
+    const loadSelectedClient = async () => {
+      if (clientId && !selectedClient) {
+        try {
+          const client = await clientService.getById(clientId)
+          if (client) {
+            setSelectedClient(client)
+          }
+        } catch (error) {
+          console.error("Failed to load client:", error)
+        }
+      }
+    }
+
+    loadSelectedClient()
+  }, [clientId, selectedClient])
 
   const addItem = useCallback(() => {
     setItems(prev => [...prev, createSampleItem({ indexNo: prev.length + 1 })])
@@ -75,7 +95,7 @@ export function SampleReceivingForm({ initialData, onSubmit, readOnly = false }:
 
   const onFormSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit({ sampleId, projectName, clientName, endUser, phone, receiveDate, numItems, storageLocation, items, remarks })
+    onSubmit({ sampleId, projectName, clientId, endUser, receiveDate, numItems, storageLocation, items, remarks })
   }
 
   return (
@@ -95,16 +115,29 @@ export function SampleReceivingForm({ initialData, onSubmit, readOnly = false }:
             <Input placeholder="e.g., MICROSTRUCTURE UNIFORMITY OF HEAT TREATED BOLT" value={projectName} onChange={(e) => setProjectName(e.target.value)} disabled={readOnly} />
           </div>
           <div className="grid gap-2">
-            <Label>Client Name</Label>
-            <Input placeholder="e.g., ALRASHED FASTENERS" value={clientName} onChange={(e) => setClientName(e.target.value)} disabled={readOnly} />
+            <Label>Client</Label>
+            <ClientSelector
+              value={clientId}
+              onValueChange={(selectedClientId, client) => {
+                setClientId(selectedClientId || "")
+                setSelectedClient(client)
+              }}
+              placeholder="Select a client..."
+              disabled={readOnly}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label>Phone No.</Label>
+            <Input 
+              placeholder="Contact number" 
+              value={selectedClient?.phone || ""} 
+              disabled={true}
+              className="bg-muted/50"
+            />
           </div>
           <div className="grid gap-2">
             <Label>End User</Label>
             <Input placeholder="End user organization" value={endUser} onChange={(e) => setEndUser(e.target.value)} disabled={readOnly} />
-          </div>
-          <div className="grid gap-2">
-            <Label>Phone No.</Label>
-            <Input placeholder="Contact number" value={phone} onChange={(e) => setPhone(e.target.value)} disabled={readOnly} />
           </div>
           <div className="grid gap-2">
             <Label>Receive Date</Label>

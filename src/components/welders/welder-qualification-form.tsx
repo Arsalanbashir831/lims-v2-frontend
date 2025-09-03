@@ -10,6 +10,7 @@ import { ROUTES } from "@/constants/routes"
 import QRCode from "qrcode"
 import { Checkbox } from "../ui/checkbox"
 import { ConfirmPopover } from "../ui/confirm-popover"
+import { WelderSelector } from "@/components/common/welder-selector"
 
 interface WelderVariable {
   id: string
@@ -111,6 +112,7 @@ export function WelderQualificationForm({
   const [formData, setFormData] = useState<WelderQualificationData>(createInitialFormData())
   const [originalFormData, setOriginalFormData] = useState<WelderQualificationData>(createInitialFormData())
   const [qrSrc, setQrSrc] = useState<string | null>(null)
+  const [selectedWelderId, setSelectedWelderId] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     // Update both form data and original data when initialData changes
@@ -215,7 +217,7 @@ export function WelderQualificationForm({
                 value={formData.clientName}
                 onChange={(e) => handleInputChange('clientName', e.target.value)}
                 placeholder="Enter client name"
-                className="border-0 p-0 h-auto text-sm text-center !text-lg text-gray-800 font-bold"
+                className="border-0 p-0 h-auto text-sm text-center !text-lg font-bold"
               />
             )}
           </div>
@@ -232,25 +234,9 @@ export function WelderQualificationForm({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  {!readOnly ? (
-                    <div className="text-center">
-                      <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                      <Label htmlFor="imageUpload" className="cursor-pointer text-blue-600 hover:text-blue-500 text-xs">
-                        Upload Photo
-                      </Label>
-                      <Input
-                        id="imageUpload"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleImageUpload}
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-gray-400 text-xs">No Photo</span>
-                  )}
-                </div>
+                <p className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                  No Photo
+                </p>
               )}
             </div>
           </div>
@@ -295,17 +281,25 @@ export function WelderQualificationForm({
               {readOnly ? (
                 <span className="text-sm">{formData.welderIdNo}</span>
               ) : (
-                <Input
-                  value={formData.welderIdNo}
-                  onChange={(e) => handleInputChange('welderIdNo', e.target.value)}
-                  placeholder="Enter welder ID number"
-                  className="border-0 p-0 h-auto text-sm"
+                <WelderSelector
+                  value={selectedWelderId}
+                  onValueChange={(welderId, welder) => {
+                    if (welder) {
+                      // Auto-fill based on selected welder
+                      setSelectedWelderId(welderId)
+                      handleInputChange('welderIdNo', welder.operatorId || "")
+                      handleInputChange('welderName', welder.operatorName || "")
+                      handleInputChange('iqamaId', welder.iqamaPassport || "")
+                      handleInputChange('welderImage', welder.operatorImage || null)
+                    }
+                  }}
+                  placeholder="Select welder by ID / name..."
                 />
               )}
             </div>
             <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Certificate Ref No</div>
             <div className="p-1 border-x">
-                <span className="text-sm">{formData.certificateRefNo}</span>
+              <span className="text-sm">{formData.certificateRefNo}</span>
             </div>
           </div>
 

@@ -20,9 +20,8 @@ export type SampleReceiving = {
   id: string
   sampleId: string
   projectName: string
-  clientName: string
+  clientId: string
   endUser: string
-  phone: string
   receiveDate: string // ISO date
   storageLocation: string
   remarks: string

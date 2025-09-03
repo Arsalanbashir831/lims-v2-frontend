@@ -27,6 +27,7 @@ import { useState } from "react"
 
 const navItems = [
   { href: ROUTES.APP.DASHBOARD, label: "Dashboard", icon: Home },
+  { href: ROUTES.APP.CLIENTS.ROOT, label: "Clients", icon: Users },
   { href: ROUTES.APP.TEST_METHODS.ROOT, label: "Test Methods", icon: FlaskConical },
   { href: ROUTES.APP.LAB_EQUIPMENTS.ROOT, label: "Lab Equipments", icon: Microscope },
   { 
@@ -46,7 +47,6 @@ const navItems = [
     ]
   },
   { href: ROUTES.APP.TEST_REPORTS.ROOT, label: "Test Reports", icon: FileText },
-  { href: ROUTES.APP.CLIENTS.ROOT, label: "Clients", icon: Users },
   { href: ROUTES.APP.MATERIAL_DISCARDS.ROOT, label: "Material Discards", icon: Archive },
   { href: ROUTES.APP.TRACKING_DATABASE, label: "Tracking Database", icon: Route },
 ]
