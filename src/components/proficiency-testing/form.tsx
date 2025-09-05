@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
-import { ProficiencyTest, createProficiencyTest, updateProficiencyTest } from "@/lib/proficiency-testing"
+import { ProficiencyTest, proficiencyTestService, CreateProficiencyTestData, UpdateProficiencyTestData } from "@/lib/proficiency-testing"
 import { useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
 
@@ -16,6 +17,10 @@ type Props = { initial?: ProficiencyTest, readOnly?: boolean }
 
 export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
   const router = useRouter()
+  const queryClient = useQueryClient()
+  // Invalidate cache after save
+  // We'll use the list key ['proficiency-tests']
+  // Keep simple here using redirect then list refetch on mount
   const isEditing = useMemo(() => Boolean(initial), [initial])
 
   const [description, setDescription] = useState(initial?.description ?? "")
@@ -33,7 +38,7 @@ export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
       toast.error("Description is required")
       return
     }
-    const payload = {
+    const payload: CreateProficiencyTestData = {
       description: description.trim(),
       provider1: provider1.trim() || undefined,
       provider2: provider2.trim() || undefined,
@@ -47,17 +52,23 @@ export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
     console.log("Submitting payload:", payload)
 
     if (isEditing && initial) {
-      const updated = updateProficiencyTest(initial.id, payload)
-      console.log("Updated record:", updated)
-      toast.success("Record updated")
-      router.push(ROUTES.APP.PROFICIENCY_TESTING.ROOT)
+      proficiencyTestService.update(initial.id, payload as UpdateProficiencyTestData)
+        .then(() => { 
+          queryClient.invalidateQueries({ queryKey: ['proficiency-tests'] })
+          toast.success("Record updated"); 
+          router.push(ROUTES.APP.PROFICIENCY_TESTING.ROOT) 
+        })
+        .catch(() => toast.error("Failed to update"))
       return
     }
 
-    const created = createProficiencyTest(payload)
-    console.log("Created record:", created)
-    toast.success("Record created")
-    router.push(ROUTES.APP.PROFICIENCY_TESTING.ROOT)
+    proficiencyTestService.create(payload)
+      .then(() => { 
+        queryClient.invalidateQueries({ queryKey: ['proficiency-tests'] })
+        toast.success("Record created"); 
+        router.push(ROUTES.APP.PROFICIENCY_TESTING.ROOT) 
+      })
+      .catch(() => toast.error("Failed to create"))
   }
 
   return (

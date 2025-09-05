@@ -1,24 +1,28 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useParams } from "next/navigation"
 import { ProficiencyTestingForm } from "@/components/proficiency-testing/form"
-import { getProficiencyTest, ProficiencyTest } from "@/lib/proficiency-testing"
+import { proficiencyTestService, ProficiencyTest } from "@/lib/proficiency-testing"
 import { ROUTES } from "@/constants/routes"
 import { FormHeader } from "@/components/common/form-header"
 import { Button } from "@/components/ui/button"
 import { PencilIcon, XIcon } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
 
 export default function EditProficiencyTestingPage() {
   const params = useParams<{ id: string }>()
   const [record, setRecord] = useState<ProficiencyTest | undefined>(undefined)
   const [isEditing, setIsEditing] = useState(false)
 
-  useEffect(() => {
-    if (params?.id) setRecord(getProficiencyTest(params.id))
-  }, [params?.id])
+  const id = params?.id as string
+  const { data, isLoading } = useQuery({
+    queryKey: ['proficiency-tests', id],
+    queryFn: () => proficiencyTestService.getById(id),
+    enabled: !!id,
+  })
 
-  if (!record) return <p className="text-muted-foreground">Loading...</p>
+  if (isLoading || !data) return <p className="text-muted-foreground">Loading...</p>
 
   return (
     <div className="grid gap-4">
@@ -29,7 +33,7 @@ export default function EditProficiencyTestingPage() {
           <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}><XIcon className="w-4 h-4 mr-1" /> Cancel</Button>
         )}
       </FormHeader>
-      <ProficiencyTestingForm initial={record} readOnly={!isEditing} />
+      <ProficiencyTestingForm initial={data} readOnly={!isEditing} />
     </div>
   )
 }

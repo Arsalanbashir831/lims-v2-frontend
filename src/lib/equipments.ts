@@ -79,9 +79,9 @@ export const equipmentService = {
   },
 
   async search(query: string, page: number = 1): Promise<{ results: Equipment[]; count: number; next: string | null; previous: string | null }> {
-    const qEncoded = encodeURIComponent(query)
-    const url = `${API_ROUTES.Lab_MANAGERS.SEARCH_EQUIPMENTS}?q=${qEncoded}&page=${page}`
-    const response = await api.get(url).json()
+    const response = await api.get(API_ROUTES.Lab_MANAGERS.SEARCH_EQUIPMENTS, {
+      searchParams: { q: query, page }
+    }).json()
     const validated = EquipmentListResponseSchema.parse(response)
     return {
       results: validated.results,

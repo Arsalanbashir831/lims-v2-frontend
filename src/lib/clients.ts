@@ -96,9 +96,9 @@ export const clientService = {
 
   async search(query: string, page: number = 1): Promise<{ results: Client[]; count: number; next: string | null; previous: string | null }> {
     // Build URL manually so spaces remain encoded as %20 not +
-    const qEncoded = encodeURIComponent(query)
-    const url = `${API_ROUTES.Lab_MANAGERS.SEARCH_CLIENTS}?q=${qEncoded}&page=${page}`
-    const response = await api.get(url).json()
+    const response = await api.get(API_ROUTES.Lab_MANAGERS.SEARCH_CLIENTS, {
+      searchParams: { q: query, page }
+    }).json()
     
     const validated = ClientListResponseSchema.parse(response)
     return {

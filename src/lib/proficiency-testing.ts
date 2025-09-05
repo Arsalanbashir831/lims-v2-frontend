@@ -1,93 +1,91 @@
-"use client"
+import { api } from "./api/ky"
+import { z } from "zod"
+import { API_ROUTES } from "@/constants/api-routes"
 
-// Fallback UUID generator for browsers that don't support crypto.randomUUID()
-function generateId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID()
-  }
-  // Fallback: simple UUID v4 generator
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0
-    const v = c === 'x' ? r : (r & 0x3 | 0x8)
-    return v.toString(16)
-  })
-}
+// Schema
+export const ProficiencyTestSchema = z.object({
+  id: z.string(),
+  description: z.string(),
+  lastTestDate: z.string().nullable().optional(),
+  nextScheduledDate: z.string().nullable().optional(),
+  dueDate: z.string().nullable().optional(),
+  provider1: z.string().nullable().optional(),
+  provider2: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+  remarks: z.string().nullable().optional(),
+  is_active: z.boolean().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+})
 
-export type ProficiencyTest = {
-  id: string
+export const ProficiencyTestListSchema = z.object({
+  count: z.number(),
+  next: z.string().nullable().optional(),
+  previous: z.string().nullable().optional(),
+  results: z.array(ProficiencyTestSchema),
+})
+
+export type ProficiencyTest = z.infer<typeof ProficiencyTestSchema>
+export type ProficiencyTestListResponse = z.infer<typeof ProficiencyTestListSchema>
+
+export type CreateProficiencyTestData = {
   description: string
+  lastTestDate?: string
+  nextScheduledDate?: string
+  dueDate?: string
   provider1?: string
   provider2?: string
-  lastTestDate?: string
-  dueDate?: string
-  nextScheduledDate?: string
   status?: string
   remarks?: string
-  createdAt: string
-  updatedAt: string
 }
 
-const STORAGE_KEY = "lims:proficiency-tests"
+export type UpdateProficiencyTestData = Partial<CreateProficiencyTestData>
 
-function readAll(): ProficiencyTest[] {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as ProficiencyTest[]) : []
-  } catch {
-    return []
-  }
+export const proficiencyTestService = {
+  async getAll(page: number = 1): Promise<{ results: ProficiencyTest[]; count: number; next: string | null; previous: string | null }> {
+    const response = await api.get(API_ROUTES.Lab_MANAGERS.ALL_PROF_TESTS, {
+      searchParams: { page, is_active: true }
+    }).json()
+    const validated = ProficiencyTestListSchema.parse(response)
+    return {
+      results: validated.results,
+      count: validated.count,
+      next: validated.next ?? null,
+      previous: validated.previous ?? null,
+    }
+  },
+
+  async getById(id: string | number): Promise<ProficiencyTest> {
+    const response = await api.get(API_ROUTES.Lab_MANAGERS.PROF_TEST_BY_ID(String(id))).json()
+    return ProficiencyTestSchema.parse(response)
+  },
+
+  async create(data: CreateProficiencyTestData): Promise<ProficiencyTest> {
+    const response = await api.post(API_ROUTES.Lab_MANAGERS.ADD_PROF_TEST, { json: data }).json()
+    return ProficiencyTestSchema.parse(response)
+  },
+
+  async update(id: string | number, data: UpdateProficiencyTestData): Promise<ProficiencyTest> {
+    const response = await api.patch(API_ROUTES.Lab_MANAGERS.UPDATE_PROF_TEST(String(id)), { json: data }).json()
+    return ProficiencyTestSchema.parse(response)
+  },
+
+  async delete(id: string | number): Promise<void> {
+    await api.delete(API_ROUTES.Lab_MANAGERS.DELETE_PROF_TEST(String(id)))
+  },
+
+  async search(query: string, page: number = 1): Promise<{ results: ProficiencyTest[]; count: number; next: string | null; previous: string | null }> {
+    // Use searchParams so spaces are encoded as '+' rather than '%20' to match backend behavior
+    const response = await api.get(API_ROUTES.Lab_MANAGERS.SEARCH_PROF_TESTS, {
+      searchParams: { q: query, page }
+    }).json()
+    const validated = ProficiencyTestListSchema.parse(response)
+    return {
+      results: validated.results,
+      count: validated.count,
+      next: validated.next ?? null,
+      previous: validated.previous ?? null,
+    }
+  },
 }
-
-function writeAll(items: ProficiencyTest[]) {
-  if (typeof window === "undefined") return
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-}
-
-export function listProficiencyTests(): ProficiencyTest[] {
-  return readAll().sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
-}
-
-export function getProficiencyTest(id: string): ProficiencyTest | undefined {
-  return readAll().find((m) => m.id === id)
-}
-
-export function createProficiencyTest(data: Omit<ProficiencyTest, "id" | "createdAt" | "updatedAt">): ProficiencyTest {
-  const now = new Date().toISOString()
-  const item: ProficiencyTest = {
-    ...data,
-    id: generateId(),
-    createdAt: now,
-    updatedAt: now,
-  }
-  console.log("Creating proficiency test:", item)
-  const items = readAll()
-  console.log("Current items:", items)
-  items.push(item)
-  writeAll(items)
-  console.log("Items after creation:", items)
-  return item
-}
-
-export function updateProficiencyTest(id: string, updates: Partial<Omit<ProficiencyTest, "id" | "createdAt">>): ProficiencyTest | undefined {
-  const items = readAll()
-  const idx = items.findIndex((m) => m.id === id)
-  if (idx === -1) return undefined
-  const updated: ProficiencyTest = {
-    ...items[idx],
-    ...updates,
-    updatedAt: new Date().toISOString(),
-  }
-  items[idx] = updated
-  writeAll(items)
-  return updated
-}
-
-export function deleteProficiencyTest(id: string): boolean {
-  const items = readAll()
-  const next = items.filter((m) => m.id !== id)
-  writeAll(next)
-  return next.length !== items.length
-}
-
 

@@ -23,12 +23,14 @@ export const API_ROUTES = {
     SEARCH_EQUIPMENTS: "equipments/search/",
     EQUIPMENT_STATISTICS: 'equipments/statistics/',
 
-  },
-  EQUIPMENTS: {
-    ADD: "equipments/",
-    LIST: "equipments/",
-    BY_ID: (id: string) => `equipments/${id}/`,
-    UPDATE: (id: string) => `equipments/${id}/`,
-    DELETE: (id: string) => `equipments/${id}/`,
+    // Proficiency Tests
+    ADD_PROF_TEST: "proficiency-tests/",
+    UPDATE_PROF_TEST: (id: string) => `proficiency-tests/${id}/`,
+    DELETE_PROF_TEST: (id: string) => `proficiency-tests/${id}/`,
+    ALL_PROF_TESTS: "proficiency-tests/",
+    PROF_TEST_BY_ID: (id: string) => `proficiency-tests/${id}/`,
+    SEARCH_PROF_TESTS: "proficiency-tests/search/",
+    PROF_TEST_STATISTICS: 'proficiency-tests/statistics/',
+    
   }
 }
