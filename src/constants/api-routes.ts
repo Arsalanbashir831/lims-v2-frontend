@@ -40,5 +40,14 @@ export const API_ROUTES = {
     CALIBRATION_TEST_BY_ID: (id: string) => `calibration-tests/${id}/`,
     SEARCH_CALIBRATION_TESTS: "calibration-tests/search/",
     CALIBRATION_TEST_STATISTICS: 'calibration-tests/statistics/',
+
+    // Test Methods
+    ADD_TEST_METHOD: "test-methods/",
+    UPDATE_TEST_METHOD: (id: string) => `test-methods/${id}/`,
+    DELETE_TEST_METHOD: (id: string) => `test-methods/${id}/`,
+    ALL_TEST_METHODS: "test-methods/",
+    TEST_METHOD_BY_ID: (id: string) => `test-methods/${id}/`,
+    SEARCH_TEST_METHODS: "test-methods/search/",
+    TEST_METHOD_STATISTICS: 'test-methods/statistics/',
   }
 }

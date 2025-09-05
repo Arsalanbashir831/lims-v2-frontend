@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { listTestMethods, deleteTestMethod, TestMethod } from "@/lib/test-methods"
+import { testMethodService, TestMethod } from "@/lib/test-methods"
 import { toast } from "sonner"
 import { DataTable } from "@/components/ui/data-table"
 import { truncateText, formatColumnsPreview } from "@/lib/format"
@@ -12,50 +12,42 @@ import { PencilIcon, TrashIcon } from "lucide-react"
 import { FilterSearch } from "@/components/ui/filter-search"
 import { ROUTES } from "@/constants/routes"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
-import { Checkbox } from "@/components/ui/checkbox"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
-import { DataTablePagination } from "@/components/ui/data-table-pagination"
+import { ServerPagination } from "@/components/ui/server-pagination"
 import { useRouter } from "next/navigation"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
 export default function TestMethodsPage() {
     const router = useRouter()
-    const [items, setItems] = useState<TestMethod[]>([])
+    const queryClient = useQueryClient()
+    const [currentPage, setCurrentPage] = useState(1)
+    const [searchQuery, setSearchQuery] = useState("")
 
-    const reload = useCallback(() => setItems(listTestMethods()), [])
+    const { data: tmData, isLoading, isFetching } = useQuery({
+        queryKey: ['test-methods', currentPage, searchQuery],
+        queryFn: () => (searchQuery.trim() ? testMethodService.search(searchQuery.trim(), currentPage) : testMethodService.getAll(currentPage)),
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
+        placeholderData: (prev) => prev,
+    })
 
-    useEffect(() => {
-        reload()
-    }, [])
+    const items = tmData?.results ?? []
+    const totalCount = tmData?.count ?? 0
+    const pageSize = 20
+    const hasNext = tmData?.next !== undefined ? Boolean(tmData?.next) : totalCount > currentPage * pageSize
+    const hasPrevious = tmData?.previous !== undefined ? Boolean(tmData?.previous) : currentPage > 1
 
-    const doDelete = useCallback((id: string) => {
-        deleteTestMethod(id)
-        toast.success("Deleted")
-        reload()
-    }, [reload])
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => testMethodService.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['test-methods'] })
+            toast.success("Deleted")
+        }
+    })
+    const doDelete = useCallback((id: string) => { deleteMutation.mutate(id) }, [deleteMutation])
 
     const columns: ColumnDef<TestMethod>[] = useMemo(() => [
-        {
-            id: "select",
-            header: ({ table }) => (
-
-                <Checkbox
-                    checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                />
-            ),
-            meta: { className: "w-fit min-w-fit px-4" },
-            enableSorting: false,
-            enableHiding: false,
-        },
         {
             id: "serial",
             header: "S.No",
@@ -65,19 +57,19 @@ export default function TestMethodsPage() {
             enableHiding: false,
         },
         {
-            accessorKey: "name",
+            accessorKey: "test_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
-            cell: ({ row }) => <div className="font-medium">{row.original.name}</div>,
+            cell: ({ row }) => <div className="font-medium">{row.original.test_name}</div>,
         },
         {
-            accessorKey: "description",
+            accessorKey: "test_description",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Description" />,
-            cell: ({ row }) => <span className="text-muted-foreground">{truncateText(row.original.description, 96)}</span>,
+            cell: ({ row }) => <span className="text-muted-foreground">{truncateText(row.original.test_description || "", 96)}</span>,
         },
         {
             id: "columns",
             header: "Columns",
-            cell: ({ row }) => <span>{formatColumnsPreview(row.original.columns, 3)}</span>,
+            cell: ({ row }) => <span>{formatColumnsPreview(row.original.test_columns, 3)}</span>,
         },
         {
             accessorKey: "updatedAt",
@@ -90,12 +82,12 @@ export default function TestMethodsPage() {
             cell: ({ row }) => (
                 <div className="text-right space-x-2 inline-flex">
                     <Button variant="secondary" size="sm" asChild>
-                        <Link href={ROUTES.APP.TEST_METHODS.EDIT(row.original.id)}><PencilIcon className="w-4 h-4" /></Link>
+                        <Link href={ROUTES.APP.TEST_METHODS.EDIT(String(row.original.id))}><PencilIcon className="w-4 h-4" /></Link>
                     </Button>
                     <ConfirmPopover
                         title="Delete this test method?"
                         confirmText="Delete"
-                        onConfirm={() => doDelete(row.original.id)}
+                        onConfirm={() => doDelete(String(row.original.id))}
                         trigger={<Button variant="destructive" size="sm"><TrashIcon className="w-4 h-4" /></Button>}
                     />
                 </div>
@@ -108,48 +100,39 @@ export default function TestMethodsPage() {
             columns={columns}
             data={items}
             empty={<span className="text-muted-foreground">No test methods yet</span>}
-            pageSize={10}
+            pageSize={20}
             tableKey="test-methods"
-            onRowClick={(row) => router.push(ROUTES.APP.TEST_METHODS.EDIT(row.original.id))}
+            onRowClick={(row) => router.push(ROUTES.APP.TEST_METHODS.EDIT(String(row.original.id)))}
             toolbar={useCallback((table: TanstackTable<TestMethod>) => {
-                const selected = table.getSelectedRowModel().rows
-                const hasSelected = selected.length > 0
-                const onBulkDelete = () => {
-                    const ids = selected.map(r => r.original.id)
-                    ids.forEach(id => doDelete(id))
-                    table.resetRowSelection()
-                }
                 return (
                     <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
                         <FilterSearch
                             placeholder="Search name..."
-                            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-                            onChange={(value) => table.getColumn("name")?.setFilterValue(value)}
+                            value={searchQuery}
+                            onChange={(value) => { setSearchQuery(value); setCurrentPage(1) }}
                             className="w-full"
                             inputClassName="max-w-md"
                         />
                         <div className="flex items-center gap-2 w-full md:w-auto">
                             <DataTableViewOptions table={table} />
-                            {hasSelected && (
-                                <ConfirmPopover
-                                    title={`Delete ${selected.length} selected item(s)?`}
-                                    confirmText="Delete"
-                                    onConfirm={onBulkDelete}
-                                    trigger={
-                                        <Button variant="destructive" size="sm">
-                                            Delete selected ({selected.length})
-                                        </Button>
-                                    }
-                                />
-                            )}
                             <Button asChild size="sm">
                                 <Link href={ROUTES.APP.TEST_METHODS.NEW}>New Test</Link>
                             </Button>
                         </div>
                     </div>
                 )
-            }, [doDelete])}
-            footer={useCallback((table: TanstackTable<TestMethod>) => <DataTablePagination table={table} />, [])}
+            }, [searchQuery])}
+            footer={useCallback((table: TanstackTable<TestMethod>) => (
+                <ServerPagination
+                    currentPage={currentPage}
+                    totalCount={totalCount}
+                    pageSize={20}
+                    hasNext={hasNext}
+                    hasPrevious={hasPrevious}
+                    onPageChange={setCurrentPage}
+                    isLoading={isFetching}
+                />
+            ), [currentPage, totalCount, hasNext, hasPrevious, isFetching])}
         />
     )
 }
