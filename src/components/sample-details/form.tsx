@@ -7,66 +7,84 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { PlusIcon, TrashIcon, ChevronDown } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useSidebar } from "../ui/sidebar"
 import { cn } from "@/lib/utils"
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { SampleDetail, CreateSampleDetailData, UpdateSampleDetailData, TestMethodRef, sampleDetailService } from "@/lib/sample-details"
+import { sampleInformationService } from "@/lib/sample-information"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
 import { useQueryClient } from "@tanstack/react-query"
+import { JobSelector } from "@/components/common/job-selector"
+import { TestMethodsSelector } from "@/components/common/test-methods-selector"
 
 interface Props {
   initial?: SampleDetail
   readOnly?: boolean
 }
 
-// Dummy options in the requested shape
-const DUMMY_METHOD_OPTIONS: { id: string; test_name: string }[] = [
-  { id: "metallography", test_name: "Metallography Test" },
-  { id: "tensile", test_name: "Tensile Test" },
-  { id: "hardness", test_name: "Hardness Test" },
-  { id: "impact", test_name: "Charpy Impact Test" },
-]
 
 export function SampleDetailForm({ initial, readOnly = false }: Props) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { state } = useSidebar()
-  const [sampleInformationId, setSampleInformationId] = useState(initial?.sampleInformationId ?? "")
-  const [indexNo, setIndexNo] = useState(initial?.indexNo ?? 1)
+  const [job, setJob] = useState(initial?.job_id ?? "")
   const [description, setDescription] = useState(initial?.description ?? "")
-  const [mtcNo, setMtcNo] = useState(initial?.mtcNo ?? "")
-  const [sampleType, setSampleType] = useState(initial?.sampleType ?? "")
-  const [materialType, setMaterialType] = useState(initial?.materialType ?? "")
-  const [heatNo, setHeatNo] = useState(initial?.heatNo ?? "")
-  const [storageLocation, setStorageLocation] = useState(initial?.storageLocation ?? "")
+  const [mtcNo, setMtcNo] = useState(initial?.mtc_no ?? "")
+  const [sampleType, setSampleType] = useState(initial?.sample_type ?? "")
+  const [materialType, setMaterialType] = useState(initial?.material_type ?? "")
+  const [heatNo, setHeatNo] = useState(initial?.heat_no ?? "")
+  const [storageLocation, setStorageLocation] = useState(initial?.material_storage_location ?? "")
   const [condition, setCondition] = useState(initial?.condition ?? "")
-  const [testMethods, setTestMethods] = useState<TestMethodRef[]>(initial?.testMethods ?? [])
+  const [testMethods, setTestMethods] = useState<string[]>(initial?.test_methods ?? [])
+  const [selectedJob, setSelectedJob] = useState<{job_id: string, project_name: string, client_name: string} | undefined>(undefined)
 
   const isEditing = Boolean(initial)
   const maxWidth = useMemo(() => (state === "expanded" ? "lg:max-w-[calc(100vw-24.5rem)]" : "lg:max-w-screen"), [state])
 
-  const toggleMethodById = useCallback((methodId: string) => {
-    const opt = DUMMY_METHOD_OPTIONS.find(o => o.id === methodId)
-    if (!opt) return
-    const asRef: TestMethodRef = { id: opt.id, name: opt.test_name }
-    const exists = testMethods.some(tm => tm.id === methodId)
-    if (exists) {
-      setTestMethods(prev => prev.filter(tm => tm.id !== methodId))
-    } else {
-      setTestMethods(prev => [...prev, asRef])
+  // Load selected job data when editing
+  useEffect(() => {
+    const loadSelectedJob = async () => {
+      if (initial?.job_id) {
+        try {
+          const response = await sampleInformationService.search(initial.job_id, 1)
+          const job = response.results.find(j => j.job_id === initial.job_id)
+          if (job) {
+            setSelectedJob({
+              job_id: job.job_id,
+              project_name: job.project_name,
+              client_name: job.client_name
+            })
+          }
+        } catch (error) {
+          console.error("Failed to load selected job:", error)
+        }
+      }
     }
-  }, [testMethods])
+
+    loadSelectedJob()
+  }, [initial?.job_id])
+
+  // Update form when initial data changes (for edit mode)
+  useEffect(() => {
+    if (initial) {
+      setJob(initial.job_id ?? "")
+      setDescription(initial.description ?? "")
+      setMtcNo(initial.mtc_no ?? "")
+      setSampleType(initial.sample_type ?? "")
+      setMaterialType(initial.material_type ?? "")
+      setHeatNo(initial.heat_no ?? "")
+      setStorageLocation(initial.material_storage_location ?? "")
+      setCondition(initial.condition ?? "")
+      setTestMethods(initial.test_methods ?? [])
+    }
+  }, [initial])
+
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
-    if (!sampleInformationId.trim()) {
-      toast.error("Sample Information ID is required")
+    if (!job.trim()) {
+      toast.error("Job ID is required")
       return
     }
     
@@ -76,26 +94,28 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
     }
 
     const payload: CreateSampleDetailData = {
-      sampleInformationId: sampleInformationId.trim(),
-      indexNo,
+      job: job.trim(),
       description: description.trim(),
-      mtcNo: mtcNo.trim() || undefined,
-      sampleType: sampleType.trim() || undefined,
-      materialType: materialType.trim() || undefined,
-      heatNo: heatNo.trim() || undefined,
-      storageLocation: storageLocation.trim() || undefined,
+      mtc_no: mtcNo.trim() || undefined,
+      sample_type: sampleType.trim() || undefined,
+      material_type: materialType.trim() || undefined,
+      heat_no: heatNo.trim() || undefined,
+      material_storage_location: storageLocation.trim() || undefined,
       condition: condition.trim() || undefined,
-      testMethods,
+      test_methods: testMethods,
     }
 
     if (isEditing && initial) {
-      sampleDetailService.update(initial.id, payload as UpdateSampleDetailData)
+      sampleDetailService.update(initial.id.toString(), payload as UpdateSampleDetailData)
         .then(() => { 
           queryClient.invalidateQueries({ queryKey: ['sample-details'] })
           toast.success("Sample detail updated"); 
           router.push(ROUTES.APP.SAMPLE_DETAILS.ROOT) 
         })
-        .catch(() => toast.error("Failed to update"))
+        .catch((error) => {
+          console.error("Failed to update sample detail:", error)
+          toast.error("Failed to update sample detail")
+        })
       return
     }
 
@@ -105,7 +125,10 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
         toast.success("Sample detail created"); 
         router.push(ROUTES.APP.SAMPLE_DETAILS.ROOT) 
       })
-      .catch(() => toast.error("Failed to create"))
+      .catch((error) => {
+        console.error("Failed to create sample detail:", error)
+        toast.error("Failed to create sample detail")
+      })
   }
 
   return (
@@ -121,12 +144,14 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           <div className="grid gap-2">
-            <Label>Sample Information ID</Label>
-            <Input placeholder="Enter sample information ID" value={sampleInformationId} onChange={(e) => setSampleInformationId(e.target.value)} disabled={readOnly} />
-          </div>
-          <div className="grid gap-2">
-            <Label>Index No</Label>
-            <Input type="number" placeholder="1" value={indexNo} onChange={(e) => setIndexNo(Number(e.target.value))} disabled={readOnly} />
+            <Label>Job ID</Label>
+            <JobSelector
+              value={job}
+              onValueChange={setJob}
+              placeholder="Select job..."
+              disabled={readOnly}
+              selectedJob={selectedJob}
+            />
           </div>
           <div className="grid gap-2 md:col-span-2 xl:col-span-3">
             <Label>Description</Label>
@@ -134,68 +159,36 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
           </div>
           <div className="grid gap-2">
             <Label>MTC No</Label>
-            <Input placeholder="N/A" value={mtcNo} onChange={(e) => setMtcNo(e.target.value)} disabled={readOnly} />
+            <Input placeholder="MTC-001" value={mtcNo} onChange={(e) => setMtcNo(e.target.value)} disabled={readOnly} />
           </div>
           <div className="grid gap-2">
             <Label>Sample Type</Label>
-            <Input placeholder="round" value={sampleType} onChange={(e) => setSampleType(e.target.value)} disabled={readOnly} />
+            <Input placeholder="TENSILE" value={sampleType} onChange={(e) => setSampleType(e.target.value)} disabled={readOnly} />
           </div>
           <div className="grid gap-2">
             <Label>Material Type</Label>
-            <Input placeholder="carbon steel" value={materialType} onChange={(e) => setMaterialType(e.target.value)} disabled={readOnly} />
+            <Input placeholder="STEEL" value={materialType} onChange={(e) => setMaterialType(e.target.value)} disabled={readOnly} />
           </div>
           <div className="grid gap-2">
             <Label>Heat No</Label>
-            <Input placeholder="Heat no." value={heatNo} onChange={(e) => setHeatNo(e.target.value)} disabled={readOnly} />
+            <Input placeholder="H123456" value={heatNo} onChange={(e) => setHeatNo(e.target.value)} disabled={readOnly} />
           </div>
           <div className="grid gap-2">
             <Label>Storage Location</Label>
-            <Input placeholder="RACK D" value={storageLocation} onChange={(e) => setStorageLocation(e.target.value)} disabled={readOnly} />
+            <Input placeholder="Storage A1" value={storageLocation} onChange={(e) => setStorageLocation(e.target.value)} disabled={readOnly} />
           </div>
           <div className="grid gap-2">
             <Label>Condition</Label>
-            <Input placeholder="GOOD" value={condition} onChange={(e) => setCondition(e.target.value)} disabled={readOnly} />
+            <Input placeholder="AS_RECEIVED" value={condition} onChange={(e) => setCondition(e.target.value)} disabled={readOnly} />
           </div>
           <div className="grid gap-2 md:col-span-2 xl:col-span-3">
             <Label>Test Methods</Label>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between" disabled={readOnly}>
-                  <ScrollArea className="w-[260px]">
-                    <div className="flex flex-nowrap items-center gap-1">
-                      {testMethods.length > 0 ? (
-                        testMethods.map((method) => (
-                          <span key={method.id} className="rounded bg-primary px-2 py-1 text-xs whitespace-nowrap text-primary-foreground">
-                            {method.name}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="whitespace-nowrap text-muted-foreground">Select Test Methods</span>
-                      )}
-                    </div>
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
-                  <ChevronDown className="h-4 w-4 ml-2 opacity-70" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="z-50 w-full" align="start" sideOffset={5}>
-                {DUMMY_METHOD_OPTIONS.length > 0 ? (
-                  DUMMY_METHOD_OPTIONS.map((opt) => (
-                    <DropdownMenuCheckboxItem
-                      key={opt.id}
-                      checked={testMethods.some(tm => tm.id === opt.id)}
-                      onCheckedChange={() => toggleMethodById(opt.id)}
-                      onSelect={(event) => event.preventDefault()}
-                      disabled={readOnly}
-                    >
-                      {opt.test_name}
-                    </DropdownMenuCheckboxItem>
-                  ))
-                ) : (
-                  <div className="px-2 py-1 text-sm text-muted-foreground">No test methods available</div>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <TestMethodsSelector
+              value={testMethods}
+              onValueChange={setTestMethods}
+              placeholder="Select test methods..."
+              disabled={readOnly}
+            />
           </div>
         </CardContent>
       </Card>

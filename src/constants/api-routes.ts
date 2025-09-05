@@ -60,12 +60,12 @@ export const API_ROUTES = {
     SAMPLE_INFORMATION_STATISTICS: 'jobs/statistics/',
 
     // Sample Details
-    ADD_SAMPLE_DETAIL: "sample-details/",
-    UPDATE_SAMPLE_DETAIL: (id: string) => `sample-details/${id}/`,
-    DELETE_SAMPLE_DETAIL: (id: string) => `sample-details/${id}/`,
-    ALL_SAMPLE_DETAILS: "sample-details/",
-    SAMPLE_DETAIL_BY_ID: (id: string) => `sample-details/${id}/`,
-    SEARCH_SAMPLE_DETAILS: "sample-details/search/",
-    SAMPLE_DETAIL_STATISTICS: 'sample-details/statistics/',
+    ADD_SAMPLE_DETAIL: "samples/",
+    UPDATE_SAMPLE_DETAIL: (id: string) => `samples/${id}/`,
+    DELETE_SAMPLE_DETAIL: (id: string) => `samples/${id}/`,
+    ALL_SAMPLE_DETAILS: "samples/",
+    SAMPLE_DETAIL_BY_ID: (id: string) => `samples/${id}/`,
+    SEARCH_SAMPLE_DETAILS: "samples/search/",
+    SAMPLE_DETAIL_STATISTICS: 'samples/statistics/',
   }
 }

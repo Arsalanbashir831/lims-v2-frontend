@@ -6,9 +6,9 @@ import { api } from "./api/ky"
 const TestMethodSchema = z.object({
   id: z.string(),
   test_name: z.string(),
-  test_description: z.string().nullable(),
+  test_description: z.string().nullable().optional(),
   test_columns: z.array(z.string()),
-  comments: z.string().nullable(),
+  comments: z.string().nullable().optional(),
   is_active: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
