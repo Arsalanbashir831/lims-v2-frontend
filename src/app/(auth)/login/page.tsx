@@ -19,18 +19,18 @@ export default function LoginPage() {
   const router = useRouter()
 
   const { mutateAsync: doLogin } = useMutation({
-    mutationFn: (p: { email: string; password: string }) => loginApi(p),
+    mutationFn: (p: { username: string; password: string }) => loginApi(p),
   })
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget as HTMLFormElement
-    const email = (form.email as any).value.trim()
+    const username = (form.username as any).value.trim()
     const password = (form.password as any).value
-    if (!email || !password) return
+    if (!username || !password) return
     setIsLoading(true)
     try {
-      await doLogin({ email, password })
+      await doLogin({ username, password })
       toast.success("Signed in")
       const role = getUser<{ role?: string }>()?.role as any
       router.push(getHomeRouteForRole(role))
@@ -53,10 +53,10 @@ export default function LoginPage() {
 
       <form className="space-y-6" onSubmit={onSubmit}>
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+          <Label htmlFor="username" className="text-sm font-medium">Username</Label>
           <div className="relative">
             <UserRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input id="email" name="email" type="text" placeholder="Enter your Email" className="h-11 pl-10" required />
+            <Input id="username" name="username" type="text" placeholder="Enter your Username" className="h-11 pl-10" required />
           </div>
         </div>
 

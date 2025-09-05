@@ -1,7 +1,45 @@
-export interface Client {
-  id?: string
+import { API_ROUTES } from "@/constants/api-routes"
+import { api } from "./api/ky"
+import { z } from "zod"
+
+// API Response schemas
+const ClientSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  phone: z.string().nullable(),
+  contact_person: z.string().nullable(),
+  email: z.string().nullable(),
+  address_line_1: z.string().nullable().optional(),
+  address_line_2: z.string().nullable().optional(),
+  city: z.string().nullable(),
+  state: z.string().nullable().optional(),
+  postal_code: z.string().nullable().optional(),
+  country: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  is_active: z.boolean(),
+  created_at: z.string(),
+  updated_at: z.string().optional(),
+  created_by: z.number().optional(),
+  updated_by: z.number().optional(),
+  created_by_username: z.string().optional(),
+  updated_by_username: z.string().optional(),
+  full_address: z.string().optional(),
+})
+
+const ClientListResponseSchema = z.object({
+  count: z.number(),
+  // Some endpoints (e.g., search) may omit next/previous entirely
+  next: z.string().nullable().optional(),
+  previous: z.string().nullable().optional(),
+  results: z.array(ClientSchema),
+})
+
+export type Client = z.infer<typeof ClientSchema>
+export type ClientListResponse = z.infer<typeof ClientListResponseSchema>
+
+export interface CreateClientData {
   name: string
-  phone?: string
+  phone: string
   contact_person?: string
   email?: string
   address_line_1?: string
@@ -9,115 +47,65 @@ export interface Client {
   state?: string
   postal_code?: string
   country?: string
-  createdAt?: string
-  updatedAt?: string
 }
 
-// Mock data for development
-const mockClients: Client[] = [
-  {
-    id: "1",
-    name: "Saudi Aramco",
-    phone: "+966-13-874-0000",
-    contact_person: "Ahmed Al-Rashid",
-    email: "ahmed.rashid@aramco.com",
-    address_line_1: "Dhahran 31311",
-    city: "Dhahran",
-    state: "Eastern Province",
-    postal_code: "31311",
-    country: "Saudi Arabia",
-    createdAt: "2024-01-15T10:30:00Z",
-    updatedAt: "2024-01-15T10:30:00Z"
-  },
-  {
-    id: "2",
-    name: "SABIC",
-    phone: "+966-13-330-2000",
-    contact_person: "Fatima Al-Zahra",
-    email: "fatima.zahra@sabic.com",
-    address_line_1: "P.O. Box 5101",
-    city: "Riyadh",
-    state: "Riyadh Province",
-    postal_code: "11422",
-    country: "Saudi Arabia",
-    createdAt: "2024-01-20T14:15:00Z",
-    updatedAt: "2024-01-20T14:15:00Z"
-  },
-  {
-    id: "3",
-    name: "ACWA Power",
-    phone: "+966-11-203-8000",
-    contact_person: "Mohammed Al-Sheikh",
-    email: "mohammed.sheikh@acwapower.com",
-    address_line_1: "King Fahd Road",
-    city: "Riyadh",
-    state: "Riyadh Province",
-    postal_code: "12345",
-    country: "Saudi Arabia",
-    createdAt: "2024-02-01T09:45:00Z",
-    updatedAt: "2024-02-01T09:45:00Z"
-  }
-]
-
-// Simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+export interface UpdateClientData extends Partial<CreateClientData> {}
 
 export const clientService = {
-  async getAll(): Promise<Client[]> {
-    await delay(500)
-    return [...mockClients]
-  },
-
-  async getById(id: string): Promise<Client | null> {
-    await delay(300)
-    return mockClients.find(client => client.id === id) || null
-  },
-
-  async create(data: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>): Promise<Client> {
-    await delay(800)
-    const newClient: Client = {
-      ...data,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    mockClients.push(newClient)
-    return newClient
-  },
-
-  async update(id: string, data: Partial<Omit<Client, 'id' | 'createdAt' | 'updatedAt'>>): Promise<Client> {
-    await delay(600)
-    const index = mockClients.findIndex(client => client.id === id)
-    if (index === -1) {
-      throw new Error('Client not found')
-    }
+  async getAll(page: number = 1): Promise<{ results: Client[]; count: number; next: string | null; previous: string | null }> {
+    const response = await api.get(API_ROUTES.Lab_MANAGERS.ALL_CLIENTS, {
+      searchParams: { 
+        is_active: true,
+        page
+      }
+    }).json()
     
-    const updatedClient: Client = {
-      ...mockClients[index],
-      ...data,
-      updatedAt: new Date().toISOString()
+    const validated = ClientListResponseSchema.parse(response)
+    return {
+      results: validated.results,
+      count: validated.count,
+      next: validated.next ?? null,
+      previous: validated.previous ?? null
     }
-    mockClients[index] = updatedClient
-    return updatedClient
   },
 
-  async delete(id: string): Promise<void> {
-    await delay(400)
-    const index = mockClients.findIndex(client => client.id === id)
-    if (index === -1) {
-      throw new Error('Client not found')
-    }
-    mockClients.splice(index, 1)
+  async getById(id: string | number): Promise<Client> {
+    const response = await api.get(API_ROUTES.Lab_MANAGERS.CLIENT_BY_ID(id.toString())).json()
+    return ClientSchema.parse(response)
   },
 
-  async search(query: string): Promise<Client[]> {
-    await delay(300)
-    const lowercaseQuery = query.toLowerCase()
-    return mockClients.filter(client => 
-      client.name.toLowerCase().includes(lowercaseQuery) ||
-      client.contact_person?.toLowerCase().includes(lowercaseQuery) ||
-      client.email?.toLowerCase().includes(lowercaseQuery) ||
-      client.city?.toLowerCase().includes(lowercaseQuery)
-    )
+  async create(data: CreateClientData): Promise<Client> {
+    const response = await api.post(API_ROUTES.Lab_MANAGERS.ADD_CLIENT, {
+      json: data
+    }).json()
+    
+    return ClientSchema.parse(response)
+  },
+
+  async update(id: string | number, data: UpdateClientData): Promise<Client> {
+    const response = await api.patch(API_ROUTES.Lab_MANAGERS.UPDATE_CLIENT(id.toString()), {
+      json: data
+    }).json()
+    
+    return ClientSchema.parse(response)
+  },
+
+  async delete(id: string | number): Promise<void> {
+    await api.delete(`core/clients/${id}/`)
+  },
+
+  async search(query: string, page: number = 1): Promise<{ results: Client[]; count: number; next: string | null; previous: string | null }> {
+    // Build URL manually so spaces remain encoded as %20 not +
+    const qEncoded = encodeURIComponent(query)
+    const url = `${API_ROUTES.Lab_MANAGERS.SEARCH_CLIENTS}?q=${qEncoded}&page=${page}`
+    const response = await api.get(url).json()
+    
+    const validated = ClientListResponseSchema.parse(response)
+    return {
+      results: validated.results,
+      count: validated.count,
+      next: validated.next ?? null,
+      previous: validated.previous ?? null
+    }
   }
 }

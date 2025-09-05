@@ -1,29 +1,32 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ClientForm } from "@/components/clients/client-form"
-import { clientService, Client } from "@/lib/clients"
+import { clientService, CreateClientData } from "@/lib/clients"
 import { ROUTES } from "@/constants/routes"
 import { toast } from "sonner"
 import { FormHeader } from "@/components/common/form-header"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 export default function NewClientPage() {
     const router = useRouter()
-    const [saving, setSaving] = useState(false)
+    const queryClient = useQueryClient()
 
-    const handleSubmit = async (data: Client) => {
-        try {
-            setSaving(true)
-            await clientService.create(data)
+    const createMutation = useMutation({
+        mutationFn: (data: CreateClientData) => clientService.create(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['clients'] })
             toast.success("Client created successfully")
             router.push(ROUTES.APP.CLIENTS.ROOT)
-        } catch (error) {
+        },
+        onError: (error) => {
             toast.error("Failed to create client")
             console.error("Create error:", error)
-        } finally {
-            setSaving(false)
         }
+    })
+
+    const handleSubmit = async (data: CreateClientData) => {
+        createMutation.mutate(data)
     }
 
     const handleCancel = () => {
@@ -36,7 +39,7 @@ export default function NewClientPage() {
             <ClientForm
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
-                readOnly={saving}
+                readOnly={createMutation.isPending}
             />
         </div>
     )

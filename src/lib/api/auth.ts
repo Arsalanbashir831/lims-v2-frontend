@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { api } from "./ky"
 import { setTokens, setUser, getRefreshToken, clearTokens } from "../auth/storage"
+import { API_ROUTES } from "@/constants/api-routes"
 
 const LoginResponse = z.object({
   refresh: z.string(),
@@ -12,14 +13,13 @@ const LoginResponse = z.object({
     first_name: z.string().optional().nullable().transform((v) => v ?? ""),
     last_name: z.string().optional().nullable().transform((v) => v ?? ""),
     role: z.string(),
-    email_verified: z.boolean().optional().default(false),
   }),
 })
 
 export type LoginResponseT = z.infer<typeof LoginResponse>
 
-export async function login(payload: { email: string; password: string }) {
-  const json = await api.post("auth/login/", { json: payload }).json()
+export async function login(payload: { username: string; password: string }) {
+  const json = await api.post(API_ROUTES.AUTH.LOGIN, { json: payload }).json()
   const parsed = LoginResponse.parse(json)
   // set tokens and user
   setTokens(parsed.access, parsed.refresh)
@@ -30,7 +30,6 @@ export async function login(payload: { email: string; password: string }) {
     first_name: parsed.user.first_name,
     last_name: parsed.user.last_name,
     role: (parsed.user.role as any) ?? "supervisor",
-    email_verified: parsed.user.email_verified,
   })
   return parsed
 }
@@ -39,7 +38,7 @@ export async function logout() {
   const refresh = getRefreshToken()
   try {
     if (refresh) {
-      await api.post("auth/logout/", { json: { refresh_token: refresh } })
+      await api.post(API_ROUTES.AUTH.LOGOUT, { json: { refresh_token: refresh } })
     }
   } catch (e) {
     // ignore network/API errors on logout
@@ -51,7 +50,7 @@ export async function logout() {
 export async function refreshAccess() {
   const refresh = getRefreshToken()
   if (!refresh) throw new Error("No refresh token")
-  const res = await api.post("auth/token/refresh/", { json: { refresh } }).json<{ access: string }>()
+  const res = await api.post(API_ROUTES.AUTH.REFRESH, { json: { refresh } }).json<{ access: string }>()
   setTokens(res.access, refresh)
   return res.access
 }

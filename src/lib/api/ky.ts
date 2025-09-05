@@ -1,12 +1,13 @@
 import ky, { HTTPError, Options } from "ky"
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from "../auth/storage"
+import { API_ROUTES } from "@/constants/api-routes"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
 async function refreshToken() {
   const refresh = getRefreshToken()
   if (!refresh) throw new Error("No refresh token")
-  const res = await ky.post(`${API_BASE_URL}/auth/token/refresh/`, {
+  const res = await ky.post(`${API_BASE_URL}${API_ROUTES.AUTH.REFRESH}`, {
     json: { refresh },
     timeout: 15000,
   }).json<{ access: string }>()

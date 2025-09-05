@@ -1,62 +1,52 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ClientForm } from "@/components/clients/client-form"
-import { clientService, Client } from "@/lib/clients"
+import { clientService, Client, UpdateClientData } from "@/lib/clients"
 import { ROUTES } from "@/constants/routes"
 import { toast } from "sonner"
 import { FormHeader } from "@/components/common/form-header"
 import { Button } from "@/components/ui/button"
 import { PencilIcon, XIcon } from "lucide-react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
 export default function EditClientPage() {
   const params = useParams()
   const router = useRouter()
-  const [client, setClient] = useState<Client | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const queryClient = useQueryClient()
   const [isEditing, setIsEditing] = useState(false)
 
   const id = params.id as string
 
-  useEffect(() => {
-    const loadClient = async () => {
-      try {
-        setLoading(true)
-        const data = await clientService.getById(id)
-        if (data) {
-          setClient(data)
-        } else {
-          toast.error("Client not found")
-          router.push(ROUTES.APP.CLIENTS.ROOT)
-        }
-      } catch (error) {
-        toast.error("Failed to load client")
-        console.error("Load error:", error)
-        router.push(ROUTES.APP.CLIENTS.ROOT)
-      } finally {
-        setLoading(false)
-      }
-    }
+  const { data: client, isLoading: loading, error } = useQuery({
+    queryKey: ['clients', id],
+    queryFn: () => {
+      console.log(`🔄 Fetching client details for ID: ${id}`)
+      return clientService.getById(id)
+    },
+    enabled: !!id,
+  })
 
-    if (id) {
-      loadClient()
-    }
-  }, [id, router])
+  // Debug logging
+  console.log("📊 Edit page - client data:", client)
 
-  const handleSubmit = async (data: Client) => {
-    try {
-      setSaving(true)
-      await clientService.update(id, data)
+  const updateMutation = useMutation({
+    mutationFn: (data: UpdateClientData) => clientService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] })
+      queryClient.invalidateQueries({ queryKey: ['clients', id] })
       toast.success("Client updated successfully")
       router.push(ROUTES.APP.CLIENTS.ROOT)
-    } catch (error) {
+    },
+    onError: (error) => {
       toast.error("Failed to update client")
       console.error("Update error:", error)
-    } finally {
-      setSaving(false)
     }
+  })
+
+  const handleSubmit = async (data: UpdateClientData) => {
+    updateMutation.mutate(data)
   }
 
   const handleCancel = () => {
@@ -71,7 +61,7 @@ export default function EditClientPage() {
     )
   }
 
-  if (!client) {
+  if (error || !client) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-muted-foreground">Client not found</div>
@@ -90,10 +80,11 @@ export default function EditClientPage() {
       </FormHeader>
       
       <ClientForm
+        key={client?.id} // Force re-render when client changes
         initialData={client}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
-        readOnly={!isEditing}
+        readOnly={!isEditing || updateMutation.isPending}
       />
     </div>
   )

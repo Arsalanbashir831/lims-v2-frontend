@@ -6,23 +6,11 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-
-interface Client {
-  id?: string
-  name: string
-  phone?: string
-  contact_person?: string
-  email?: string
-  address_line_1?: string
-  city?: string
-  state?: string
-  postal_code?: string
-  country?: string
-}
+import type { Client, CreateClientData, UpdateClientData } from "@/lib/clients"
 
 interface ClientFormProps {
   initialData?: Client
-  onSubmit: (data: Client) => void
+  onSubmit: (data: CreateClientData | UpdateClientData) => void
   onCancel: () => void
   readOnly?: boolean
 }
@@ -33,7 +21,7 @@ export function ClientForm({
   onCancel,
   readOnly = false
 }: ClientFormProps) {
-  const createInitialFormData = (): Client => ({
+  const createInitialFormData = (): CreateClientData => ({
     name: "",
     phone: "",
     contact_person: "",
@@ -43,20 +31,32 @@ export function ClientForm({
     state: "",
     postal_code: "",
     country: "",
-    ...initialData
+    ...(initialData ? {
+      name: initialData.name,
+      phone: initialData.phone || "",
+      contact_person: initialData.contact_person || "",
+      email: initialData.email || "",
+      address_line_1: initialData.address_line_1 || "",
+      city: initialData.city || "",
+      state: initialData.state || "",
+      postal_code: initialData.postal_code || "",
+      country: initialData.country || "",
+    } : {})
   })
 
-  const [formData, setFormData] = useState<Client>(createInitialFormData())
-  const [originalFormData, setOriginalFormData] = useState<Client>(createInitialFormData())
+  const [formData, setFormData] = useState<CreateClientData>(createInitialFormData())
+  const [originalFormData, setOriginalFormData] = useState<CreateClientData>(createInitialFormData())
 
   useEffect(() => {
     // Update both form data and original data when initialData changes
+    console.log("🔄 ClientForm: initialData changed", initialData)
     const updatedData = createInitialFormData()
+    console.log("📝 ClientForm: created form data", updatedData)
     setFormData(updatedData)
     setOriginalFormData(updatedData)
   }, [initialData])
 
-  const handleInputChange = (field: keyof Client, value: any) => {
+  const handleInputChange = (field: keyof CreateClientData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -124,7 +124,7 @@ export function ClientForm({
 
           {/* Address Information */}
           <div className="grid gap-2">
-            <Label htmlFor="address_line_1">Address Line 1</Label>
+            <Label htmlFor="address_line_1">Address</Label>
             <Textarea 
               id="address_line_1" 
               value={formData.address_line_1 || ""} 
@@ -194,4 +194,4 @@ export function ClientForm({
   )
 }
 
-export type { Client }
+export type { Client } from "@/lib/clients"
