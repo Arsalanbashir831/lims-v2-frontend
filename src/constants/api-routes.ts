@@ -49,5 +49,23 @@ export const API_ROUTES = {
     TEST_METHOD_BY_ID: (id: string) => `test-methods/${id}/`,
     SEARCH_TEST_METHODS: "test-methods/search/",
     TEST_METHOD_STATISTICS: 'test-methods/statistics/',
+
+    // Sample Information
+    ADD_SAMPLE_INFORMATION: "jobs/",
+    UPDATE_SAMPLE_INFORMATION: (id: string) => `jobs/${id}/`,
+    DELETE_SAMPLE_INFORMATION: (id: string) => `jobs/${id}/`,
+    ALL_SAMPLE_INFORMATION: "jobs/",
+    SAMPLE_INFORMATION_BY_ID: (id: string) => `jobs/${id}/`,
+    SEARCH_SAMPLE_INFORMATION: "jobs/search/",
+    SAMPLE_INFORMATION_STATISTICS: 'jobs/statistics/',
+
+    // Sample Details
+    ADD_SAMPLE_DETAIL: "sample-details/",
+    UPDATE_SAMPLE_DETAIL: (id: string) => `sample-details/${id}/`,
+    DELETE_SAMPLE_DETAIL: (id: string) => `sample-details/${id}/`,
+    ALL_SAMPLE_DETAILS: "sample-details/",
+    SAMPLE_DETAIL_BY_ID: (id: string) => `sample-details/${id}/`,
+    SEARCH_SAMPLE_DETAILS: "sample-details/search/",
+    SAMPLE_DETAIL_STATISTICS: 'sample-details/statistics/',
   }
 }

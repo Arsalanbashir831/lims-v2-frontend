@@ -1,20 +1,13 @@
 import { z } from "zod"
-import ky from "ky"
 import { API_ROUTES } from "@/constants/api-routes"
 import { api } from "./api/ky"
-
-// Test column schema for the JSON field
-const TestColumnSchema = z.object({
-  index: z.number(),
-  column_name: z.string(),
-})
 
 // API response schemas
 const TestMethodSchema = z.object({
   id: z.string(),
   test_name: z.string(),
   test_description: z.string().nullable(),
-  test_columns: z.array(z.string()), // Backend expects array of strings
+  test_columns: z.array(z.string()),
   comments: z.string().nullable(),
   is_active: z.boolean(),
   createdAt: z.string(),
@@ -40,7 +33,7 @@ export type TestMethod = z.infer<typeof TestMethodSchema>
 export type CreateTestMethodData = {
   test_name: string
   test_description?: string
-  test_columns: string[] // Backend expects array of strings
+  test_columns: string[]
   comments?: string
   is_active?: boolean
 }

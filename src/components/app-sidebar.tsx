@@ -43,6 +43,8 @@ const navItems = [
     icon: FileText,
     items: [
       { href: ROUTES.APP.SAMPLE_RECEIVING.ROOT, label: "Sample Receiving" },
+      { href: ROUTES.APP.SAMPLE_INFORMATION.ROOT, label: "Sample Information" },
+      { href: ROUTES.APP.SAMPLE_DETAILS.ROOT, label: "Sample Details" },
       { href: ROUTES.APP.SAMPLE_PREPARATION.ROOT, label: "Sample Preparation" },
     ]
   },

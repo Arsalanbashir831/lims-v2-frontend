@@ -24,7 +24,7 @@ export default function TestMethodsPage() {
     const [currentPage, setCurrentPage] = useState(1)
     const [searchQuery, setSearchQuery] = useState("")
 
-    const { data: tmData, isLoading, isFetching } = useQuery({
+    const { data: tmData, isFetching } = useQuery({
         queryKey: ['test-methods', currentPage, searchQuery],
         queryFn: () => (searchQuery.trim() ? testMethodService.search(searchQuery.trim(), currentPage) : testMethodService.getAll(currentPage)),
         staleTime: 5 * 60 * 1000,

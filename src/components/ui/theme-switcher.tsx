@@ -56,8 +56,21 @@ export const ThemeSwitcher = ({
     setMounted(true);
   }, []);
 
+  // Always render something, never return null
   if (!mounted) {
-    return null;
+    return (
+      <div className={cn(
+        'relative isolate flex items-center justify-between gap-2 h-8 rounded-full bg-background p-1 px-3 ring-1 ring-border',
+        className
+      )}>
+        <div className="flex items-center gap-2">
+          <div className="h-6 w-6 rounded-full bg-muted animate-pulse" />
+          <div className="h-6 w-6 rounded-full bg-muted animate-pulse" />
+          <div className="h-6 w-6 rounded-full bg-muted animate-pulse" />
+        </div>
+        <div className="h-4 w-12 bg-muted animate-pulse rounded" />
+      </div>
+    );
   }
 
   return (

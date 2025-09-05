@@ -30,6 +30,16 @@ export const ROUTES = {
             NEW: "/sample-receiving/new",
             EDIT: (id: string) => `/sample-receiving/${id}/edit`,
         },
+        SAMPLE_INFORMATION: {
+            ROOT: "/sample-information",
+            NEW: "/sample-information/new",
+            EDIT: (id: string) => `/sample-information/${id}/edit`,
+        },
+        SAMPLE_DETAILS: {
+            ROOT: "/sample-details",
+            NEW: "/sample-details/new",
+            EDIT: (id: string) => `/sample-details/${id}/edit`,
+        },
         SAMPLE_PREPARATION: {
             ROOT: "/sample-preparation",
             NEW: "/sample-preparation/new",

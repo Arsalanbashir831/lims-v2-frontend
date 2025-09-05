@@ -15,11 +15,18 @@ export function RequireAuth({ children }: PropsWithChildren) {
       setChecked(true)
       return
     }
-    if (getAccessToken()) { setChecked(true); return }
+    if (getAccessToken()) { 
+      setChecked(true)
+      return 
+    }
     router.replace("/login")
   }, [pathname, router])
 
-  if (!checked) return null
+  // Always render something, never return null
+  if (!checked) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
+  }
+  
   return <>{children}</>
 }
 

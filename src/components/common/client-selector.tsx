@@ -14,6 +14,7 @@ interface ClientSelectorProps {
   placeholder?: string
   disabled?: boolean
   className?: string
+  selectedClient?: Client // Pass the selected client data directly
 }
 
 export function ClientSelector({
@@ -21,20 +22,29 @@ export function ClientSelector({
   onValueChange,
   placeholder = "Select client...",
   disabled = false,
-  className
+  className,
+  selectedClient: propSelectedClient
 }: ClientSelectorProps) {
   const [open, setOpen] = useState(false)
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Load clients on component mount
+  // Load clients based on search query
   useEffect(() => {
     const loadClients = async () => {
       try {
         setLoading(true)
-        const data = await clientService.getAll()
-        setClients(data)
+        // If no search query, load all clients; otherwise search
+        const response = searchQuery.trim() 
+          ? await clientService.search(searchQuery, 1)
+          : await clientService.getAll(1)
+        
+        console.log("Search query:", searchQuery)
+        console.log("API response:", response)
+        console.log("Clients set:", response.results)
+        
+        setClients(response.results)
       } catch (error) {
         console.error("Failed to load clients:", error)
       } finally {
@@ -42,26 +52,29 @@ export function ClientSelector({
       }
     }
 
-    loadClients()
-  }, [])
+    // Debounce the search to avoid too many API calls
+    const timeoutId = setTimeout(() => {
+      loadClients()
+    }, searchQuery.trim() ? 300 : 0) // No delay for initial load
 
-  // Filter clients based on search query
-  const filteredClients = useMemo(() => {
-    if (!searchQuery.trim()) return clients
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery])
 
-    const query = searchQuery.toLowerCase()
-    return clients.filter(client =>
-      client.name.toLowerCase().includes(query)
-    )
-  }, [clients, searchQuery])
+  // No need for client-side filtering since we're using server-side search
+  const filteredClients = clients
 
-  // Find selected client
+  // Find selected client - use prop if available, otherwise find from clients array
   const selectedClient = useMemo(() => {
-    return clients.find(client => client.id === value)
-  }, [clients, value])
+    // If we have a prop selected client and it matches the value, use it
+    if (propSelectedClient && propSelectedClient.id.toString() === value) {
+      return propSelectedClient
+    }
+    // Otherwise, try to find from the clients array
+    return clients.find(client => client.id.toString() === value)
+  }, [clients, value, propSelectedClient])
 
   const handleSelect = (clientId: string) => {
-    const client = clients.find(c => c.id === clientId)
+    const client = clients.find(c => c.id.toString() === clientId)
     if (client) {
       onValueChange(clientId, client)
       setOpen(false)
@@ -95,7 +108,7 @@ export function ClientSelector({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
-        <Command>
+        <Command shouldFilter={false}>
           <div className="flex items-center border-b">
            <CommandInput
               placeholder="Search clients..."
@@ -111,15 +124,15 @@ export function ClientSelector({
               </div>
             ) : filteredClients.length === 0 ? (
               <CommandEmpty>
-                {searchQuery ? "No clients found." : "No clients available."}
+                {searchQuery ? `No clients found for "${searchQuery}".` : "No clients available."}
               </CommandEmpty>
             ) : (
               <CommandGroup>
                 {filteredClients.map((client) => (
                   <CommandItem
                     key={client.id}
-                    value={client.id}
-                    onSelect={() => handleSelect(client.id!)}
+                    value={client.id.toString()}
+                    onSelect={() => handleSelect(client.id.toString())}
                     className="flex flex-col items-start py-3"
                   >
                     <div className="flex items-center justify-between w-full">
@@ -129,7 +142,7 @@ export function ClientSelector({
                       <Check
                         className={cn(
                           "ml-auto h-4 w-4",
-                          value === client.id ? "opacity-100" : "opacity-0"
+                          value === client.id.toString() ? "opacity-100" : "opacity-0"
                         )}
                       />
                     </div>
