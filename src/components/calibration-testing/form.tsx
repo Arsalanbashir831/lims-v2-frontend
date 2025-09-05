@@ -7,23 +7,25 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
-import { CalibrationTest, createCalibrationTest, updateCalibrationTest } from "@/lib/calibration-testing"
+import { CalibrationTest, calibrationTestService, CreateCalibrationTestData, UpdateCalibrationTestData } from "@/lib/calibration-testing"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
+import { useQueryClient } from "@tanstack/react-query"
 
 type Props = { initial?: CalibrationTest, readOnly?: boolean }
 
 export function CalibrationTestingForm({ initial, readOnly = false }: Props) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const isEditing = useMemo(() => Boolean(initial), [initial])
 
   const [equipmentName, setEquipmentName] = useState(initial?.equipmentName ?? "")
   const [equipmentSerial, setEquipmentSerial] = useState(initial?.equipmentSerial ?? "")
-  const [vendor, setVendor] = useState(initial?.vendor ?? "")
+  const [vendor, setVendor] = useState((initial as any)?.calibrationVendor ?? "")
   const [calibrationDate, setCalibrationDate] = useState(initial?.calibrationDate ?? "")
   const [calibrationDueDate, setCalibrationDueDate] = useState(initial?.calibrationDueDate ?? "")
-  const [certification, setCertification] = useState(initial?.certification ?? "")
+  const [certification, setCertification] = useState((initial as any)?.calibrationCertification ?? "")
   const [createdBy, setCreatedBy] = useState(initial?.createdBy ?? "")
   const [updatedBy, setUpdatedBy] = useState(initial?.updatedBy ?? "")
   const [remarks, setRemarks] = useState(initial?.remarks ?? "")
@@ -34,28 +36,36 @@ export function CalibrationTestingForm({ initial, readOnly = false }: Props) {
       toast.error("Equipment/Instrument Name is required")
       return
     }
-    const payload = {
+    const payload: CreateCalibrationTestData = {
       equipmentName: equipmentName.trim(),
       equipmentSerial: equipmentSerial.trim() || undefined,
-      vendor: vendor.trim() || undefined,
+      calibrationVendor: vendor.trim() || undefined,
       calibrationDate: calibrationDate || undefined,
       calibrationDueDate: calibrationDueDate || undefined,
-      certification: certification.trim() || undefined,
+      calibrationCertification: certification.trim() || undefined,
       createdBy: createdBy.trim() || undefined,
       updatedBy: updatedBy.trim() || undefined,
       remarks: remarks.trim() || undefined,
     }
 
     if (isEditing && initial) {
-      updateCalibrationTest(initial.id, payload)
-      toast.success("Record updated")
-      router.push(ROUTES.APP.CALIBRATION_TESTING.ROOT)
+      calibrationTestService.update(initial.id, payload as UpdateCalibrationTestData)
+        .then(() => { 
+          queryClient.invalidateQueries({ queryKey: ['calibration-tests'] })
+          toast.success("Record updated"); 
+          router.push(ROUTES.APP.CALIBRATION_TESTING.ROOT) 
+        })
+        .catch(() => toast.error("Failed to update"))
       return
     }
 
-    createCalibrationTest(payload)
-    toast.success("Record created")
-    router.push(ROUTES.APP.CALIBRATION_TESTING.ROOT)
+    calibrationTestService.create(payload)
+      .then(() => { 
+        queryClient.invalidateQueries({ queryKey: ['calibration-tests'] })
+        toast.success("Record created"); 
+        router.push(ROUTES.APP.CALIBRATION_TESTING.ROOT) 
+      })
+      .catch(() => toast.error("Failed to create"))
   }
 
   return (

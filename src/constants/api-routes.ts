@@ -32,5 +32,13 @@ export const API_ROUTES = {
     SEARCH_PROF_TESTS: "proficiency-tests/search/",
     PROF_TEST_STATISTICS: 'proficiency-tests/statistics/',
     
+    // Calibration Tests
+    ADD_CALIBRATION_TEST: "calibration-tests/",
+    UPDATE_CALIBRATION_TEST: (id: string) => `calibration-tests/${id}/`,
+    DELETE_CALIBRATION_TEST: (id: string) => `calibration-tests/${id}/`,
+    ALL_CALIBRATION_TESTS: "calibration-tests/",
+    CALIBRATION_TEST_BY_ID: (id: string) => `calibration-tests/${id}/`,
+    SEARCH_CALIBRATION_TESTS: "calibration-tests/search/",
+    CALIBRATION_TEST_STATISTICS: 'calibration-tests/statistics/',
   }
 }

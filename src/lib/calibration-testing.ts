@@ -1,79 +1,91 @@
-"use client"
+import { api } from "./api/ky"
+import { z } from "zod"
+import { API_ROUTES } from "@/constants/api-routes"
 
-export type CalibrationTest = {
-  id: string
+export const CalibrationTestSchema = z.object({
+  id: z.string(),
+  equipmentName: z.string(),
+  equipmentSerial: z.string().nullable().optional(),
+  calibrationVendor: z.string().nullable().optional(),
+  calibrationDate: z.string().nullable().optional(),
+  calibrationDueDate: z.string().nullable().optional(),
+  calibrationCertification: z.string().nullable().optional(),
+  remarks: z.string().nullable().optional(),
+  createdBy: z.string().nullable().optional(),
+  updatedBy: z.string().nullable().optional(),
+  is_active: z.boolean().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+})
+
+export const CalibrationTestListSchema = z.object({
+  count: z.number(),
+  next: z.string().nullable().optional(),
+  previous: z.string().nullable().optional(),
+  results: z.array(CalibrationTestSchema),
+})
+
+export type CalibrationTest = z.infer<typeof CalibrationTestSchema>
+export type CalibrationTestListResponse = z.infer<typeof CalibrationTestListSchema>
+
+export type CreateCalibrationTestData = {
   equipmentName: string
   equipmentSerial?: string
-  vendor?: string
+  calibrationVendor?: string
   calibrationDate?: string
   calibrationDueDate?: string
-  certification?: string
+  calibrationCertification?: string
+  remarks?: string
   createdBy?: string
   updatedBy?: string
-  remarks?: string
-  createdAt: string
-  updatedAt: string
 }
 
-const STORAGE_KEY = "lims:calibration-tests"
+export type UpdateCalibrationTestData = Partial<CreateCalibrationTestData>
 
-function readAll(): CalibrationTest[] {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as CalibrationTest[]) : []
-  } catch {
-    return []
-  }
+export const calibrationTestService = {
+  async getAll(page: number = 1): Promise<{ results: CalibrationTest[]; count: number; next: string | null; previous: string | null }> {
+    const response = await api.get(API_ROUTES.Lab_MANAGERS.ALL_CALIBRATION_TESTS, {
+      searchParams: { page, is_active: true }
+    }).json()
+    const validated = CalibrationTestListSchema.parse(response)
+    return {
+      results: validated.results,
+      count: validated.count,
+      next: validated.next ?? null,
+      previous: validated.previous ?? null,
+    }
+  },
+
+  async getById(id: string | number): Promise<CalibrationTest> {
+    const response = await api.get(API_ROUTES.Lab_MANAGERS.CALIBRATION_TEST_BY_ID(String(id))).json()
+    return CalibrationTestSchema.parse(response)
+  },
+
+  async create(data: CreateCalibrationTestData): Promise<CalibrationTest> {
+    const response = await api.post(API_ROUTES.Lab_MANAGERS.ADD_CALIBRATION_TEST, { json: data }).json()
+    return CalibrationTestSchema.parse(response)
+  },
+
+  async update(id: string | number, data: UpdateCalibrationTestData): Promise<CalibrationTest> {
+    const response = await api.patch(API_ROUTES.Lab_MANAGERS.UPDATE_CALIBRATION_TEST(String(id)), { json: data }).json()
+    return CalibrationTestSchema.parse(response)
+  },
+
+  async delete(id: string | number): Promise<void> {
+    await api.delete(API_ROUTES.Lab_MANAGERS.DELETE_CALIBRATION_TEST(String(id)))
+  },
+
+  async search(query: string, page: number = 1): Promise<{ results: CalibrationTest[]; count: number; next: string | null; previous: string | null }> {
+    const response = await api.get(API_ROUTES.Lab_MANAGERS.SEARCH_CALIBRATION_TESTS, {
+      searchParams: { q: query, page }
+    }).json()
+    const validated = CalibrationTestListSchema.parse(response)
+    return {
+      results: validated.results,
+      count: validated.count,
+      next: validated.next ?? null,
+      previous: validated.previous ?? null,
+    }
+  },
 }
-
-function writeAll(items: CalibrationTest[]) {
-  if (typeof window === "undefined") return
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-}
-
-// Fallback UUID
-function generateId(): string {
-  if (typeof crypto !== "undefined" && (crypto as any).randomUUID) return (crypto as any).randomUUID()
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0
-    const v = c === "x" ? r : (r & 0x3) | 0x8
-    return v.toString(16)
-  })
-}
-
-export function listCalibrationTests(): CalibrationTest[] {
-  return readAll().sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
-}
-
-export function getCalibrationTest(id: string): CalibrationTest | undefined {
-  return readAll().find((m) => m.id === id)
-}
-
-export function createCalibrationTest(data: Omit<CalibrationTest, "id" | "createdAt" | "updatedAt">): CalibrationTest {
-  const now = new Date().toISOString()
-  const item: CalibrationTest = { ...data, id: generateId(), createdAt: now, updatedAt: now }
-  const items = readAll()
-  items.push(item)
-  writeAll(items)
-  return item
-}
-
-export function updateCalibrationTest(id: string, updates: Partial<Omit<CalibrationTest, "id" | "createdAt">>): CalibrationTest | undefined {
-  const items = readAll()
-  const idx = items.findIndex((m) => m.id === id)
-  if (idx === -1) return undefined
-  const updated: CalibrationTest = { ...items[idx], ...updates, updatedAt: new Date().toISOString() }
-  items[idx] = updated
-  writeAll(items)
-  return updated
-}
-
-export function deleteCalibrationTest(id: string): boolean {
-  const items = readAll()
-  const next = items.filter((m) => m.id !== id)
-  writeAll(next)
-  return next.length !== items.length
-}
-
 
