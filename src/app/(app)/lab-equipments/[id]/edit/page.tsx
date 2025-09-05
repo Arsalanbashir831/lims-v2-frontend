@@ -1,12 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useParams } from "next/navigation"
 import { EquipmentForm } from "@/components/equipments/form"
-import { getEquipment, Equipment } from "@/lib/equipments"
+import { equipmentService, Equipment } from "@/lib/equipments"
 import { ROUTES } from "@/constants/routes"
 import { FormHeader } from "@/components/common/form-header"
 import { Button } from "@/components/ui/button"
+import { useQuery } from "@tanstack/react-query"
 import { PencilIcon, XIcon } from "lucide-react"
 
 export default function EditEquipmentPage() {
@@ -14,11 +15,16 @@ export default function EditEquipmentPage() {
   const [record, setRecord] = useState<Equipment | undefined>(undefined)
   const [isEditing, setIsEditing] = useState(false)
 
-  useEffect(() => {
-    if (params?.id) setRecord(getEquipment(params.id))
-  }, [params?.id])
+  const id = params?.id as string
+  const { data, isLoading } = useQuery({
+    queryKey: ['equipments', id],
+    queryFn: () => equipmentService.getById(id),
+    enabled: !!id,
+  })
+  
+  const recordData = data
 
-  if (!record) return <p className="text-muted-foreground">Loading...</p>
+  if (isLoading || !recordData) return <p className="text-muted-foreground">Loading...</p>
 
   return (
     <div className="grid gap-4">
@@ -29,7 +35,7 @@ export default function EditEquipmentPage() {
         <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}><XIcon className="w-4 h-4 mr-1" /> Cancel</Button>
       )}
       </FormHeader>
-      <EquipmentForm initial={record} readOnly={!isEditing} />
+      <EquipmentForm initial={recordData as any} readOnly={!isEditing} />
     </div>
   )
 }

@@ -9,20 +9,22 @@ import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Equipment, createEquipment, updateEquipment } from "@/lib/equipments"
+import { Equipment, equipmentService, CreateEquipmentData, UpdateEquipmentData } from "@/lib/equipments"
 import { ROUTES } from "@/constants/routes"
+import { useQueryClient } from "@tanstack/react-query"
 
 type Props = { initial?: Equipment, readOnly?: boolean }
 
 export function EquipmentForm({ initial, readOnly = false }: Props) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const isEditing = useMemo(() => Boolean(initial), [initial])
 
-  const [name, setName] = useState(initial?.name ?? "")
-  const [serial, setSerial] = useState(initial?.serial ?? "")
+  const [name, setName] = useState((initial as any)?.equipmentName ?? "")
+  const [serial, setSerial] = useState((initial as any)?.equipmentSerial ?? "")
   const [status, setStatus] = useState(initial?.status ?? "")
-  const [lastInternalVerificationDate, setLastInternalVerificationDate] = useState(initial?.lastInternalVerificationDate ?? "")
-  const [internalVerificationDueDate, setInternalVerificationDueDate] = useState(initial?.internalVerificationDueDate ?? "")
+  const [lastInternalVerificationDate, setLastInternalVerificationDate] = useState((initial as any)?.lastVerification ?? "")
+  const [internalVerificationDueDate, setInternalVerificationDueDate] = useState((initial as any)?.verificationDue ?? "")
   const [createdBy, setCreatedBy] = useState(initial?.createdBy ?? "")
   const [updatedBy, setUpdatedBy] = useState(initial?.updatedBy ?? "")
   const [remarks, setRemarks] = useState(initial?.remarks ?? "")
@@ -33,27 +35,35 @@ export function EquipmentForm({ initial, readOnly = false }: Props) {
       toast.error("Equipment Name is required")
       return
     }
-    const payload = {
-      name: name.trim(),
-      serial: serial.trim() || undefined,
+    const payload: CreateEquipmentData = {
+      equipmentName: name.trim(),
+      equipmentSerial: serial.trim() || undefined,
       status: status.trim() || undefined,
-      lastInternalVerificationDate: lastInternalVerificationDate || undefined,
-      internalVerificationDueDate: internalVerificationDueDate || undefined,
+      lastVerification: lastInternalVerificationDate || undefined,
+      verificationDue: internalVerificationDueDate || undefined,
       createdBy: createdBy.trim() || undefined,
       updatedBy: updatedBy.trim() || undefined,
       remarks: remarks.trim() || undefined,
     }
 
     if (isEditing && initial) {
-      updateEquipment(initial.id, payload)
-      toast.success("Record updated")
-      router.push(ROUTES.APP.LAB_EQUIPMENTS.ROOT)
+      equipmentService.update((initial as any).id, payload as UpdateEquipmentData)
+        .then(() => { 
+          queryClient.invalidateQueries({ queryKey: ['equipments'] })
+          toast.success("Record updated"); 
+          router.push(ROUTES.APP.LAB_EQUIPMENTS.ROOT) 
+        })
+        .catch(() => toast.error("Failed to update"))
       return
     }
 
-    createEquipment(payload)
-    toast.success("Record created")
-    router.push(ROUTES.APP.LAB_EQUIPMENTS.ROOT)
+    equipmentService.create(payload)
+      .then(() => { 
+        queryClient.invalidateQueries({ queryKey: ['equipments'] })
+        toast.success("Record created"); 
+        router.push(ROUTES.APP.LAB_EQUIPMENTS.ROOT) 
+      })
+      .catch(() => toast.error("Failed to create"))
   }
 
   return (

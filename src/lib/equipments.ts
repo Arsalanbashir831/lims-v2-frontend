@@ -1,77 +1,94 @@
-"use client"
+import { api } from "./api/ky"
+import { z } from "zod"
+import { API_ROUTES } from "@/constants/api-routes"
 
-export type Equipment = {
-  id: string
-  name: string
-  serial?: string
+// Backend payload and response schemas
+export const EquipmentSchema = z.object({
+  id: z.string(),
+  equipmentName: z.string(),
+  equipmentSerial: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+  lastVerification: z.string().nullable().optional(),
+  verificationDue: z.string().nullable().optional(),
+  remarks: z.string().nullable().optional(),
+  createdBy: z.string().nullable().optional(),
+  updatedBy: z.string().nullable().optional(),
+  is_active: z.boolean().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  created_by_username: z.string().optional(),
+  is_verification_overdue: z.boolean().nullable().optional(),
+  days_until_verification: z.number().nullable().optional(),
+  verification_status_display: z.string().optional(),
+})
+
+export const EquipmentListResponseSchema = z.object({
+  count: z.number(),
+  next: z.string().nullable().optional(),
+  previous: z.string().nullable().optional(),
+  results: z.array(EquipmentSchema),
+})
+
+export type Equipment = z.infer<typeof EquipmentSchema>
+export type EquipmentListResponse = z.infer<typeof EquipmentListResponseSchema>
+
+export type CreateEquipmentData = {
+  equipmentName: string
+  equipmentSerial?: string
   status?: string
-  lastInternalVerificationDate?: string
-  internalVerificationDueDate?: string
+  lastVerification?: string // yyyy-mm-dd
+  verificationDue?: string // yyyy-mm-dd
+  remarks?: string
   createdBy?: string
   updatedBy?: string
-  remarks?: string
-  createdAt: string
-  updatedAt: string
 }
 
-const STORAGE_KEY = "lims:equipments"
+export type UpdateEquipmentData = Partial<CreateEquipmentData>
 
-function readAll(): Equipment[] {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as Equipment[]) : []
-  } catch {
-    return []
-  }
+export const equipmentService = {
+  async getAll(page: number = 1): Promise<{ results: Equipment[]; count: number; next: string | null; previous: string | null }> {
+    const response = await api.get(API_ROUTES.Lab_MANAGERS.ALL_EQUIPMENTS, {
+      searchParams: { page, is_active: true }
+    }).json()
+    const validated = EquipmentListResponseSchema.parse(response)
+    return {
+      results: validated.results,
+      count: validated.count,
+      next: validated.next ?? null,
+      previous: validated.previous ?? null,
+    }
+  },
+
+  async getById(id: string | number): Promise<Equipment> {
+    const response = await api.get(API_ROUTES.Lab_MANAGERS.EQUIPMENT_BY_ID(String(id))).json()
+    return EquipmentSchema.parse(response)
+  },
+
+  async create(data: CreateEquipmentData): Promise<Equipment> {
+    const response = await api.post(API_ROUTES.Lab_MANAGERS.ADD_EQUIPMENT, { json: data }).json()
+    return EquipmentSchema.parse(response)
+  },
+
+  async update(id: string | number, data: UpdateEquipmentData): Promise<Equipment> {
+    const response = await api.patch(API_ROUTES.Lab_MANAGERS.UPDATE_EQUIPMENT(String(id)), { json: data }).json()
+    return EquipmentSchema.parse(response)
+  },
+
+  async delete(id: string | number): Promise<void> {
+    await api.delete(API_ROUTES.Lab_MANAGERS.DELETE_EQUIPMENT(String(id)))
+  },
+
+  async search(query: string, page: number = 1): Promise<{ results: Equipment[]; count: number; next: string | null; previous: string | null }> {
+    const qEncoded = encodeURIComponent(query)
+    const url = `${API_ROUTES.Lab_MANAGERS.SEARCH_EQUIPMENTS}?q=${qEncoded}&page=${page}`
+    const response = await api.get(url).json()
+    const validated = EquipmentListResponseSchema.parse(response)
+    return {
+      results: validated.results,
+      count: validated.count,
+      next: validated.next ?? null,
+      previous: validated.previous ?? null,
+    }
+  },
 }
-
-function writeAll(items: Equipment[]) {
-  if (typeof window === "undefined") return
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-}
-
-function generateId(): string {
-  if (typeof crypto !== "undefined" && (crypto as any).randomUUID) return (crypto as any).randomUUID()
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0
-    const v = c === "x" ? r : (r & 0x3) | 0x8
-    return v.toString(16)
-  })
-}
-
-export function listEquipments(): Equipment[] {
-  return readAll().sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
-}
-
-export function getEquipment(id: string): Equipment | undefined {
-  return readAll().find((m) => m.id === id)
-}
-
-export function createEquipment(data: Omit<Equipment, "id" | "createdAt" | "updatedAt">): Equipment {
-  const now = new Date().toISOString()
-  const item: Equipment = { ...data, id: generateId(), createdAt: now, updatedAt: now }
-  const items = readAll()
-  items.push(item)
-  writeAll(items)
-  return item
-}
-
-export function updateEquipment(id: string, updates: Partial<Omit<Equipment, "id" | "createdAt">>): Equipment | undefined {
-  const items = readAll()
-  const idx = items.findIndex((m) => m.id === id)
-  if (idx === -1) return undefined
-  const updated: Equipment = { ...items[idx], ...updates, updatedAt: new Date().toISOString() }
-  items[idx] = updated
-  writeAll(items)
-  return updated
-}
-
-export function deleteEquipment(id: string): boolean {
-  const items = readAll()
-  const next = items.filter((m) => m.id !== id)
-  writeAll(next)
-  return next.length !== items.length
-}
-
 
