@@ -1,29 +1,20 @@
 import type { DynamicColumn, DynamicRow } from "@/components/pqr/form/dynamic-table"
 
 export type CertificateDetails = {
-  dateOfSampling: string
-  dateOfTesting: string
-  issueDate: string
-  gripcoRefNo: string
-  revisionNo: string
-  clientName: string
-  poNumber: string
-  customerNameAndNo: string
+  date_of_sampling: string
+  date_of_testing: string
+  issue_date: string
+  gripco_ref_no: string
+  revision_no: string
+  client_name: string
+  customer_name_no: string
   atten: string
-  customerPo: string
-  projectName: string
-  laboratoryName: string
+  customer_po: string
+  project_name: string
+  name_of_laboratory: string
   address: string
-  sampleDescription: string
-  materialGrade: string
-  temperature: string
-  humidity: string
-  samplePreparationMethod: string
-  testEquipment: string
-  equipmentCalibration: string
-  equipmentExpiryDate: string
-  mtcNo: string
-  heatNo: string
+  tested_by: string
+  reviewed_by: string
 }
 
 export type ReportItem = {
@@ -32,6 +23,15 @@ export type ReportItem = {
   specimenId: string
   testMethodId: string
   testMethodName: string
+  testEquipment: string
+  testEquipmentId: string
+  samplePrepMethod: string
+  sampleDescription: string
+  materialGrade: string
+  heatNo: string
+  temperature: string
+  humidity: string
+  comments: string
   columns: DynamicColumn[]
   data: DynamicRow[]
 }

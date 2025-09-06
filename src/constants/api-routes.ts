@@ -73,11 +73,16 @@ export const API_ROUTES = {
 
     // Sample Preparation (Complete Requests)
     ADD_SAMPLE_PREPARATION: "complete-requests/",
-    UPDATE_SAMPLE_PREPARATION: (id: string) => `complete-requests/${id}/`,
     DELETE_SAMPLE_PREPARATION: (id: string) => `complete-requests/${id}/`,
     ALL_SAMPLE_PREPARATIONS: "complete-requests/",
     GET_SAMPLE_PREPARATION: (id: string) => `complete-requests/${id}/`,
-    SEARCH_SAMPLE_PREPARATIONS: "complete-requests/search/",
-    SAMPLE_PREPARATION_STATISTICS: 'complete-requests/statistics/',
+
+    // Complete Certificates
+    ADD_COMPLETE_CERTIFICATE: "complete-certificates/",
+    UPDATE_COMPLETE_CERTIFICATE: (id: string) => `complete-certificates/${id}/`,
+    DELETE_COMPLETE_CERTIFICATE: (id: string) => `complete-certificates/${id}/`,
+    ALL_COMPLETE_CERTIFICATES: "complete-certificates/",
+    COMPLETE_CERTIFICATE_BY_ID: (id: string) => `complete-certificates/${id}/`,
+    SEARCH_COMPLETE_CERTIFICATES: "complete-certificates/search/",
   }
 }
