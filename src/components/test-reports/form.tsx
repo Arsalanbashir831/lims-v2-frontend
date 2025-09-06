@@ -13,7 +13,7 @@ import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { PlusIcon, TrashIcon } from "lucide-react"
 import type { TestReport } from "@/lib/test-reports"
 import { generateReportNo, type CertificateDetails, type ReportItem } from "@/lib/test-reports"
-import { listSamplePreparations } from "@/lib/sample-preparation"
+import { samplePreparationService } from "@/lib/sample-preparation"
 import { listSampleReceivings } from "@/lib/sample-receiving"
 import { DynamicTable, type DynamicColumn, type DynamicRow } from "@/components/pqr/form/dynamic-table"
 
@@ -47,9 +47,21 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
   })
   const [items, setItems] = useState<ReportItem[]>(initialData?.items ?? [])
 
-  const allPreps = useMemo(() => listSamplePreparations(), [])
+  const [allPreps, setAllPreps] = useState<any[]>([])
   const prepsMap = useMemo(() => new Map(allPreps.map(p => [p.id, p])), [allPreps])
   const selectedPrep = useMemo(() => prepsMap.get(preparationId) ?? null, [preparationId, prepsMap])
+
+  useEffect(() => {
+    const loadPreps = async () => {
+      try {
+        const response = await samplePreparationService.getAll(1)
+        setAllPreps(response.results)
+      } catch (error) {
+        console.error("Failed to load preparations:", error)
+      }
+    }
+    loadPreps()
+  }, [])
   const recMap = useMemo(() => new Map(listSampleReceivings().map(r => [r.id, r])), [])
 
   useEffect(() => {

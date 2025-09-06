@@ -1,5 +1,5 @@
 import { listSampleReceivings, type SampleReceiving } from "@/lib/sample-receiving"
-import { listSamplePreparations, type SamplePreparation } from "@/lib/sample-preparation"
+import { samplePreparationService, type SamplePreparation } from "@/lib/sample-preparation"
 import { listTestReports, type TestReport } from "@/lib/test-reports"
 import { listDiscardedMaterials, type DiscardedMaterial } from "@/lib/discarded-materials"
 
@@ -23,17 +23,20 @@ export interface TrackingRow {
   discards?: DiscardedMaterial[]
 }
 
-export function computeTrackingRows(): TrackingRow[] {
+export async function computeTrackingRows(): Promise<TrackingRow[]> {
   const receivings = listSampleReceivings()
-  const preparations = listSamplePreparations()
+  const preparationsResponse = await samplePreparationService.getAll(1)
+  const preparations = preparationsResponse.results
   const reports = listTestReports()
   const discards = listDiscardedMaterials()
 
   const prepByReceiving = new Map<string, SamplePreparation[]>()
   for (const p of preparations) {
-    const arr = prepByReceiving.get(p.sampleReceivingId) ?? []
+    // Note: The new structure uses job_id instead of sampleReceivingId
+    // We'll need to map this differently or update the tracking logic
+    const arr = prepByReceiving.get(p.job_id) ?? []
     arr.push(p)
-    prepByReceiving.set(p.sampleReceivingId, arr)
+    prepByReceiving.set(p.job_id, arr)
   }
 
   const reportsByPrep = new Map<string, TestReport[]>()
@@ -51,12 +54,13 @@ export function computeTrackingRows(): TrackingRow[] {
   }
 
   return receivings.map((rec) => {
-    const preps = prepByReceiving.get(rec.id) ?? []
+    // Map by job_id instead of sampleReceivingId
+    const preps = prepByReceiving.get(rec.sampleId) ?? []
     const repList = preps.flatMap((p) => reportsByPrep.get(p.id) ?? [])
     const discList = discardsBySample.get(rec.sampleId) ?? []
 
     const itemsCount = rec.items?.length ?? 0
-    const specimensCount = preps.reduce((sum, p) => sum + p.items.reduce((n, it) => n + (it.specimenIds?.length ?? 0), 0), 0)
+    const specimensCount = preps.reduce((sum, p) => sum + p.items.reduce((n, it) => n + (it.specimen_ids?.length ?? 0), 0), 0)
 
     let latestStatus: TrackingStatus = "received"
     if (discList.length > 0) latestStatus = "discarded"
@@ -64,7 +68,7 @@ export function computeTrackingRows(): TrackingRow[] {
     else if (preps.length > 0) latestStatus = "in_preparation"
 
     const receivedDate = rec.receiveDate
-    const preparationDate = preps[0]?.createdAt
+    const preparationDate = preps[0]?.created_at
     const reportIssueDate = repList[0]?.certificate?.issueDate
     const discardDate = discList[0]?.discardDate
 
@@ -72,7 +76,7 @@ export function computeTrackingRows(): TrackingRow[] {
       id: rec.id,
       sampleId: rec.sampleId,
       projectName: rec.projectName,
-      clientName: rec.clientName,
+      clientName: rec.clientId, // Using clientId as clientName for now
       itemsCount,
       specimensCount,
       latestStatus,

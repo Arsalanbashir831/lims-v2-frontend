@@ -35,7 +35,7 @@ export function DataTableViewOptions<TData>({ table }: { table: TanstackTable<TD
                 checked={column.getIsVisible()}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
-                {column.id}
+                {column.id.replace(/_/g, ' ')}
               </DropdownMenuCheckboxItem>
             )
           })}

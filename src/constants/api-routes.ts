@@ -67,5 +67,17 @@ export const API_ROUTES = {
     SAMPLE_DETAIL_BY_ID: (id: string) => `samples/${id}/`,
     SEARCH_SAMPLE_DETAILS: "samples/search/",
     SAMPLE_DETAIL_STATISTICS: 'samples/statistics/',
+
+    // Complete Jobs
+    GET_COMPLETE_JOB: (jobId: string) => `complete-jobs/${jobId}/`,
+
+    // Sample Preparation (Complete Requests)
+    ADD_SAMPLE_PREPARATION: "complete-requests/",
+    UPDATE_SAMPLE_PREPARATION: (id: string) => `complete-requests/${id}/`,
+    DELETE_SAMPLE_PREPARATION: (id: string) => `complete-requests/${id}/`,
+    ALL_SAMPLE_PREPARATIONS: "complete-requests/",
+    GET_SAMPLE_PREPARATION: (id: string) => `complete-requests/${id}/`,
+    SEARCH_SAMPLE_PREPARATIONS: "complete-requests/search/",
+    SAMPLE_PREPARATION_STATISTICS: 'complete-requests/statistics/',
   }
 }

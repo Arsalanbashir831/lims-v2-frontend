@@ -10,7 +10,7 @@ import { DataTablePagination } from "@/components/ui/data-table-pagination"
 import { FilterSearch } from "@/components/ui/filter-search"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { listTestReports, deleteTestReport, type TestReport } from "@/lib/test-reports"
-import { listSamplePreparations, type SamplePreparation } from "@/lib/sample-preparation"
+import { samplePreparationService, type SamplePreparation } from "@/lib/sample-preparation"
 import { listSampleReceivings, type SampleReceiving } from "@/lib/sample-receiving"
 import { toast } from "sonner"
 import { PencilIcon, TrashIcon, EyeIcon } from "lucide-react"
@@ -26,7 +26,21 @@ export default function TestReportsPage() {
   const router = useRouter()
 
   const reload = useCallback(() => setItems(listTestReports()), [])
-  useEffect(() => { reload(); setPreps(listSamplePreparations()); setRecs(listSampleReceivings()) }, [])
+  
+  useEffect(() => { 
+    reload()
+    setRecs(listSampleReceivings())
+    
+    const loadPreps = async () => {
+      try {
+        const response = await samplePreparationService.getAll(1)
+        setPreps(response.results)
+      } catch (error) {
+        console.error("Failed to load preparations:", error)
+      }
+    }
+    loadPreps()
+  }, [])
 
   const prepMap = useMemo(() => new Map(preps.map(p => [p.id, p])), [preps])
   const recMap = useMemo(() => new Map(recs.map(r => [r.id, r])), [recs])

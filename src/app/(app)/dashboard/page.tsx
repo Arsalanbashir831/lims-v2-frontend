@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -86,7 +86,19 @@ const mockData = {
 export default function DashboardPage() {
   const [selectedPeriod, setSelectedPeriod] = useState("month")
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const trackingRows = useMemo(() => computeTrackingRows(), [])
+  const [trackingRows, setTrackingRows] = useState([])
+
+  useEffect(() => {
+    const loadTrackingRows = async () => {
+      try {
+        const rows = await computeTrackingRows()
+        setTrackingRows(rows)
+      } catch (error) {
+        console.error("Failed to load tracking rows:", error)
+      }
+    }
+    loadTrackingRows()
+  }, [])
 
   const getStatusColor = (status: string) => {
     switch (status) {

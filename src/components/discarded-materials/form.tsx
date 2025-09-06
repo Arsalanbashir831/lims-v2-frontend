@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Check, ChevronsUpDown, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { CreateDiscardedMaterialData, DiscardedItem } from "@/lib/discarded-materials"
-import { listSamplePreparations } from "@/lib/sample-preparation"
+import { samplePreparationService } from "@/lib/sample-preparation"
 import { listSampleReceivings } from "@/lib/sample-receiving"
 
 interface Props {
@@ -31,10 +31,22 @@ export function DiscardedMaterialForm({ initialData, onSubmit, readOnly = false 
   const [selectedSpecimens, setSelectedSpecimens] = useState<string[]>(initialData?.items?.map(item => item.specimenId) ?? [])
   const [openSpecimenSelect, setOpenSpecimenSelect] = useState(false)
 
-  const allPreps = useMemo(() => listSamplePreparations(), [])
+  const [allPreps, setAllPreps] = useState<any[]>([])
   const recMap = useMemo(() => new Map(listSampleReceivings().map(r => [r.id, r])), [])
   
   const selectedPrep = useMemo(() => allPreps.find(p => p.id === jobId), [allPreps, jobId])
+
+  useEffect(() => {
+    const loadPreps = async () => {
+      try {
+        const response = await samplePreparationService.getAll(1)
+        setAllPreps(response.results)
+      } catch (error) {
+        console.error("Failed to load preparations:", error)
+      }
+    }
+    loadPreps()
+  }, [])
   const selectedRec = useMemo(() => selectedPrep ? recMap.get(selectedPrep.sampleReceivingId) : null, [selectedPrep, recMap])
 
   // Get all available specimen IDs from the selected preparation
