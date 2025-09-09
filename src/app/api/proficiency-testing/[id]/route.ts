@@ -18,6 +18,7 @@ export async function GET(
     const { id } = await params
     const doc = await collection.findOne({ _id: new ObjectId(id), $or: [{ is_active: true }, { is_active: { $exists: false } }] })
     if (!doc) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    const toValidDate = (v: any) => { const d = v instanceof Date ? v : (v ? new Date(v) : undefined); return d && !isNaN(d.getTime()) ? d : undefined }
     return NextResponse.json({
       id: doc._id.toString(),
       description: doc.description,
@@ -29,8 +30,8 @@ export async function GET(
       status: doc.status ?? null,
       remarks: doc.remarks ?? null,
       is_active: doc.is_active !== false,
-      createdAt: (doc.createdAt instanceof Date ? doc.createdAt : new Date(doc.createdAt)).toISOString(),
-      updatedAt: doc.updatedAt ? (doc.updatedAt instanceof Date ? doc.updatedAt : new Date(doc.updatedAt)).toISOString() : undefined,
+      createdAt: (toValidDate(doc.createdAt) || new Date()).toISOString(),
+      updatedAt: toValidDate(doc.updatedAt)?.toISOString(),
     })
   } catch (error) {
     console.error('API Error:', error)
