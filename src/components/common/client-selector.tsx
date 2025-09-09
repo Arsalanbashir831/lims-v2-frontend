@@ -99,7 +99,7 @@ export function ClientSelector({
         >
           {selectedClient ? (
             <p>
-              {selectedClient.name}
+              {selectedClient.client_name}
             </p>
           ) : (
             <span className="text-muted-foreground">{placeholder}</span>
@@ -137,7 +137,7 @@ export function ClientSelector({
                   >
                     <div className="flex items-center justify-between w-full">
                       <p>
-                        {client.name}
+                        {client.client_name}
                       </p>
                       <Check
                         className={cn(

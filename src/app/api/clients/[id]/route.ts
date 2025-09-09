@@ -7,7 +7,7 @@ import { ObjectId } from "mongodb"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -20,8 +20,9 @@ export async function GET(
     const db = client.db('lims')
     const collection = db.collection('clients')
     
+    const { id } = await params
     const clientDoc = await collection.findOne({ 
-      _id: new ObjectId(params.id),
+      _id: new ObjectId(id),
       $or: [ { is_active: true }, { is_active: { $exists: false } } ]
     })
     
@@ -60,7 +61,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -95,8 +96,9 @@ export async function PATCH(
       updated_by: session.user.id,
     }
     
+    const { id } = await params
     const result = await collection.updateOne(
-      { _id: new ObjectId(params.id) },
+      { _id: new ObjectId(id) },
       { $set: updateData }
     )
     
@@ -105,12 +107,13 @@ export async function PATCH(
     }
     
     // Return the updated client
-    const updatedClient = await collection.findOne({ _id: new ObjectId(params.id) })
+    const updatedClient = await collection.findOne({ _id: new ObjectId(id) })
 
     if (!updatedClient) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 })
     }
     
+    const toValidDate = (v: any) => { const d = v instanceof Date ? v : (v ? new Date(v) : undefined); return d && !isNaN(d.getTime()) ? d : undefined }
     return NextResponse.json({
       id: updatedClient._id.toString(),
       client_name: updatedClient.client_name,
@@ -124,8 +127,8 @@ export async function PATCH(
       country: updatedClient.country,
       notes: updatedClient.notes,
       is_active: updatedClient.is_active,
-      created_at: updatedClient.created_at.toISOString(),
-      updated_at: updatedClient.updated_at?.toISOString(),
+      created_at: (toValidDate(updatedClient.created_at) || new Date()).toISOString(),
+      updated_at: toValidDate(updatedClient.updated_at)?.toISOString(),
       created_by: updatedClient.created_by,
       updated_by: updatedClient.updated_by,
     })
