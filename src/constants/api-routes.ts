@@ -20,20 +20,20 @@ export const API_ROUTES = {
     SEARCH_EQUIPMENTS: "equipments/search",
 
     // Proficiency Tests
-    ADD_PROF_TEST: "proficiency-tests",
-    UPDATE_PROF_TEST: (id: string) => `proficiency-tests/${id}`,
-    DELETE_PROF_TEST: (id: string) => `proficiency-tests/${id}`,
-    ALL_PROF_TESTS: "proficiency-tests",
-    PROF_TEST_BY_ID: (id: string) => `proficiency-tests/${id}`,
-    SEARCH_PROF_TESTS: "proficiency-tests/search",
+    ADD_PROF_TEST: "proficiency-testing",
+    UPDATE_PROF_TEST: (id: string) => `proficiency-testing/${id}`,
+    DELETE_PROF_TEST: (id: string) => `proficiency-testing/${id}`,
+    ALL_PROF_TESTS: "proficiency-testing",
+    PROF_TEST_BY_ID: (id: string) => `proficiency-testing/${id}`,
+    SEARCH_PROF_TESTS: "proficiency-testing/search",
     
     // Calibration Tests
-    ADD_CALIBRATION_TEST: "calibration-tests",
-    UPDATE_CALIBRATION_TEST: (id: string) => `calibration-tests/${id}`,
-    DELETE_CALIBRATION_TEST: (id: string) => `calibration-tests/${id}`,
-    ALL_CALIBRATION_TESTS: "calibration-tests",
-    CALIBRATION_TEST_BY_ID: (id: string) => `calibration-tests/${id}`,
-    SEARCH_CALIBRATION_TESTS: "calibration-tests/search",
+    ADD_CALIBRATION_TEST: "calibration-testing",
+    UPDATE_CALIBRATION_TEST: (id: string) => `calibration-testing/${id}`,
+    DELETE_CALIBRATION_TEST: (id: string) => `calibration-testing/${id}`,
+    ALL_CALIBRATION_TESTS: "calibration-testing",
+    CALIBRATION_TEST_BY_ID: (id: string) => `calibration-testing/${id}`,
+    SEARCH_CALIBRATION_TESTS: "calibration-testing/search",
 
     // Test Methods
     ADD_TEST_METHOD: "test-methods",
