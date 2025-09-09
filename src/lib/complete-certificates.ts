@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { api } from "./api/ky"
+import { api } from "./api/client"
 import { API_ROUTES } from "@/constants/api-routes"
 
 // Test Results Schema for JSON field - Object with columns and data

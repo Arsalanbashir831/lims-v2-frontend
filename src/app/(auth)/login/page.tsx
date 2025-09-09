@@ -1,26 +1,22 @@
 "use client"
 
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
 import { Eye, EyeOff, Lock, UserRound } from "lucide-react"
-import { useMutation } from "@tanstack/react-query"
-import { login as loginApi } from "@/lib/api/auth"
+import { signIn } from "next-auth/react"
 import { toast } from "sonner"
+import Link from "next/link"
 import { getHomeRouteForRole } from "@/lib/auth/roles"
-import { getUser } from "@/lib/auth/storage"
+import { UserRole } from "@/lib/schemas/user"
+import { ROUTES } from "@/constants/routes"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
-
-  const { mutateAsync: doLogin } = useMutation({
-    mutationFn: (p: { username: string; password: string }) => loginApi(p),
-  })
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -29,13 +25,24 @@ export default function LoginPage() {
     const password = (form.password as any).value
     if (!username || !password) return
     setIsLoading(true)
+    
     try {
-      await doLogin({ username, password })
-      toast.success("Signed in")
-      const role = getUser<{ role?: string }>()?.role as any
-      router.push(getHomeRouteForRole(role))
+      const result = await signIn('credentials', {
+        username,
+        password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        toast.error("Invalid credentials or account not verified")
+      } else if (result?.ok) {
+        toast.success("Signed in successfully")
+        
+        // Redirect to dashboard - the dashboard will handle role-based routing
+        router.push(ROUTES.APP.DASHBOARD)
+      }
     } catch (err: any) {
-      toast.error(err.message || "Invalid credentials")
+      toast.error("Login failed. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -103,10 +110,12 @@ export default function LoginPage() {
           )}
         </Button>
 
-        {/* For now comment forgot password link */}
-        {/* <div className="text-center text-sm">
-                <Link href={ROUTES.AUTH.FORGOT_PASSWORD} className="text-primary hover:underline">Forgot Password?</Link>
-              </div> */}
+        <div className="text-center text-sm">
+          Don't have an account?{' '}
+          <Link href={ROUTES.AUTH.REGISTER} className="text-primary hover:underline">
+            Create account
+          </Link>
+        </div>
       </form>
     </div>
   )

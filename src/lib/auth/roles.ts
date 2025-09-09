@@ -1,20 +1,16 @@
 import { ROUTES } from "@/constants/routes"
-export type UserRole = "supervisor" | "inspector" | "welder" | "lab_manager" | string
+import { UserRoleSchema } from "@/lib/schemas/user"
+import { z } from "zod"
 
-export const ROLES = {
-  SUPERVISOR: "supervisor",
-  INSPECTOR: "inspector",
-  WELDER: "welder",
-  LAB_MANAGER: "lab_manager",
-} as const
+export type UserRole = z.infer<typeof UserRoleSchema>
 
 export function getHomeRouteForRole(role?: UserRole): string {
   switch (role) {
-    case ROLES.WELDER:
+    case UserRoleSchema.enum.welder:
       return ROUTES.APP.WELDERS.DASHBOARD
-    case ROLES.SUPERVISOR:
-    case ROLES.INSPECTOR:
-    case ROLES.LAB_MANAGER:
+    case UserRoleSchema.enum.supervisor:
+    case UserRoleSchema.enum.inspector:
+    case UserRoleSchema.enum.lab_manager:
     default:
       return ROUTES.APP.DASHBOARD
   }

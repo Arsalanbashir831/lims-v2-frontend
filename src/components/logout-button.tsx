@@ -3,15 +3,15 @@
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { logout } from "@/lib/api/auth"
+import { AuthService } from "@/lib/api/auth-service"
+import { ROUTES } from "@/constants/routes"
 
 export function LogoutButton() {
   const router = useRouter()
 
   const onLogout = () => {
-    logout()
-    try { window.localStorage.removeItem("lims:test-methods") } catch {}
-    router.push("/login")
+    AuthService.logout()
+    router.push(ROUTES.AUTH.LOGIN)
   }
 
   return (
