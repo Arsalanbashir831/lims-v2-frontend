@@ -74,7 +74,12 @@ export default function TestMethodsPage() {
         {
             accessorKey: "updatedAt",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Updated" />,
-            cell: ({ row }) => new Date(row.original.updatedAt).toLocaleString(),
+            cell: ({ row }) => {
+                const updatedAt = row.original.updatedAt;
+                return updatedAt
+                    ? new Date(updatedAt).toLocaleString()
+                    : <span className="text-muted-foreground">N/A</span>;
+            },
         },
         {
             id: "actions",

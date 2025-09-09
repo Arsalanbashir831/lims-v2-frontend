@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -31,6 +32,7 @@ export function TestMethodForm({ initial, readOnly = false }: Props) {
     }
     return [""]
   })
+  const [hasImage, setHasImage] = useState<boolean>(initial?.hasImage ?? false)
   const isEditing = useMemo(() => Boolean(initial), [initial])
 
   useEffect(() => {
@@ -59,46 +61,41 @@ export function TestMethodForm({ initial, readOnly = false }: Props) {
       toast.error("Name is required")
       return
     }
-    
-    // Debug: log the columns before processing
-    console.log("Raw columns:", columns)
-    
+
     const cleanedColumns = columns
       .map((c) => c.trim())
       .filter(c => c && c.length > 0)
-    
-    // Debug: log the cleaned columns
-    console.log("Cleaned columns:", cleanedColumns)
-    
+
     if (cleanedColumns.length === 0) {
       toast.error("At least one test column is required")
       return
     }
-    
+
     const payload: CreateTestMethodData = {
       test_name: name.trim(),
       test_description: description.trim() || undefined,
       comments: comments.trim() || undefined,
       test_columns: cleanedColumns,
+      hasImage,
       is_active: true,
     }
 
     if (isEditing && initial) {
       testMethodService.update(String(initial.id), payload as UpdateTestMethodData)
-        .then(() => { 
+        .then(() => {
           queryClient.invalidateQueries({ queryKey: ['test-methods'] })
-          toast.success("Test method updated"); 
-          router.push(ROUTES.APP.TEST_METHODS.ROOT) 
+          toast.success("Test method updated");
+          router.push(ROUTES.APP.TEST_METHODS.ROOT)
         })
         .catch(() => toast.error("Failed to update"))
       return
     }
 
     testMethodService.create(payload)
-      .then(() => { 
+      .then(() => {
         queryClient.invalidateQueries({ queryKey: ['test-methods'] })
-        toast.success("Test method created"); 
-        router.push(ROUTES.APP.TEST_METHODS.ROOT) 
+        toast.success("Test method created");
+        router.push(ROUTES.APP.TEST_METHODS.ROOT)
       })
       .catch(() => toast.error("Failed to create"))
   }
@@ -153,6 +150,10 @@ export function TestMethodForm({ initial, readOnly = false }: Props) {
           <div className="grid gap-2">
             <Label htmlFor="comments">Comments</Label>
             <Textarea id="comments" value={comments} onChange={(e) => setComments(e.target.value)} rows={3} disabled={readOnly} />
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox id="hasImage" checked={hasImage} onCheckedChange={(v) => setHasImage(Boolean(v))} disabled={readOnly} />
+            <Label htmlFor="hasImage">Has image(s)</Label>
           </div>
         </CardContent>
       </Card>
