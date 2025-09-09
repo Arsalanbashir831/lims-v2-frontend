@@ -44,6 +44,7 @@ export function EquipmentForm({ initial, readOnly = false }: Props) {
       createdBy: createdBy.trim() || undefined,
       updatedBy: updatedBy.trim() || undefined,
       remarks: remarks.trim() || undefined,
+      is_active: true,
     }
 
     if (isEditing && initial) {
