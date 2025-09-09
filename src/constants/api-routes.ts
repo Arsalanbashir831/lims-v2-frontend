@@ -72,5 +72,13 @@ export const API_ROUTES = {
     ALL_COMPLETE_CERTIFICATES: "complete-certificates",
     COMPLETE_CERTIFICATE_BY_ID: (id: string) => `complete-certificates/${id}`,
     SEARCH_COMPLETE_CERTIFICATES: "complete-certificates/search",
+
+    // Sample Lots
+    ADD_SAMPLE_LOT: "sample-lots",
+    UPDATE_SAMPLE_LOT: (id: string) => `sample-lots/${id}`,
+    DELETE_SAMPLE_LOT: (id: string) => `sample-lots/${id}`,
+    ALL_SAMPLE_LOTS: "sample-lots",
+    SAMPLE_LOT_BY_ID: (id: string) => `sample-lots/${id}`,
+    SEARCH_SAMPLE_LOTS: "sample-lots/search",
   }
 }

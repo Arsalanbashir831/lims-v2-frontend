@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Separator } from "@/components/ui/separator"
 import { CalibrationTest, calibrationTestService, CreateCalibrationTestData, UpdateCalibrationTestData } from "@/lib/calibration-testing"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -46,6 +45,7 @@ export function CalibrationTestingForm({ initial, readOnly = false }: Props) {
       createdBy: createdBy.trim() || undefined,
       updatedBy: updatedBy.trim() || undefined,
       remarks: remarks.trim() || undefined,
+      is_active: true,
     }
 
     if (isEditing && initial) {
@@ -89,11 +89,11 @@ export function CalibrationTestingForm({ initial, readOnly = false }: Props) {
           <div className="grid gap-2 md:grid-cols-3">
             <div className="grid gap-2">
               <Label htmlFor="calibrationDate">Calibration Date</Label>
-              <Input id="calibrationDate" type="date" value={calibrationDate} onChange={(e) => setCalibrationDate(e.target.value)} disabled={readOnly} />
+              <Input id="calibrationDate" type="date" value={calibrationDate.toString()} onChange={(e) => setCalibrationDate(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="calibrationDueDate">Calibration Due Date</Label>
-              <Input id="calibrationDueDate" type="date" value={calibrationDueDate} onChange={(e) => setCalibrationDueDate(e.target.value)} disabled={readOnly} />
+              <Input id="calibrationDueDate" type="date" value={calibrationDueDate.toString()} onChange={(e) => setCalibrationDueDate(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="certification">Calibration Certification</Label>

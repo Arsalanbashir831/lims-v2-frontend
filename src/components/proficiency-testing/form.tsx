@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Separator } from "@/components/ui/separator"
 import { ProficiencyTest, proficiencyTestService, CreateProficiencyTestData, UpdateProficiencyTestData } from "@/lib/proficiency-testing"
 import { useRouter } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
@@ -47,6 +46,7 @@ export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
       nextScheduledDate: nextScheduledDate || undefined,
       status: status.trim() || undefined,
       remarks: remarks.trim() || undefined,
+      is_active: true,
     }
 
     console.log("Submitting payload:", payload)
@@ -92,15 +92,15 @@ export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
           <div className="grid gap-2 md:grid-cols-3">
             <div className="grid gap-2">
               <Label htmlFor="lastTestDate">Last Test Date</Label>
-              <Input id="lastTestDate" type="date" value={lastTestDate} onChange={(e) => setLastTestDate(e.target.value)} disabled={readOnly} />
+              <Input id="lastTestDate" type="date" value={lastTestDate.toString()} onChange={(e) => setLastTestDate(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="dueDate">Due Date</Label>
-              <Input id="dueDate" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} disabled={readOnly} />
+              <Input id="dueDate" type="date" value={dueDate.toString()} onChange={(e) => setDueDate(e.target.value)} disabled={readOnly} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="nextScheduledDate">Next Scheduled Date</Label>
-              <Input id="nextScheduledDate" type="date" value={nextScheduledDate} onChange={(e) => setNextScheduledDate(e.target.value)} disabled={readOnly} />
+              <Input id="nextScheduledDate" type="date" value={nextScheduledDate.toString()} onChange={(e) => setNextScheduledDate(e.target.value)} disabled={readOnly} />
             </div>
           </div>
           <div className="grid gap-2 md:grid-cols-2">

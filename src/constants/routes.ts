@@ -41,6 +41,9 @@ export const ROUTES = {
             NEW: "/sample-details/new",
             EDIT: (id: string) => `/sample-details/${id}/edit`,
         },
+        SAMPLE_LOTS: {
+            EDIT_FOR_JOB: (jobId: string) => `/sample-lots/${jobId}/edit`,
+        },
         SAMPLE_PREPARATION: {
             ROOT: "/sample-preparation",
             NEW: "/sample-preparation/new",

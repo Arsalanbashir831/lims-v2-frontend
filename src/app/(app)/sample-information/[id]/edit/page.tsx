@@ -5,10 +5,16 @@ import { useQuery } from "@tanstack/react-query"
 import { SampleInformationForm } from "@/components/sample-information/form"
 import { sampleInformationService } from "@/lib/sample-information"
 import { Skeleton } from "@/components/ui/skeleton"
+import { FormHeader } from "@/components/common/form-header"
+import { Button } from "@/components/ui/button"
+import { PencilIcon, XIcon } from "lucide-react"
+import { ROUTES } from "@/constants/routes"
+import { useState } from "react"
 
 export default function EditSampleInformationPage() {
   const params = useParams()
   const id = params.id as string
+  const [isEditing, setIsEditing] = useState(false)
 
   const { data: sampleInformation, isLoading, error } = useQuery({
     queryKey: ['sample-information', id],
@@ -52,8 +58,15 @@ export default function EditSampleInformationPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
-      <SampleInformationForm initial={sampleInformation} />
+    <div className="grid gap-4">
+      <FormHeader title="Edit Sample Information" description="Edit the sample information details" label={null} href={ROUTES.APP.SAMPLE_INFORMATION.ROOT}>
+        {!isEditing ? (
+          <Button size="sm" onClick={() => setIsEditing(true)}><PencilIcon className="w-4 h-4 mr-1" /> Edit</Button>
+        ) : (
+          <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}><XIcon className="w-4 h-4 mr-1" /> Cancel</Button>
+        )}
+      </FormHeader>
+      <SampleInformationForm initial={sampleInformation} readOnly={!isEditing} />
     </div>
   )
 }

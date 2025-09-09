@@ -9,13 +9,13 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ClientSelector } from "@/components/common/client-selector"
 import { Client, clientService } from "@/lib/clients"
-import { SampleInformation, SampleInformationEdit, CreateSampleInformationData, UpdateSampleInformationData, sampleInformationService } from "@/lib/sample-information"
+import { SampleInformation, sampleInformationService, CreateSampleInformationData, UpdateSampleInformationData } from "@/lib/sample-information"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
 import { useQueryClient } from "@tanstack/react-query"
 
 interface Props {
-  initial?: SampleInformation | SampleInformationEdit
+  initial?: SampleInformation
   readOnly?: boolean
 }
 
@@ -27,8 +27,9 @@ export function SampleInformationForm({ initial, readOnly = false }: Props) {
   const [selectedClient, setSelectedClient] = useState<Client | undefined>()
   const [endUser, setEndUser] = useState(initial?.end_user ?? "")
   const [receiveDate, setReceiveDate] = useState(
-    initial?.received_date ? new Date(initial.received_date).toISOString().split('T')[0] : ""
+    initial?.receive_date ? new Date(initial.receive_date).toISOString().split('T')[0] : ""
   )
+  const [receivedBy, setReceivedBy] = useState(initial && (initial as any).received_by ? String((initial as any).received_by) : "")
   const [remarks, setRemarks] = useState(initial?.remarks ?? "")
 
   const isEditing = Boolean(initial)
@@ -39,20 +40,21 @@ export function SampleInformationForm({ initial, readOnly = false }: Props) {
       if (initial && !selectedClient) {
         try {
           // Check if we have client ID (from edit response) or client name (from list response)
-          if ('client' in initial && typeof initial.client === 'number') {
+          if ((initial as any).client && typeof (initial as any).client === 'number') {
             // We have client ID from edit response, get client details
-            console.log('Loading client by ID:', initial.client)
-            const client = await clientService.getById(initial.client.toString())
-            console.log('Loaded client:', client)
+            const client = await clientService.getById(String((initial as any).client))
+            setSelectedClient(client)
+            setClientId(client.id.toString())
+          } else if ((initial as any).client_id && typeof (initial as any).client_id === 'string') {
+            // API provides client_id on edit payload; fetch directly by id
+            const client = await clientService.getById((initial as any).client_id)
             setSelectedClient(client)
             setClientId(client.id.toString())
           } else if (initial.client_name) {
             // We have client name, search for client
-            console.log('Loading client by name:', initial.client_name)
             const response = await clientService.search(initial.client_name, 1)
-            const client = response.results.find(c => c.name === initial.client_name)
+            const client = response.results.find(c => c.client_name === initial.client_name)
             if (client) {
-              console.log('Found client by name:', client)
               setSelectedClient(client)
               setClientId(client.id.toString())
             }
@@ -87,18 +89,17 @@ export function SampleInformationForm({ initial, readOnly = false }: Props) {
 
     const payload: CreateSampleInformationData = {
       project_name: projectName.trim(),
-      client: clientId.trim(),
+      client_id: clientId.trim(),
       end_user: endUser.trim() || undefined,
-      received_date: new Date(receiveDate.trim()).toISOString(),
+      receive_date: new Date(receiveDate.trim()).toISOString(),
+      received_by: receivedBy.trim() || undefined,
       remarks: remarks.trim() || undefined,
     }
 
     // Handle create or update
     if (isEditing && initial) {
-      console.log('Updating sample information:', { jobId: initial.job_id, payload })
       sampleInformationService.update(initial.job_id, payload as UpdateSampleInformationData)
         .then((response) => { 
-          console.log('Update successful:', response)
           queryClient.invalidateQueries({ queryKey: ['sample-information'] })
           toast.success("Sample information updated"); 
           router.push(ROUTES.APP.SAMPLE_INFORMATION.ROOT) 
@@ -113,10 +114,8 @@ export function SampleInformationForm({ initial, readOnly = false }: Props) {
           }
         })
     } else {
-      console.log('Creating sample information:', payload)
       sampleInformationService.create(payload)
         .then((response) => { 
-          console.log('Create successful:', response)
           queryClient.invalidateQueries({ queryKey: ['sample-information'] })
           toast.success("Sample information created"); 
           router.push(ROUTES.APP.SAMPLE_INFORMATION.ROOT) 
@@ -163,17 +162,12 @@ export function SampleInformationForm({ initial, readOnly = false }: Props) {
              />
            </div>
           <div className="grid gap-2">
-            <Label>Phone No.</Label>
-            <Input 
-              placeholder="Contact number" 
-              value={selectedClient?.phone || ""} 
-              disabled={true}
-              className="bg-muted/50"
-            />
-          </div>
-          <div className="grid gap-2">
             <Label>End User</Label>
             <Input placeholder="End user organization" value={endUser} onChange={(e) => setEndUser(e.target.value)} disabled={readOnly} />
+          </div>
+          <div className="grid gap-2">
+            <Label>Received By</Label>
+            <Input placeholder="Receiver name" value={receivedBy} onChange={(e) => setReceivedBy(e.target.value)} disabled={readOnly} />
           </div>
           <div className="grid gap-2">
             <Label>Receive Date</Label>

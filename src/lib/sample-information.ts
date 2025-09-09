@@ -1,150 +1,96 @@
-import { z } from "zod"
 import { API_ROUTES } from "@/constants/api-routes"
-import { api } from "./api/ky"
-
-// Sample Information schemas
-const SampleInformationSchema = z.object({
-  job_id: z.string(),
-  project_name: z.string(),
-  client_name: z.string(),
-  end_user: z.string().nullable(),
-  received_date: z.string(),
-  remarks: z.string().nullable().optional(),
-  sample_count: z.number(),
-  is_active: z.boolean(),
-  created_at: z.string(),
-  updated_at: z.string(),
-})
-
-// Edit response schema (has additional fields and different client format)
-const SampleInformationEditSchema = z.object({
-  job_id: z.string(),
-  project_name: z.string(),
-  client: z.number(), // Client ID
-  client_name: z.string(),
-  end_user: z.string().nullable(),
-  received_date: z.string(),
-  remarks: z.string().nullable().optional(),
-  sample_count: z.number(),
-  is_active: z.boolean(),
-  created_at: z.string(),
-  updated_at: z.string(),
-  created_by: z.number().optional(),
-  created_by_username: z.string().optional(),
-  updated_by: z.number().optional(),
-  updated_by_username: z.string().optional(),
-})
-
-// Update response schema (may have fewer fields than edit response)
-const SampleInformationUpdateSchema = z.object({
-  job_id: z.string().optional(),
-  project_name: z.string().optional(),
-  client: z.number().optional(),
-  client_name: z.string().optional(),
-  end_user: z.string().nullable().optional(),
-  received_date: z.string().optional(),
-  remarks: z.string().nullable().optional(),
-  sample_count: z.number().optional(),
-  is_active: z.boolean().optional(),
-  created_at: z.string().optional(),
-  updated_at: z.string().optional(),
-  created_by: z.number().optional(),
-  created_by_username: z.string().optional(),
-  updated_by: z.number().optional(),
-  updated_by_username: z.string().optional(),
-})
-
-const SampleInformationListResponseSchema = z.object({
-  count: z.number(),
-  next: z.string().nullable(),
-  previous: z.string().nullable(),
-  results: z.array(SampleInformationSchema),
-})
-
-// Search response might be different - handle both array and object formats
-const SampleInformationSearchResponseSchema = z.union([
-  // Standard paginated response
+import { api } from "./api/api"
+import {
+  SampleInformationResponseSchema,
   SampleInformationListResponseSchema,
-  // Direct array response
-  z.array(SampleInformationSchema)
-])
+  SampleInformationResponse,
+  CreateSampleInformationData,
+  UpdateSampleInformationData,
+} from "@/lib/schemas/sample-information"
 
-// TypeScript types
-export type SampleInformation = z.infer<typeof SampleInformationSchema>
-export type SampleInformationEdit = z.infer<typeof SampleInformationEditSchema>
-export type SampleInformationUpdate = z.infer<typeof SampleInformationUpdateSchema>
-
-export type CreateSampleInformationData = {
-  project_name: string
-  client: string
-  end_user?: string
-  received_date: string
-  remarks?: string
+export type SampleInformation = {
+  job_id: string
+  project_name: string | null | undefined
+  client_id: string
+  client_name?: string
+  end_user: string | null | undefined
+  receive_date: string | null | undefined
+  remarks?: string | null | undefined
+  sample_count?: number
+  is_active: boolean
+  created_at: string
+  updated_at?: string
 }
 
-export type UpdateSampleInformationData = Partial<CreateSampleInformationData>
+function mapToUi(item: SampleInformationResponse): SampleInformation {
+  return {
+    job_id: item.job_id,
+    project_name: (item as any).project_name ?? null,
+    client_id: (item as any).client_id ?? "",
+    client_name: (item as any).client_name ?? "",
+    end_user: (item as any).end_user ?? null,
+    receive_date: (item as any).receive_date ?? null,
+    remarks: (item as any).remarks ?? null,
+    sample_count: (item as any).sample_count ?? 0,
+    is_active: (item as any).is_active !== false,
+    created_at: (item as any).created_at as string,
+    updated_at: (item as any).updated_at as string | undefined,
+  }
+}
 
-// API client
 export const sampleInformationService = {
   async getAll(page: number = 1): Promise<{ results: SampleInformation[]; count: number; next: string | null; previous: string | null }> {
-    const response = await api.get(API_ROUTES.Lab_MANAGERS.ALL_SAMPLE_INFORMATION, {
-      searchParams: { page }
-    }).json()
+    const endpoint = API_ROUTES.Lab_MANAGERS.ALL_SAMPLE_INFORMATION.replace(/^\//, "")
+    const response = await api.get(endpoint, { searchParams: { page: page.toString() } }).json()
     const validated = SampleInformationListResponseSchema.parse(response)
     return {
-      results: validated.results,
+      results: validated.results.map(mapToUi),
       count: validated.count,
-      next: validated.next ?? null,
-      previous: validated.previous ?? null,
+      next: (validated.next as any) ?? null,
+      previous: (validated.previous as any) ?? null,
     }
   },
 
-  async getById(id: string): Promise<SampleInformationEdit> {
-    const response = await api.get(API_ROUTES.Lab_MANAGERS.SAMPLE_INFORMATION_BY_ID(id)).json()
-    return SampleInformationEditSchema.parse(response)
+  async getById(id: string): Promise<SampleInformationResponse> {
+    const endpoint = API_ROUTES.Lab_MANAGERS.SAMPLE_INFORMATION_BY_ID(id).replace(/^\//, "")
+    const response = await api.get(endpoint).json()
+    return SampleInformationResponseSchema.parse(response)
   },
 
-  async create(data: CreateSampleInformationData): Promise<SampleInformation> {
-    const response = await api.post(API_ROUTES.Lab_MANAGERS.ADD_SAMPLE_INFORMATION, {
-      json: data
-    }).json()
-    return SampleInformationSchema.parse(response)
+  async create(data: CreateSampleInformationData): Promise<SampleInformationResponse> {
+    const endpoint = API_ROUTES.Lab_MANAGERS.ADD_SAMPLE_INFORMATION.replace(/^\//, "")
+    const response = await api.post(endpoint, { json: data }).json()
+    return SampleInformationResponseSchema.parse(response)
   },
 
-  async update(id: string, data: UpdateSampleInformationData): Promise<SampleInformationUpdate> {
-    const response = await api.put(API_ROUTES.Lab_MANAGERS.UPDATE_SAMPLE_INFORMATION(id), {
-      json: data
-    }).json()
-    return SampleInformationUpdateSchema.parse(response)
+  async update(id: string, data: UpdateSampleInformationData): Promise<SampleInformationResponse> {
+    const endpoint = API_ROUTES.Lab_MANAGERS.UPDATE_SAMPLE_INFORMATION(id).replace(/^\//, "")
+    const response = await api.patch(endpoint, { json: data }).json()
+    return SampleInformationResponseSchema.parse(response)
   },
 
   async delete(id: string): Promise<void> {
-    await api.delete(API_ROUTES.Lab_MANAGERS.DELETE_SAMPLE_INFORMATION(id))
+    const endpoint = API_ROUTES.Lab_MANAGERS.DELETE_SAMPLE_INFORMATION(id).replace(/^\//, "")
+    await api.delete(endpoint)
   },
 
   async search(query: string, page: number = 1): Promise<{ results: SampleInformation[]; count: number; next: string | null; previous: string | null }> {
-    const response = await api.get(API_ROUTES.Lab_MANAGERS.SEARCH_SAMPLE_INFORMATION, {
-      searchParams: { q: query, page }
-    }).json()
-    const validated = SampleInformationSearchResponseSchema.parse(response)
-    
-    // Handle both array and object response formats
-    if (Array.isArray(validated)) {
-      // Direct array response
-      return {
-        results: validated,
-        count: validated.length,
-        next: null,
-        previous: null,
-      }
-    } else {
-      // Standard paginated response
-      return {
-        results: validated.results,
-        count: validated.count,
-        next: validated.next ?? null,
-        previous: validated.previous ?? null,
-      }
+    const endpoint = API_ROUTES.Lab_MANAGERS.SEARCH_SAMPLE_INFORMATION.replace(/^\//, "")
+    const response = await api.get(endpoint, { searchParams: { q: query, page: page.toString() } }).json()
+    const validated = SampleInformationListResponseSchema.parse(response)
+    return {
+      results: validated.results.map(mapToUi),
+      count: validated.count,
+      next: (validated.next as any) ?? null,
+      previous: (validated.previous as any) ?? null,
     }
   },
+
+  async getSidebarData(id: string): Promise<{ job: any, lots: any[] }> {
+    const endpoint = `sample-information/${id}/sidebar`
+    const response = await api.get(endpoint).json()
+    return response as { job: any, lots: any[] }
+  },
 }
+export type { CreateSampleInformationData, UpdateSampleInformationData }
+

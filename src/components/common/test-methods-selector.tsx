@@ -1,14 +1,17 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Check, ChevronsUpDown, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { testMethodService, TestMethod } from "@/lib/test-methods"
+
+// Simple in-memory cache keyed by query ("__ALL__" for initial load)
+const testMethodsCache = new Map<string, TestMethod[]>()
 
 interface TestMethodsSelectorProps {
   value?: string[]
@@ -32,20 +35,27 @@ export function TestMethodsSelector({
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Load test methods based on search query with debouncing
+  // Load test methods only when the popover is open and debounce searches
   useEffect(() => {
+    // Avoid fetching when the selector is not open
+    if (!open) return
+
+    const key = searchQuery.trim() ? searchQuery.trim() : "__ALL__"
+
+    // Serve from cache if available
+    const cached = testMethodsCache.get(key)
+    if (cached) {
+      setTestMethods(cached)
+      return
+    }
+
     const loadTestMethods = async () => {
       try {
         setLoading(true)
-        // If no search query, load all test methods; otherwise search
-        const response = searchQuery.trim() 
+        const response = searchQuery.trim()
           ? await testMethodService.search(searchQuery, 1)
           : await testMethodService.getAll(1)
-        
-        console.log("Search query:", searchQuery)
-        console.log("API response:", response)
-        console.log("Test methods set:", response.results)
-        
+        testMethodsCache.set(key, response.results)
         setTestMethods(response.results)
       } catch (error) {
         console.error("Failed to load test methods:", error)
@@ -54,13 +64,12 @@ export function TestMethodsSelector({
       }
     }
 
-    // Debounce the search to avoid too many API calls
     const timeoutId = setTimeout(() => {
       loadTestMethods()
-    }, searchQuery.trim() ? 300 : 0) // No delay for initial load
+    }, searchQuery.trim() ? 300 : 0)
 
     return () => clearTimeout(timeoutId)
-  }, [searchQuery])
+  }, [open, searchQuery])
 
 
   // Get selected test methods data
@@ -155,11 +164,6 @@ export function TestMethodsSelector({
                             <Badge variant="secondary" className="text-xs">
                               {method.test_columns.length} columns
                             </Badge>
-                            {method.version && (
-                              <Badge variant="outline" className="text-xs">
-                                v{method.version}
-                              </Badge>
-                            )}
                           </div>
                         </div>
                       </CommandItem>
