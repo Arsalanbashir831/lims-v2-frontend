@@ -1,7 +1,7 @@
 import { signIn, signOut, getSession } from "next-auth/react"
 import { UserRole } from "@/lib/schemas/user"
 import { API_ROUTES } from "@/constants/api-routes"
-import { api } from "./client"
+import { api } from "./api"
 
 export interface LoginCredentials {
   username: string

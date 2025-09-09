@@ -22,26 +22,26 @@ export function ClientForm({
   readOnly = false
 }: ClientFormProps) {
   const createInitialFormData = (): CreateClientData => ({
-    name: "",
+    client_name: "",
     phone: "",
     contact_person: "",
     email: "",
-    address_line_1: "",
+    address: "",
     city: "",
     state: "",
     postal_code: "",
     country: "",
     ...(initialData ? {
-      name: initialData.name,
+      client_name: initialData.client_name,
       phone: initialData.phone || "",
       contact_person: initialData.contact_person || "",
       email: initialData.email || "",
-      address_line_1: initialData.address_line_1 || "",
+      address: initialData.address || "",
       city: initialData.city || "",
       state: initialData.state || "",
       postal_code: initialData.postal_code || "",
       country: initialData.country || "",
-    } : {})
+    } : {}),
   })
 
   const [formData, setFormData] = useState<CreateClientData>(createInitialFormData())
@@ -49,9 +49,7 @@ export function ClientForm({
 
   useEffect(() => {
     // Update both form data and original data when initialData changes
-    console.log("🔄 ClientForm: initialData changed", initialData)
     const updatedData = createInitialFormData()
-    console.log("📝 ClientForm: created form data", updatedData)
     setFormData(updatedData)
     setOriginalFormData(updatedData)
   }, [initialData])
@@ -80,101 +78,101 @@ export function ClientForm({
         <CardContent className="p-6 grid gap-4">
           {/* Basic Information */}
           <div className="grid gap-2">
-            <Label htmlFor="name">Client Name *</Label>
-            <Input 
-              id="name" 
-              value={formData.name} 
-              onChange={(e) => handleInputChange('name', e.target.value)} 
-              required 
-              disabled={readOnly} 
+            <Label htmlFor="client_name">Client Name *</Label>
+            <Input
+              id="client_name"
+              value={formData.client_name}
+              onChange={(e) => handleInputChange('client_name', e.target.value)}
+              required
+              disabled={readOnly}
             />
           </div>
-          
+
           <div className="grid gap-2 md:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="phone">Phone</Label>
-              <Input 
-                id="phone" 
-                value={formData.phone || ""} 
-                onChange={(e) => handleInputChange('phone', e.target.value)} 
-                disabled={readOnly} 
+              <Input
+                id="phone"
+                value={formData.phone || ""}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                disabled={readOnly}
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="contact_person">Contact Person</Label>
-              <Input 
-                id="contact_person" 
-                value={formData.contact_person || ""} 
-                onChange={(e) => handleInputChange('contact_person', e.target.value)} 
-                disabled={readOnly} 
+              <Input
+                id="contact_person"
+                value={formData.contact_person || ""}
+                onChange={(e) => handleInputChange('contact_person', e.target.value)}
+                disabled={readOnly}
               />
             </div>
           </div>
 
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
-            <Input 
-              id="email" 
+            <Input
+              id="email"
               type="email"
-              value={formData.email || ""} 
-              onChange={(e) => handleInputChange('email', e.target.value)} 
-              disabled={readOnly} 
+              value={formData.email || ""}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              disabled={readOnly}
             />
           </div>
 
           {/* Address Information */}
           <div className="grid gap-2">
-            <Label htmlFor="address_line_1">Address</Label>
-            <Textarea 
-              id="address_line_1" 
-              value={formData.address_line_1 || ""} 
-              onChange={(e) => handleInputChange('address_line_1', e.target.value)} 
+            <Label htmlFor="address">Address</Label>
+            <Textarea
+              id="address"
+              value={formData.address || ""}
+              onChange={(e) => handleInputChange('address', e.target.value)}
               rows={2}
-              disabled={readOnly} 
+              disabled={readOnly}
             />
           </div>
 
           <div className="grid gap-2 md:grid-cols-3">
             <div className="grid gap-2">
               <Label htmlFor="city">City</Label>
-              <Input 
-                id="city" 
-                value={formData.city || ""} 
-                onChange={(e) => handleInputChange('city', e.target.value)} 
-                disabled={readOnly} 
+              <Input
+                id="city"
+                value={formData.city || ""}
+                onChange={(e) => handleInputChange('city', e.target.value)}
+                disabled={readOnly}
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="state">State/Province</Label>
-              <Input 
-                id="state" 
-                value={formData.state || ""} 
-                onChange={(e) => handleInputChange('state', e.target.value)} 
-                disabled={readOnly} 
+              <Input
+                id="state"
+                value={formData.state || ""}
+                onChange={(e) => handleInputChange('state', e.target.value)}
+                disabled={readOnly}
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="postal_code">Postal Code</Label>
-              <Input 
-                id="postal_code" 
-                value={formData.postal_code || ""} 
-                onChange={(e) => handleInputChange('postal_code', e.target.value)} 
-                disabled={readOnly} 
+              <Input
+                id="postal_code"
+                value={formData.postal_code || ""}
+                onChange={(e) => handleInputChange('postal_code', e.target.value)}
+                disabled={readOnly}
               />
             </div>
           </div>
 
           <div className="grid gap-2">
             <Label htmlFor="country">Country</Label>
-            <Input 
-              id="country" 
-              value={formData.country || ""} 
-              onChange={(e) => handleInputChange('country', e.target.value)} 
-              disabled={readOnly} 
+            <Input
+              id="country"
+              value={formData.country || ""}
+              onChange={(e) => handleInputChange('country', e.target.value)}
+              disabled={readOnly}
             />
           </div>
         </CardContent>
-        
+
         <CardFooter className="">
           {!readOnly && (
             <div className="sticky bottom-0 bg-background/80 dark:bg-background/10 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 w-full">

@@ -23,10 +23,9 @@ export default function ClientsPage() {
     const [currentPage, setCurrentPage] = useState(1)
     const [searchQuery, setSearchQuery] = useState("")
 
-    const { data: clientsData, isLoading: loading, error, isFetching } = useQuery({
+    const { data: clientsData, isLoading: loading, isFetching } = useQuery({
         queryKey: ['clients', currentPage, searchQuery],
         queryFn: () => {
-            console.log(`🔄 Fetching clients page ${currentPage}${searchQuery ? ` with search: "${searchQuery}"` : ''}`)
             if (searchQuery.trim()) {
                 return clientService.search(searchQuery.trim(), currentPage)
             } else {
@@ -36,7 +35,6 @@ export default function ClientsPage() {
         staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh for 5 minutes
         gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache for 10 minutes (renamed from cacheTime)
         placeholderData: (previousData) => {
-            console.log(`📦 Using placeholder data for page ${currentPage}:`, !!previousData)
             return previousData
         },
     })
@@ -49,7 +47,7 @@ export default function ClientsPage() {
     const hasPrevious = clientsData?.previous !== undefined ? !!clientsData?.previous : currentPage > 1
 
     const deleteMutation = useMutation({
-        mutationFn: (id: number) => clientService.delete(id),
+        mutationFn: (id: string) => clientService.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['clients'] })
             toast.success("Client deleted successfully")
@@ -60,7 +58,7 @@ export default function ClientsPage() {
         }
     })
 
-    const handleDelete = useCallback((id: number) => {
+    const handleDelete = useCallback((id: string) => {
         deleteMutation.mutate(id)
     }, [deleteMutation])
 
@@ -69,8 +67,10 @@ export default function ClientsPage() {
     }
 
     const handleSearch = (query: string) => {
-        setSearchQuery(query)
-        setCurrentPage(1) // Reset to first page when searching
+        if (query !== searchQuery) {
+            setSearchQuery(query)
+            setCurrentPage(1) // Reset to first page only when query actually changes
+        }
     }
 
     const handleClearSearch = () => {
@@ -134,10 +134,10 @@ export default function ClientsPage() {
 
     const columns: ColumnDef<Client>[] = useMemo(() => [
         {
-            accessorKey: "name",
+            accessorKey: "client_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
             cell: ({ row }) => {
-                const name = row.getValue("name") as string
+                const name = row.getValue("client_name") as string
                 return <div className="font-medium">{name}</div>
             },
         },
@@ -166,14 +166,6 @@ export default function ClientsPage() {
             },
         },
         {
-            accessorKey: "city",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="City" />,
-            cell: ({ row }) => {
-                const city = row.getValue("city") as string
-                return <div className="text-muted-foreground">{city || "—"}</div>
-            },
-        },
-        {
             accessorKey: "created_at",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
             cell: ({ row }) => {
@@ -191,7 +183,7 @@ export default function ClientsPage() {
                 return (
                     <div className="flex items-center gap-2">
                         <Button variant="secondary" size="sm" asChild>
-                            <Link href={ROUTES.APP.CLIENTS.EDIT(client.id.toString())}>
+                            <Link href={ROUTES.APP.CLIENTS.EDIT(client.id)}>
                                 <PencilIcon className="w-4 h-4" />
                             </Link>
                         </Button>
@@ -242,13 +234,13 @@ export default function ClientsPage() {
                 columns={columns}
                 data={clients}
                 empty={
-                    searchQuery 
+                    searchQuery
                         ? <span className="text-muted-foreground">No clients found matching "{searchQuery}". Try a different search term.</span>
                         : <span className="text-muted-foreground">No clients found. Create your first client to get started.</span>
                 }
                 pageSize={10}
                 tableKey="clients"
-                onRowClick={(row) => router.push(ROUTES.APP.CLIENTS.EDIT(row.original.id.toString()))}
+                onRowClick={(row) => router.push(ROUTES.APP.CLIENTS.EDIT(row.original.id))}
                 toolbar={toolbar}
                 footer={footer}
             />
