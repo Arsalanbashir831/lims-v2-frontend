@@ -76,7 +76,31 @@ export async function GET(request: NextRequest) {
         { $addFields: {
             client_name: { $ifNull: [ { $arrayElemAt: ["$clientDoc.client_name", 0] }, { $arrayElemAt: ["$clientDoc.name", 0] } ] }
         }},
-        { $project: { clientDoc: 0, clientObjectId: 0 } }
+        { $lookup: {
+            from: 'sample_lots',
+            let: { jobId: "$job_id", jobObjectId: "$_id" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $or: [
+                      { $eq: ["$job_id", "$$jobId"] },
+                      { $eq: ["$job_id", "$$jobObjectId"] }
+                    ]
+                  },
+                  $or: [
+                    { is_active: true },
+                    { is_active: { $exists: false } }
+                  ]
+                }
+              }
+            ],
+            as: 'sampleLots'
+        }},
+        { $addFields: {
+            sample_count: { $size: "$sampleLots" }
+        }},
+        { $project: { clientDoc: 0, clientObjectId: 0, sampleLots: 0 } }
       ]).toArray(),
       collection.countDocuments(query)
     ])
@@ -91,6 +115,7 @@ export async function GET(request: NextRequest) {
       received_by: item.received_by ?? null,
       project_name: item.project_name ?? null,
       remarks: item.remarks ?? null,
+      sample_count: item.sample_count ?? 0,
       is_active: item.is_active !== false,
       created_at: (toValidDate(item.created_at) || new Date()).toISOString(),
       updated_at: toValidDate(item.updated_at)?.toISOString(),

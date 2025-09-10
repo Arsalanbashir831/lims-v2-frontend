@@ -49,6 +49,7 @@ export const API_ROUTES = {
     DELETE_SAMPLE_INFORMATION: (id: string) => `sample-information/${id}`,
     ALL_SAMPLE_INFORMATION: "sample-information",
     SAMPLE_INFORMATION_BY_ID: (id: string) => `sample-information/${id}`,
+    SAMPLE_INFORMATION_COMPLETE_INFO: (id: string) => `sample-information/${id}/complete-info`,
     SEARCH_SAMPLE_INFORMATION: "sample-information/search",
 
     // Sample Details

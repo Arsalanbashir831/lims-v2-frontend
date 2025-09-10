@@ -23,6 +23,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     // Job: allow lookup by ObjectId or job_id string
     const jobsCol = db.collection("jobs")
+    const clientsCol = db.collection("clients")
     const sampleLotsCol = db.collection("sample_lots")
     const testMethodsCol = db.collection("test_methods")
 
@@ -34,6 +35,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       jobDoc = await jobsCol.findOne({ job_id: id })
     }
     if (!jobDoc) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+    const clientDoc = await clientsCol.findOne({ _id: new ObjectId(jobDoc.client_id) })
 
     // Lots by job reference (support both string job_id and ObjectId variants)
     const jobIdStr = jobDoc.job_id || String(jobDoc._id)
@@ -54,12 +57,16 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       methodMap = new Map(methods.map((m: any) => [m._id.toString(), m.test_name as string]))
     }
 
+    console.log(jobDoc, clientDoc)
+
     const job = {
       job_id: jobDoc.job_id,
       project_name: jobDoc.project_name ?? null,
-      client_name: jobDoc.client_name ?? null,
+      client_name: clientDoc?.client_name ?? null,
       end_user: jobDoc.end_user ?? null,
       receive_date: safeDate(jobDoc.receive_date),
+      received_by: jobDoc.received_by ?? null,
+      remarks: jobDoc.remarks ?? null,
     }
 
     const lotsOut = lots.map((doc: any) => ({
@@ -75,13 +82,13 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       storage_location: doc.storage_location == null ? null : String(doc.storage_location),
       test_method_oids: Array.isArray(doc.test_method_oids) ? doc.test_method_oids.map(String) : [],
       test_method_names: Array.isArray(doc.test_method_oids) ? doc.test_method_oids.map((x: any) => methodMap.get(String(x)) || String(x)) : [],
-      created_at: safeDate(doc.created_at),
-      updated_at: safeDate(doc.updated_at),
+      // created_at: safeDate(doc.created_at),
+      // updated_at: safeDate(doc.updated_at),
     }))
 
     return NextResponse.json({ job, lots: lotsOut })
   } catch (error: any) {
-    console.error("GET /api/sample-information/[id]/sidebar error", error)
+    console.error("GET /api/sample-information/[id]/complete-info error", error)
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 })
   }
 }
