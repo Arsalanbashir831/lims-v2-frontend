@@ -18,9 +18,10 @@ export type SampleInformation = {
   remarks?: string | null | undefined
   sample_count?: number
   is_active: boolean
-  created_at: string
-  updated_at?: string
 }
+
+// Re-export types from schema
+export type { SampleInformationResponse }
 
 function mapToUi(item: SampleInformationResponse): SampleInformation {
   return {
@@ -33,8 +34,6 @@ function mapToUi(item: SampleInformationResponse): SampleInformation {
     remarks: (item as any).remarks ?? null,
     sample_count: (item as any).sample_count ?? 0,
     is_active: (item as any).is_active !== false,
-    created_at: (item as any).created_at as string,
-    updated_at: (item as any).updated_at as string | undefined,
   }
 }
 

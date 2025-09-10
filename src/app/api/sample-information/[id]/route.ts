@@ -14,17 +14,55 @@ export async function GET(
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const client = await clientPromise
     const db = client.db('lims')
-    const collection = db.collection('jobs')
+    const jobsCollection = db.collection('jobs')
     const { id } = await params
     const isObjectId = ObjectId.isValid(id)
     const baseFilter = { $or: [{ is_active: true }, { is_active: { $exists: false } }] }
-    const doc = await collection.findOne({ ...(isObjectId ? { _id: new ObjectId(id) } : { job_id: id }), ...baseFilter })
+    
+    // Use aggregation to join with clients collection
+    const pipeline = [
+      {
+        $match: {
+          ...(isObjectId ? { _id: new ObjectId(id) } : { job_id: id }),
+          ...baseFilter
+        }
+      },
+      {
+        $addFields: {
+          clientObjectId: {
+            $convert: { input: "$client_id", to: "objectId", onError: null, onNull: null }
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: 'clients',
+          localField: 'clientObjectId',
+          foreignField: '_id',
+          as: 'clientDoc'
+        }
+      },
+      {
+        $addFields: {
+          client_name: { $ifNull: [ { $arrayElemAt: ["$clientDoc.client_name", 0] }, { $arrayElemAt: ["$clientDoc.name", 0] } ] }
+        }
+      },
+      {
+        $project: { clientDoc: 0, clientObjectId: 0 }
+      }
+    ]
+    
+    const result = await jobsCollection.aggregate(pipeline).toArray()
+    const doc = result[0]
+    
     if (!doc) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    
     const toValidDate = (v: any) => { const d = v instanceof Date ? v : (v ? new Date(v) : undefined); return d && !isNaN(d.getTime()) ? d : undefined }
     return NextResponse.json({
       id: doc._id.toString(),
       job_id: doc.job_id,
       client_id: String(doc.client_id),
+      client_name: doc.client_name ?? "",
       end_user: doc.end_user ?? null,
       receive_date: doc.receive_date ?? null,
       received_by: doc.received_by ?? null,

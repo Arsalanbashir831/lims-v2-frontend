@@ -9,9 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useSidebar } from "../ui/sidebar"
 import { cn } from "@/lib/utils"
-import { CreateSampleDetailData, UpdateSampleDetailData, sampleDetailService } from "@/lib/sample-details"
 import { sampleLotService, CreateSampleLotData, SampleLot } from "@/lib/sample-lots"
-import { SampleInformation, sampleInformationService } from "@/lib/sample-information"
+import { SampleInformation } from "@/lib/sample-information"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
 import { useQueryClient } from "@tanstack/react-query"
@@ -21,64 +20,6 @@ import { ScrollArea, ScrollBar } from "../ui/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { TrashIcon, Plus as PlusIcon } from "lucide-react"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
-
-// {
-//   "job": {
-//       "job_id": "MTL-2025-0160",
-//       "project_name": "adfadf",
-//       "client_name": "Saadaan Hassan",
-//       "end_user": "asdf",
-//       "receive_date": "2025-09-24T00:00:00.000Z",
-//       "received_by": null,
-//       "remarks": null
-//   },
-//   "lots": [
-//       {
-//           "id": "68c03490574f19caf8af11d3",
-//           "job_id": "MTL-2025-0160",
-//           "item_no": "MTL-2025-0160-001",
-//           "sample_type": "h",
-//           "material_type": "h",
-//           "condition": "h",
-//           "heat_no": "h",
-//           "description": "adadsf adsfgjh ",
-//           "mtc_no": "hh",
-//           "storage_location": "h",
-//           "test_method_oids": [
-//               "68be726c38b66424c8eee510",
-//               "68be726c38b66424c8eee4d1"
-//           ],
-//           "test_method_names": [
-//               "WATER ANALYSIS ",
-//               "ASME SEC IX- Fillet Weld Break Test"
-//           ]
-//       },
-//       {
-//           "id": "68c0dc713911cef6d5fc8653",
-//           "job_id": "MTL-2025-0160",
-//           "item_no": "MTL-2025-0160-002",
-//           "sample_type": "kljljlk",
-//           "material_type": "kljljl",
-//           "condition": "kjhkjkj",
-//           "heat_no": "kjkh",
-//           "description": "j klj lkj",
-//           "mtc_no": "kljljljk",
-//           "storage_location": "jhkjhkj",
-//           "test_method_oids": [
-//               "68be726c38b66424c8eee4f6",
-//               "68be726c38b66424c8eee4f0",
-//               "68be726c38b66424c8eee510",
-//               "68be726c38b66424c8eee50a"
-//           ],
-//           "test_method_names": [
-//               "DESTRUCTIVE TESTING OF VALVES",
-//               "CHEMICAL ANALYSIS-ASTM E 536",
-//               "WATER ANALYSIS ",
-//               "SECTIONING TEST"
-//           ]
-//       }
-//   ]
-// }
 
 type CompleteSampleInformation = {
   job: SampleInformation

@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useMemo } from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { sampleInformationService } from "@/lib/sample-information"
+import { useQuery } from "@tanstack/react-query"
 
 interface Job {
   job_id: string
@@ -32,39 +33,19 @@ export function JobSelector({
   selectedJob
 }: JobSelectorProps) {
   const [open, setOpen] = useState(false)
-  const [jobs, setJobs] = useState<Job[]>([])
-  const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Load jobs based on search query with debouncing
-  useEffect(() => {
-    const loadJobs = async () => {
-      try {
-        setLoading(true)
-        // If no search query, load all jobs; otherwise search
-        const response = searchQuery.trim() 
-          ? await sampleInformationService.search(searchQuery, 1)
-          : await sampleInformationService.getAll(1)
-        
-        console.log("Search query:", searchQuery)
-        console.log("API response:", response)
-        console.log("Jobs set:", response.results)
-        
-        setJobs(response.results)
-      } catch (error) {
-        console.error("Failed to load jobs:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    // Debounce the search to avoid too many API calls
-    const timeoutId = setTimeout(() => {
-      loadJobs()
-    }, searchQuery.trim() ? 300 : 0) // No delay for initial load
-
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery])
+  // Use React Query for jobs - only load when popover is open
+  const { data: jobs = [], isLoading: loading } = useQuery({
+    queryKey: ['sample-information', searchQuery.trim() || '__ALL__'],
+    queryFn: () => searchQuery.trim() 
+      ? sampleInformationService.search(searchQuery, 1)
+      : sampleInformationService.getAll(1),
+    enabled: open,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    select: (data) => data.results,
+  })
 
   // Find selected job
   const selectedJobData = useMemo(() => {

@@ -7,7 +7,7 @@ export const SampleInformationSchema = z.object({
   end_user: z.string().nullable().optional(),
   receive_date: z.union([z.string(), z.date()]).nullable().optional(),
   received_by: z.string().nullable().optional(),
-  project_name: z.string().nullable().optional(),
+  project_name: z.string(),
   remarks: z.string().nullable().optional(),
   is_active: z.boolean().default(true),
   created_at: z.union([z.string(), z.date()]).optional(),

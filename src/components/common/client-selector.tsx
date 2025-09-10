@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { Check, ChevronsUpDown, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { clientService, Client } from "@/lib/clients"
+import { useQuery } from "@tanstack/react-query"
 
 interface ClientSelectorProps {
   value?: string // client ID
@@ -26,39 +27,19 @@ export function ClientSelector({
   selectedClient: propSelectedClient
 }: ClientSelectorProps) {
   const [open, setOpen] = useState(false)
-  const [clients, setClients] = useState<Client[]>([])
-  const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Load clients based on search query
-  useEffect(() => {
-    const loadClients = async () => {
-      try {
-        setLoading(true)
-        // If no search query, load all clients; otherwise search
-        const response = searchQuery.trim() 
-          ? await clientService.search(searchQuery, 1)
-          : await clientService.getAll(1)
-        
-        console.log("Search query:", searchQuery)
-        console.log("API response:", response)
-        console.log("Clients set:", response.results)
-        
-        setClients(response.results)
-      } catch (error) {
-        console.error("Failed to load clients:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    // Debounce the search to avoid too many API calls
-    const timeoutId = setTimeout(() => {
-      loadClients()
-    }, searchQuery.trim() ? 300 : 0) // No delay for initial load
-
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery])
+  // Use React Query for clients - only load when popover is open
+  const { data: clients = [], isLoading: loading } = useQuery({
+    queryKey: ['clients', searchQuery.trim() || '__ALL__'],
+    queryFn: () => searchQuery.trim() 
+      ? clientService.search(searchQuery, 1)
+      : clientService.getAll(1),
+    enabled: open,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    select: (data) => data.results,
+  })
 
   // No need for client-side filtering since we're using server-side search
   const filteredClients = clients
@@ -98,7 +79,7 @@ export function ClientSelector({
           disabled={disabled}
         >
           {selectedClient ? (
-            <p>
+            <p className="max-w-[280px] truncate">
               {selectedClient.client_name}
             </p>
           ) : (

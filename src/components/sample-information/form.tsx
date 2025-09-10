@@ -8,14 +8,14 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ClientSelector } from "@/components/common/client-selector"
-import { Client, clientService } from "@/lib/clients"
-import { SampleInformation, sampleInformationService, CreateSampleInformationData, UpdateSampleInformationData } from "@/lib/sample-information"
+import { Client } from "@/lib/clients"
+import { SampleInformationResponse, sampleInformationService, CreateSampleInformationData, UpdateSampleInformationData } from "@/lib/sample-information"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
 import { useQueryClient } from "@tanstack/react-query"
 
 interface Props {
-  initial?: SampleInformation
+  initial?: SampleInformationResponse
   readOnly?: boolean
 }
 
@@ -36,36 +36,24 @@ export function SampleInformationForm({ initial, readOnly = false }: Props) {
 
   // Load selected client when initial data is available (for edit mode)
   useEffect(() => {
-    const loadSelectedClient = async () => {
-      if (initial && !selectedClient) {
-        try {
-          // Check if we have client ID (from edit response) or client name (from list response)
-          if ((initial as any).client && typeof (initial as any).client === 'number') {
-            // We have client ID from edit response, get client details
-            const client = await clientService.getById(String((initial as any).client))
-            setSelectedClient(client)
-            setClientId(client.id.toString())
-          } else if ((initial as any).client_id && typeof (initial as any).client_id === 'string') {
-            // API provides client_id on edit payload; fetch directly by id
-            const client = await clientService.getById((initial as any).client_id)
-            setSelectedClient(client)
-            setClientId(client.id.toString())
-          } else if (initial.client_name) {
-            // We have client name, search for client
-            const response = await clientService.search(initial.client_name, 1)
-            const client = response.results.find(c => c.client_name === initial.client_name)
-            if (client) {
-              setSelectedClient(client)
-              setClientId(client.id.toString())
-            }
-          }
-        } catch (error) {
-          console.error("Failed to load client:", error)
+    if (initial && !selectedClient) {
+      // Create client object from API response data
+      if (initial.client_id && initial.client_name) {
+        const client: Client = {
+          id: initial.client_id,
+          client_name: initial.client_name,
+          contact_person: "", // Not available in sample info response
+          email: "", // Not available in sample info response
+          phone: "", // Not available in sample info response
+          address: "", // Not available in sample info response
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         }
+        setSelectedClient(client)
+        setClientId(initial.client_id)
       }
     }
-
-    loadSelectedClient()
   }, [initial])
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
