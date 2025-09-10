@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { Check, ChevronsUpDown, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -8,10 +8,8 @@ import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { testMethodService, TestMethod } from "@/lib/test-methods"
-
-// Simple in-memory cache keyed by query ("__ALL__" for initial load)
-const testMethodsCache = new Map<string, TestMethod[]>()
+import { TestMethod, testMethodService } from "@/lib/test-methods"
+import { useQuery } from "@tanstack/react-query"
 
 interface TestMethodsSelectorProps {
   value?: string[]
@@ -20,6 +18,7 @@ interface TestMethodsSelectorProps {
   disabled?: boolean
   className?: string
   maxSelections?: number
+  selectedMethods?: Array<{ id: string; test_name: string }>
 }
 
 export function TestMethodsSelector({ 
@@ -28,54 +27,35 @@ export function TestMethodsSelector({
   placeholder = "Select test methods...", 
   disabled = false,
   className,
-  maxSelections
+  maxSelections,
+  selectedMethods = []
 }: TestMethodsSelectorProps) {
   const [open, setOpen] = useState(false)
-  const [testMethods, setTestMethods] = useState<TestMethod[]>([])
-  const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Load test methods only when the popover is open and debounce searches
-  useEffect(() => {
-    // Avoid fetching when the selector is not open
-    if (!open) return
-
-    const key = searchQuery.trim() ? searchQuery.trim() : "__ALL__"
-
-    // Serve from cache if available
-    const cached = testMethodsCache.get(key)
-    if (cached) {
-      setTestMethods(cached)
-      return
-    }
-
-    const loadTestMethods = async () => {
-      try {
-        setLoading(true)
-        const response = searchQuery.trim()
-          ? await testMethodService.search(searchQuery, 1)
-          : await testMethodService.getAll(1)
-        testMethodsCache.set(key, response.results)
-        setTestMethods(response.results)
-      } catch (error) {
-        console.error("Failed to load test methods:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    const timeoutId = setTimeout(() => {
-      loadTestMethods()
-    }, searchQuery.trim() ? 300 : 0)
-
-    return () => clearTimeout(timeoutId)
-  }, [open, searchQuery])
+  // Use React Query for test methods - only load when popover is open or when we have selected values
+  const shouldLoad = open || value.length > 0
+  const { data: testMethods = [], isLoading: loading } = useQuery({
+    queryKey: ['test-methods', searchQuery.trim() || '__ALL__'],
+    queryFn: () => searchQuery.trim() 
+      ? testMethodService.search(searchQuery, 1)
+      : testMethodService.getAll(1),
+    enabled: shouldLoad,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    select: (data) => data.results,
+  })
 
 
-  // Get selected test methods data
+  // Get selected test methods data - use provided selectedMethods or filter from loaded testMethods
   const selectedTestMethods = useMemo(() => {
+    if (selectedMethods.length > 0) {
+      // Use provided selected methods (for edit mode)
+      return selectedMethods.filter(method => value.includes(method.id))
+    }
+    // Fallback to filtering from loaded testMethods (for create mode)
     return testMethods.filter(method => value.includes(method.id))
-  }, [testMethods, value])
+  }, [testMethods, value, selectedMethods])
 
   const handleSelect = (methodId: string) => {
     const isSelected = value.includes(methodId)

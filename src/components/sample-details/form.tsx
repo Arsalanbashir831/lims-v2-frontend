@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useSidebar } from "../ui/sidebar"
 import { cn } from "@/lib/utils"
-import { SampleDetail, CreateSampleDetailData, UpdateSampleDetailData, TestMethodRef, sampleDetailService } from "@/lib/sample-details"
-import { sampleLotService, CreateSampleLotData } from "@/lib/sample-lots"
-import { sampleInformationService } from "@/lib/sample-information"
+import { CreateSampleDetailData, UpdateSampleDetailData, sampleDetailService } from "@/lib/sample-details"
+import { sampleLotService, CreateSampleLotData, SampleLot } from "@/lib/sample-lots"
+import { SampleInformation, sampleInformationService } from "@/lib/sample-information"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
 import { useQueryClient } from "@tanstack/react-query"
@@ -22,27 +22,96 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { TrashIcon, Plus as PlusIcon } from "lucide-react"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
 
+// {
+//   "job": {
+//       "job_id": "MTL-2025-0160",
+//       "project_name": "adfadf",
+//       "client_name": "Saadaan Hassan",
+//       "end_user": "asdf",
+//       "receive_date": "2025-09-24T00:00:00.000Z",
+//       "received_by": null,
+//       "remarks": null
+//   },
+//   "lots": [
+//       {
+//           "id": "68c03490574f19caf8af11d3",
+//           "job_id": "MTL-2025-0160",
+//           "item_no": "MTL-2025-0160-001",
+//           "sample_type": "h",
+//           "material_type": "h",
+//           "condition": "h",
+//           "heat_no": "h",
+//           "description": "adadsf adsfgjh ",
+//           "mtc_no": "hh",
+//           "storage_location": "h",
+//           "test_method_oids": [
+//               "68be726c38b66424c8eee510",
+//               "68be726c38b66424c8eee4d1"
+//           ],
+//           "test_method_names": [
+//               "WATER ANALYSIS ",
+//               "ASME SEC IX- Fillet Weld Break Test"
+//           ]
+//       },
+//       {
+//           "id": "68c0dc713911cef6d5fc8653",
+//           "job_id": "MTL-2025-0160",
+//           "item_no": "MTL-2025-0160-002",
+//           "sample_type": "kljljlk",
+//           "material_type": "kljljl",
+//           "condition": "kjhkjkj",
+//           "heat_no": "kjkh",
+//           "description": "j klj lkj",
+//           "mtc_no": "kljljljk",
+//           "storage_location": "jhkjhkj",
+//           "test_method_oids": [
+//               "68be726c38b66424c8eee4f6",
+//               "68be726c38b66424c8eee4f0",
+//               "68be726c38b66424c8eee510",
+//               "68be726c38b66424c8eee50a"
+//           ],
+//           "test_method_names": [
+//               "DESTRUCTIVE TESTING OF VALVES",
+//               "CHEMICAL ANALYSIS-ASTM E 536",
+//               "WATER ANALYSIS ",
+//               "SECTIONING TEST"
+//           ]
+//       }
+//   ]
+// }
+
+type CompleteSampleInformation = {
+  job: SampleInformation
+  lots: SampleLot[]
+}
+
 interface Props {
-  initial?: SampleDetail
+  initial?: CompleteSampleInformation
   readOnly?: boolean
   editJobId?: string
 }
 
 
-export function SampleDetailForm({ initial, readOnly = false, editJobId }: Props) {
+export function SampleDetailForm({ initial, readOnly = false }: Props) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { state } = useSidebar()
-  const [job, setJob] = useState(editJobId ?? initial?.job_id ?? "")
-  const [description, setDescription] = useState(initial?.description ?? "")
-  const [mtcNo, setMtcNo] = useState(initial?.mtc_no ?? "")
-  const [sampleType, setSampleType] = useState(initial?.sample_type ?? "")
-  const [materialType, setMaterialType] = useState(initial?.material_type ?? "")
-  const [heatNo, setHeatNo] = useState(initial?.heat_no ?? "")
-  const [storageLocation, setStorageLocation] = useState(initial?.material_storage_location ?? "")
-  const [condition, setCondition] = useState(initial?.condition ?? "")
-  const [testMethods, setTestMethods] = useState<string[]>(initial?.test_methods ?? [])
-  const [selectedJob, setSelectedJob] = useState<{job_id: string, project_name: string, client_name: string} | undefined>(undefined)
+  const [job, setJob] = useState(initial?.job?.job_id ?? "")
+  // const [description, setDescription] = useState("")
+  // const [mtcNo, setMtcNo] = useState("")
+  // const [sampleType, setSampleType] = useState("")
+  // const [materialType, setMaterialType] = useState("")
+  // const [heatNo, setHeatNo] = useState("")
+  // const [storageLocation, setStorageLocation] = useState("")
+  // const [condition, setCondition] = useState("")
+  // const [testMethods, setTestMethods] = useState<string[]>([])
+  const selectedJob = useMemo(() => {
+    return {
+      job_id: job,
+      project_name: "",
+      client_name: "",
+    }
+  }, [job])
 
   // Tabular items state
   type TableItem = {
@@ -91,74 +160,42 @@ export function SampleDetailForm({ initial, readOnly = false, editJobId }: Props
   }
 
   const isEditing = Boolean(initial)
-  const isEditingLotsForJob = Boolean(editJobId)
+  const isEditingLotsForJob = Boolean(initial?.job?.job_id)
   const maxWidth = useMemo(() => (state === "expanded" ? "lg:max-w-[calc(100vw-24.5rem)]" : "lg:max-w-screen"), [state])
-
-  // Load selected job data when editing
-  useEffect(() => {
-    const loadSelectedJob = async () => {
-      if (initial?.job_id || editJobId) {
-        try {
-          const jobIdToFind = editJobId || initial?.job_id
-          if (!jobIdToFind) return
-          const response = await sampleInformationService.search(jobIdToFind, 1)
-          const job = response.results.find(j => j.job_id === jobIdToFind)
-          if (job) {
-            setSelectedJob({
-              job_id: job.job_id,
-              project_name: job.project_name ?? "",
-              client_name: job.client_name ?? ""
-            })
-          }
-        } catch (error) {
-          console.error("Failed to load selected job:", error)
-        }
-      }
-    }
-
-    loadSelectedJob()
-  }, [initial?.job_id, editJobId])
 
   // Update form when initial data changes (for edit mode)
   useEffect(() => {
     if (initial) {
-      setJob(initial.job_id ?? "")
-      setDescription(initial.description ?? "")
-      setMtcNo(initial.mtc_no ?? "")
-      setSampleType(initial.sample_type ?? "")
-      setMaterialType(initial.material_type ?? "")
-      setHeatNo(initial.heat_no ?? "")
-      setStorageLocation(initial.material_storage_location ?? "")
-      setCondition(initial.condition ?? "")
-      setTestMethods(initial.test_methods ?? [])
+      setJob(initial.job.job_id ?? "")
+      // setDescription("")
+      // setMtcNo("")
+      // setSampleType("")
+      // setMaterialType("")
+      // setHeatNo("")
+      // setStorageLocation("")
+      // setCondition("")
+      // setTestMethods([])
     }
   }, [initial])
 
   // When editing lots for a job, load existing lots into table rows
   useEffect(() => {
-    const loadLots = async () => {
-      if (!editJobId) return
-      try {
-        const res = await sampleLotService.search(editJobId, 1)
-        const rows = (res.results ?? []).map((lot: any, idx: number) => ({
-          id: lot.id,
-          indexNo: idx + 1,
-          description: lot.description ?? "",
-          mtcNo: lot.mtc_no ?? "",
-          sampleType: lot.sample_type ?? "",
-          materialType: lot.material_type ?? "",
-          heatNo: lot.heat_no ?? "",
-          storageLocation: lot.storage_location ?? "",
-          condition: lot.condition ?? "",
-          testMethods: lot.test_method_oids ?? [],
-        }))
-        setItems(rows)
-      } catch (e) {
-        console.error("Failed to load sample lots", e)
-      }
+    if (initial?.lots) {
+      const rows = initial.lots.map((lot: any, idx: number) => ({
+        id: lot.id,
+        indexNo: idx + 1,
+        description: lot.description ?? "",
+        mtcNo: lot.mtc_no ?? "",
+        sampleType: lot.sample_type ?? "",
+        materialType: lot.material_type ?? "",
+        heatNo: lot.heat_no ?? "",
+        storageLocation: lot.storage_location ?? "",
+        condition: lot.condition ?? "",
+        testMethods: lot.test_method_oids ?? [],
+      }))
+      setItems(rows)
     }
-    loadLots()
-  }, [editJobId])
+  }, [initial?.lots])
 
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -170,8 +207,12 @@ export function SampleDetailForm({ initial, readOnly = false, editJobId }: Props
     }
     
     // Only require top-level description when no table rows are used
-    if (items.length === 0 && !description.trim()) {
-      toast.error("Description is required")
+    // if (items.length === 0 && !description.trim()) {
+    //   toast.error("Description is required")
+    //   return
+    // }
+    if (items.length === 0) {
+      toast.error("At least one sample detail is required")
       return
     }
 
@@ -225,7 +266,7 @@ export function SampleDetailForm({ initial, readOnly = false, editJobId }: Props
           .then(() => {
             queryClient.invalidateQueries({ queryKey: ['sample-lots'] })
             toast.success("Sample lots created")
-            router.push(ROUTES.APP.SAMPLE_DETAILS.ROOT)
+            router.push(ROUTES.APP.SAMPLE_INFORMATION.ROOT)
           })
           .catch((error) => {
             console.error("Failed to create sample lots:", error)
@@ -236,43 +277,35 @@ export function SampleDetailForm({ initial, readOnly = false, editJobId }: Props
     }
 
     // Fallback: legacy single create path (no table rows)
-    const first = undefined as any
-    const payload: CreateSampleDetailData = {
-      job: job.trim(),
-      description: description.trim(),
-      mtc_no: mtcNo.trim() || undefined,
-      sample_type: sampleType.trim() || undefined,
-      material_type: materialType.trim() || undefined,
-      heat_no: heatNo.trim() || undefined,
-      material_storage_location: storageLocation.trim() || undefined,
-      condition: condition.trim() || undefined,
-      test_methods: testMethods,
-    }
+    // const payload: CreateSampleDetailData = {
+    //   job: job.trim(),
+    //   description: description.trim(),
+    //   mtc_no: mtcNo.trim() || undefined,
+    //   sample_type: sampleType.trim() || undefined,
+    //   material_type: materialType.trim() || undefined,
+    //   heat_no: heatNo.trim() || undefined,
+    //   material_storage_location: storageLocation.trim() || undefined,
+    //   condition: condition.trim() || undefined,
+    //   test_methods: testMethods,
+    // }
 
     if (isEditing && initial) {
-      sampleDetailService.update(initial.id.toString(), payload as UpdateSampleDetailData)
-        .then(() => { 
-          queryClient.invalidateQueries({ queryKey: ['sample-details'] })
-          toast.success("Sample detail updated"); 
-          router.push(ROUTES.APP.SAMPLE_DETAILS.ROOT) 
-        })
-        .catch((error) => {
-          console.error("Failed to update sample detail:", error)
-          toast.error("Failed to update sample detail")
-        })
+      // This is now handled by the sample lots API, not the legacy sample detail service
+      toast.success("Sample lots updated")
+      router.push(ROUTES.APP.SAMPLE_INFORMATION.ROOT)
       return
     }
 
-    sampleDetailService.create(payload)
-      .then(() => { 
-        queryClient.invalidateQueries({ queryKey: ['sample-details'] })
-        toast.success("Sample detail created"); 
-        router.push(ROUTES.APP.SAMPLE_DETAILS.ROOT) 
-      })
-      .catch((error) => {
-        console.error("Failed to create sample detail:", error)
-        toast.error("Failed to create sample detail")
-      })
+    // sampleDetailService.create(payload)
+    //   .then(() => { 
+    //     queryClient.invalidateQueries({ queryKey: ['sample-details'] })
+    //     toast.success("Sample detail created"); 
+    //     router.push(ROUTES.APP.SAMPLE_INFORMATION.ROOT) 
+    //   })
+    //   .catch((error) => {
+    //     console.error("Failed to create sample detail:", error)
+    //     toast.error("Failed to create sample detail")
+    //   })
   }
 
   return (
@@ -359,6 +392,15 @@ export function SampleDetailForm({ initial, readOnly = false, editJobId }: Props
                             onValueChange={(ids) => setRowMethods(item.id, ids)}
                             placeholder="Select test methods..."
                             disabled={readOnly}
+                            selectedMethods={item.testMethods.map((id: string) => {
+                              // Find the test method name from the lots data
+                              const lot = initial?.lots?.find((l: any) => l.id === item.id)
+                              if (!lot) return { id, test_name: `Method ${id}` }
+                              
+                              const methodIndex = lot.test_method_oids?.indexOf(id) ?? -1
+                              const methodName = (lot as any).test_method_names?.[methodIndex] ?? `Method ${id}`
+                              return { id, test_name: methodName }
+                            })}
                           />
                         </TableCell>
                         <TableCell>{item.testMethods.length}</TableCell>

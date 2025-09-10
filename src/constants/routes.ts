@@ -37,7 +37,6 @@ export const ROUTES = {
             EDIT: (id: string) => `/sample-information/${id}/edit`,
         },
         SAMPLE_DETAILS: {
-            ROOT: "/sample-details",
             NEW: "/sample-details/new",
             EDIT: (id: string) => `/sample-details/${id}/edit`,
         },

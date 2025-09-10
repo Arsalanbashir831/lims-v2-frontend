@@ -31,7 +31,7 @@ export default function CompleteDetailsSidebar({
 
     const { data: sidebarData, isFetching } = useQuery({
         queryKey: ['sample-lots', selectedJobId],
-        queryFn: () => selectedJobId ? sampleInformationService.getSidebarData(selectedJobId) : Promise.resolve(null),
+        queryFn: () => selectedJobId ? sampleInformationService.getCompleteSampleInformation(selectedJobId) : Promise.resolve(null),
         enabled: !!selectedJobId,
     })
 
@@ -154,7 +154,7 @@ export default function CompleteDetailsSidebar({
                                     </CardTitle>
                                     {selectedJobId && (
                                         <Button size="sm" asChild>
-                                            <Link href={`${ROUTES.APP.SAMPLE_DETAILS.NEW}?mode=edit-lots&jobId=${selectedJobId}`}>
+                                            <Link href={ROUTES.APP.SAMPLE_DETAILS.EDIT(selectedJobId)}>
                                                 <EditIcon className="w-4 h-4 mr-1" />
                                                 Edit Sample Lots
                                             </Link>

@@ -86,7 +86,7 @@ export const sampleInformationService = {
     }
   },
 
-  async getSidebarData(id: string): Promise<{ job: any, lots: any[] }> {
+  async getCompleteSampleInformation(id: string): Promise<{ job: any, lots: any[] }> {
     const endpoint = API_ROUTES.Lab_MANAGERS.SAMPLE_INFORMATION_COMPLETE_INFO(id).replace(/^\//, "")
     const response = await api.get(endpoint).json()
     return response as { job: any, lots: any[] }
