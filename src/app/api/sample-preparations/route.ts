@@ -27,81 +27,69 @@ export async function GET(request: NextRequest) {
     // Get total count
     const totalCount = await collection.countDocuments(filter)
 
+
     // Use aggregation to join with sample_lots, jobs, clients, and specimens
     const pipeline = [
       { $match: filter },
+      { $addFields: { __original_items_count: { $size: "$request_items" } } },
+      {
+        $unwind: {
+          path: "$request_items",
+          preserveNullAndEmptyArrays: true
+        }
+      },
       {
         $lookup: {
           from: 'sample_lots',
-          let: { requestIds: "$sample_lots.request_id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: { 
-                  $in: [
-                    "$_id",
-                    { $map: { input: { $ifNull: ["$$requestIds", []] }, as: "id", in: { $toObjectId: "$$id" } } }
-                  ]
-                },
-                $or: [{ is_active: true }, { is_active: { $exists: false } }]
-              }
-            },
-            {
-              $lookup: {
-                from: 'jobs',
-                let: { jobIdVal: "$job_id" },
-                pipeline: [
-                  { $match: { $expr: { $or: [
-                    { $eq: [
-                      "$_id",
-                      { $cond: [
-                        { $eq: [ { $type: "$$jobIdVal" }, "objectId" ] },
-                        "$$jobIdVal",
-                        { $convert: { input: "$$jobIdVal", to: "objectId", onError: null, onNull: null } }
-                      ] }
-                    ] },
-                    { $eq: ["$job_id", "$$jobIdVal"] }
-                  ] } } }
-                ],
-                as: 'jobDoc'
-              }
-            },
-            {
-              $lookup: {
-                from: 'clients',
-                localField: 'jobDoc.client_id',
-                foreignField: '_id',
-                as: 'clientDoc'
-              }
-            },
-            {
-              $addFields: {
-                job_id: { $arrayElemAt: ["$jobDoc.job_id", 0] },
-                project_name: { $arrayElemAt: ["$jobDoc.project_name", 0] },
-                client_name: { $arrayElemAt: ["$clientDoc.client_name", 0] }
-              }
-            }
-          ],
-          as: 'sampleLotData'
+          localField: 'request_id',
+          foreignField: '_id',
+          as: 'sampleLot'
         }
       },
-      
       {
         $unwind: {
-          path: "$sample_lots",
+          path: "$sampleLot",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: 'jobs',
+          localField: 'sampleLot.job_id',
+          foreignField: '_id',
+          as: 'job'
+        }
+      },
+      {
+        $unwind: {
+          path: "$job",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: 'clients',
+          localField: 'job.client_id',
+          foreignField: '_id',
+          as: 'client'
+        }
+      },
+      {
+        $unwind: {
+          path: "$client",
           preserveNullAndEmptyArrays: true
         }
       },
       {
         $unwind: {
-          path: "$sample_lots.specimen_oids",
+          path: "$request_items.specimen_oids",
           preserveNullAndEmptyArrays: true
         }
       },
       {
         $lookup: {
           from: 'specimens',
-          localField: 'sample_lots.specimen_oids',
+          localField: 'request_items.specimen_oids',
           foreignField: '_id',
           as: 'specimenDoc'
         }
@@ -110,23 +98,24 @@ export async function GET(request: NextRequest) {
         $group: {
           _id: "$_id",
           request_no: { $first: "$request_no" },
-          sample_lots: { $push: "$sample_lots" },
-          sampleLotData: { $first: "$sampleLotData" },
+          request_items: { $push: "$request_items" },
+          job_id: { $first: "$job.job_id" },
+          project_name: { $first: "$job.project_name" },
+          client_name: { $first: "$client.client_name" },
           specimen_ids: { $addToSet: { $arrayElemAt: ["$specimenDoc.specimen_id", 0] } },
-          created_at: { $first: "$created_at" }
+          created_at: { $first: "$created_at" },
+          __original_items_count: { $first: "$__original_items_count" }
         }
       },
       {
         $addFields: {
-          job_id: { $arrayElemAt: ["$sampleLotData.job_id", 0] },
-          client_name: { $arrayElemAt: ["$sampleLotData.client_name", 0] },
-          project_name: { $arrayElemAt: ["$sampleLotData.project_name", 0] },
-          specimen_ids: { $filter: { input: "$specimen_ids", cond: { $ne: ["$$this", null] } } }
+          specimen_ids: { $filter: { input: "$specimen_ids", cond: { $ne: ["$$this", null] } } },
+          no_of_request_items: "$__original_items_count"
         }
       },
       { $project: { 
-        sampleLotData: 0, 
-        sample_lots: 0,
+        request_items: 0,
+        __original_items_count: 0,
         is_active: 0,
         updated_at: 0
       }},

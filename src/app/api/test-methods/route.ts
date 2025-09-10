@@ -42,11 +42,21 @@ export async function GET(request: NextRequest) {
       id: tm._id.toString(),
       test_name: tm.test_name,
       test_description: tm.test_description ?? null,
-      test_columns: tm.test_columns ?? [],
+      test_columns: Array.isArray(tm.test_columns) ? tm.test_columns : (typeof tm.test_columns === 'string' ? tm.test_columns.split(',').map(col => col.trim()).filter(col => col) : []),
       hasImage: tm.hasImage === true,
       is_active: tm.is_active !== false,
-      createdAt: (tm.createdAt instanceof Date ? tm.createdAt : new Date(tm.createdAt)).toISOString(),
-      updatedAt: tm.updatedAt ? (tm.updatedAt instanceof Date ? tm.updatedAt : new Date(tm.updatedAt)).toISOString() : undefined,
+      createdAt: (() => {
+        if (!tm.createdAt) return new Date().toISOString()
+        if (tm.createdAt instanceof Date) return tm.createdAt.toISOString()
+        const date = new Date(tm.createdAt)
+        return isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString()
+      })(),
+      updatedAt: (() => {
+        if (!tm.updatedAt) return undefined
+        if (tm.updatedAt instanceof Date) return tm.updatedAt.toISOString()
+        const date = new Date(tm.updatedAt)
+        return isNaN(date.getTime()) ? undefined : date.toISOString()
+      })(),
     }))
 
     return NextResponse.json({

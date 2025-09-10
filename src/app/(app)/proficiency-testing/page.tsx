@@ -26,9 +26,9 @@ export default function ProficiencyTestingPage() {
     const { data: ptData, isLoading, isFetching } = useQuery({
         queryKey: ['proficiency-tests', currentPage, searchQuery],
         queryFn: () => (searchQuery.trim() ? proficiencyTestService.search(searchQuery.trim(), currentPage) : proficiencyTestService.getAll(currentPage)),
-        staleTime: 5 * 60 * 1000,
+        staleTime: 0, // Always refetch when page changes
         gcTime: 10 * 60 * 1000,
-        placeholderData: (prev) => prev,
+        // Remove placeholderData to ensure queries refetch when page changes
     })
 
     const items = ptData?.results ?? []
@@ -98,12 +98,17 @@ export default function ProficiencyTestingPage() {
             tableKey="proficiency-testing"
             onRowClick={(row) => router.push(ROUTES.APP.PROFICIENCY_TESTING.EDIT(String(row.original.id)))}
             toolbar={useCallback((table: TanstackTable<ProficiencyTest>) => {
+                const handleSearchChange = useCallback((value: string) => {
+                    setSearchQuery(value)
+                    setCurrentPage(1)
+                }, [])
+
                 return (
                     <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
                         <FilterSearch
                             placeholder="Search description..."
                             value={searchQuery}
-                            onChange={(value) => { setSearchQuery(value); setCurrentPage(1) }}
+                            onChange={handleSearchChange}
                             className="w-full"
                             inputClassName="max-w-md"
                         />

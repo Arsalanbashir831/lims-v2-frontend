@@ -30,9 +30,9 @@ export default function SampleInformationPage() {
         queryFn: () => searchQuery
             ? sampleInformationService.search(searchQuery, currentPage)
             : sampleInformationService.getAll(currentPage),
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        staleTime: 0, // Always refetch when page changes
         gcTime: 10 * 60 * 1000, // 10 minutes
-        placeholderData: (previousData) => previousData,
+        // Remove placeholderData to ensure queries refetch when page changes
     })
 
     // Handle errors with useEffect

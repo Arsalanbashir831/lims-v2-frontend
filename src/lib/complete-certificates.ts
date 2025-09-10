@@ -36,18 +36,18 @@ export const CompleteCertificateSchema = z.object({
   date_of_sampling: z.string(),
   date_of_testing: z.string(),
   issue_date: z.string(),
-  gripco_ref_no: z.string(),
+  gripco_ref_no: z.string().optional().default(""),
   revision_no: z.string(),
-  client_name: z.string(),
+  client_name: z.string().optional().default(""),
   customer_name_no: z.string().optional(),
   atten: z.string().optional(),
   customer_po: z.string().optional(),
-  project_name: z.string(),
-  name_of_laboratory: z.string(),
-  address: z.string(),
+  project_name: z.string().optional().default(""),
+  name_of_laboratory: z.string().optional().default(""),
+  address: z.string().optional().default(""),
   tested_by: z.string(),
   reviewed_by: z.string(),
-  certificate_items_json: z.array(CertificateItemSchema)
+  certificate_items_json: z.array(CertificateItemSchema).optional().default([])
 })
 
 export type CompleteCertificate = z.infer<typeof CompleteCertificateSchema>
@@ -58,8 +58,8 @@ export type TestResult = z.infer<typeof TestResultSchema>
 // API Response Schema for list
 export const CompleteCertificateListResponseSchema = z.object({
   count: z.number(),
-  next: z.string().nullable(),
-  previous: z.string().nullable(),
+  next: z.union([z.string(), z.number()]).nullable().transform(val => val ? String(val) : null),
+  previous: z.union([z.string(), z.number()]).nullable().transform(val => val ? String(val) : null),
   results: z.array(CompleteCertificateSchema),
 })
 
@@ -71,7 +71,21 @@ export const completeCertificateService = {
       searchParams: { page }
     }).json()
     
-    return CompleteCertificateListResponseSchema.parse(response)
+    // Transform the response to handle undefined values
+    const transformedResponse = {
+      ...response,
+      results: (response.results || []).map((item: any) => ({
+        ...item,
+        gripco_ref_no: item.gripco_ref_no || "",
+        client_name: item.client_name || "",
+        project_name: item.project_name || "",
+        name_of_laboratory: item.name_of_laboratory || "",
+        address: item.address || "",
+        certificate_items_json: item.certificate_items_json || []
+      }))
+    }
+    
+    return CompleteCertificateListResponseSchema.parse(transformedResponse)
   },
 
   async getById(id: string): Promise<CompleteCertificate> {
@@ -84,7 +98,21 @@ export const completeCertificateService = {
       searchParams: { q: query, page }
     }).json()
     
-    return CompleteCertificateListResponseSchema.parse(response)
+    // Transform the response to handle undefined values
+    const transformedResponse = {
+      ...response,
+      results: (response.results || []).map((item: any) => ({
+        ...item,
+        gripco_ref_no: item.gripco_ref_no || "",
+        client_name: item.client_name || "",
+        project_name: item.project_name || "",
+        name_of_laboratory: item.name_of_laboratory || "",
+        address: item.address || "",
+        certificate_items_json: item.certificate_items_json || []
+      }))
+    }
+    
+    return CompleteCertificateListResponseSchema.parse(transformedResponse)
   },
 
   async create(data: CompleteCertificate): Promise<any> {

@@ -26,7 +26,7 @@ export function FilterSearch({ placeholder = "Search...", value = "", onChange, 
       onChange?.(term)
     }, debounceMs)
     return () => clearTimeout(id)
-  }, [term, debounceMs, onChange])
+  }, [term, debounceMs]) // Remove onChange from dependencies
 
   return (
     <div className={`flex items-center gap-2 ${className ?? ""}`}>

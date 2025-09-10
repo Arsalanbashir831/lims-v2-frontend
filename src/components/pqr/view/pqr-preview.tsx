@@ -305,10 +305,15 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
   const [errorView, setErrorView] = useState<string | null>(null);
   const [qrSrc, setQrSrc] = useState<string | null>(null);
 
-  const frontendBase =
-    (process.env.NEXT_PUBLIC_FRONTEND_URL as string | undefined) ||
-    (process.env.FRONTEND_URL as string | undefined) ||
-    (typeof window !== "undefined" ? window.location.origin : "");
+  const [frontendBase, setFrontendBase] = useState("")
+  
+  useEffect(() => {
+    const url = (process.env.NEXT_PUBLIC_FRONTEND_URL as string | undefined) ||
+               (process.env.FRONTEND_URL as string | undefined) ||
+               (typeof window !== "undefined" ? window.location.origin : "");
+    setFrontendBase(url)
+  }, [])
+  
   const publicPreviewBase = `${frontendBase}${ROUTES.PUBLIC?.PQR_PREVIEW(pqrId ?? "")}`;
 
   console.log("publicPreviewBase", publicPreviewBase);

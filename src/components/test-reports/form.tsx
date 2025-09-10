@@ -13,6 +13,7 @@ import type { TestReport } from "@/lib/test-reports"
 import { generateReportNo, type CertificateDetails, type ReportItem } from "@/lib/test-reports"
 import { samplePreparationService } from "@/lib/sample-preparation-new"
 import { listSampleReceivings } from "@/lib/sample-receiving"
+import { generateStableId } from "@/utils/hydration-fix"
 import { completeCertificateService, type CompleteCertificate } from "@/lib/complete-certificates"
 import { DynamicTable, type DynamicColumn, type DynamicRow } from "@/components/pqr/form/dynamic-table"
 import { RequestSelector } from "@/components/common/request-selector"
@@ -34,7 +35,9 @@ function fallbackColumns(): DynamicColumn[] {
   ]
 }
 
-function genLocalId(): string { return `loc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}` }
+function genLocalId(): string { 
+  return generateStableId('loc')
+}
 
 // Helper function to map test results back to form structure
 function mapTestResultsToFormData(testResults: { columns: string[], data: any[][] }, columns: DynamicColumn[]): DynamicRow[] {

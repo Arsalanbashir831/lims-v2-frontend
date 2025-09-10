@@ -26,9 +26,9 @@ export default function CalibrationTestingPage() {
   const { data: ctData, isLoading, isFetching } = useQuery({
     queryKey: ['calibration-tests', currentPage, searchQuery],
     queryFn: () => (searchQuery.trim() ? calibrationTestService.search(searchQuery.trim(), currentPage) : calibrationTestService.getAll(currentPage)),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0, // Always refetch when page changes
     gcTime: 10 * 60 * 1000,
-    placeholderData: (prev) => prev,
+    // Remove placeholderData to ensure queries refetch when page changes
   })
 
   const items = ctData?.results ?? []
@@ -81,12 +81,17 @@ export default function CalibrationTestingPage() {
       tableKey="calibration-testing"
       onRowClick={(row) => router.push(ROUTES.APP.CALIBRATION_TESTING.EDIT(String(row.original.id)))}
       toolbar={useCallback((table: TanstackTable<CalibrationTest>) => {
+        const handleSearchChange = useCallback((value: string) => {
+          setSearchQuery(value)
+          setCurrentPage(1)
+        }, [])
+
         return (
           <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
             <FilterSearch
               placeholder="Search equipment..."
               value={searchQuery}
-              onChange={(value) => { setSearchQuery(value); setCurrentPage(1) }}
+              onChange={handleSearchChange}
               className="w-full"
               inputClassName="max-w-md"
             />

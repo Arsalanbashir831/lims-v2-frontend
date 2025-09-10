@@ -47,8 +47,8 @@ export function SampleInformationForm({ initial, readOnly = false }: Props) {
           phone: "", // Not available in sample info response
           address: "", // Not available in sample info response
           is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          created_at: "",
+          updated_at: "",
         }
         setSelectedClient(client)
         setClientId(initial.client_id)

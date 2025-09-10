@@ -51,8 +51,18 @@ export async function GET(request: NextRequest) {
       createdBy: eq.createdBy ?? null,
       updatedBy: eq.updatedBy ?? null,
       is_active: eq.is_active !== false,
-      createdAt: (eq.createdAt instanceof Date ? eq.createdAt : new Date(eq.createdAt)).toISOString(),
-      updatedAt: eq.updatedAt ? (eq.updatedAt instanceof Date ? eq.updatedAt : new Date(eq.updatedAt)).toISOString() : undefined,
+      createdAt: (() => {
+        if (!eq.createdAt) return new Date().toISOString()
+        if (eq.createdAt instanceof Date) return eq.createdAt.toISOString()
+        const date = new Date(eq.createdAt)
+        return isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString()
+      })(),
+      updatedAt: (() => {
+        if (!eq.updatedAt) return undefined
+        if (eq.updatedAt instanceof Date) return eq.updatedAt.toISOString()
+        const date = new Date(eq.updatedAt)
+        return isNaN(date.getTime()) ? undefined : date.toISOString()
+      })(),
     }))
 
     return NextResponse.json({

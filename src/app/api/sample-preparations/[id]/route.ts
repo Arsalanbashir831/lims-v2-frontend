@@ -29,68 +29,66 @@ export async function GET(
         }
       },
       {
-        $lookup: {
-          from: 'sample_lots',
-          let: { requestIds: "$sample_lots.request_id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: { 
-                  $in: [
-                    "$_id",
-                    { $map: { input: { $ifNull: ["$$requestIds", []] }, as: "id", in: { $toObjectId: "$$id" } } }
-                  ]
-                },
-                $or: [{ is_active: true }, { is_active: { $exists: false } }]
-              }
-            },
-            {
-              $lookup: {
-                from: 'jobs',
-                let: { jobIdVal: "$job_id" },
-                pipeline: [
-                  { $match: { $expr: { $or: [
-                    { $eq: [
-                      "$_id",
-                      { $cond: [
-                        { $eq: [ { $type: "$$jobIdVal" }, "objectId" ] },
-                        "$$jobIdVal",
-                        { $convert: { input: "$$jobIdVal", to: "objectId", onError: null, onNull: null } }
-                      ] }
-                    ] },
-                    { $eq: ["$job_id", "$$jobIdVal"] }
-                  ] } } }
-                ],
-                as: 'jobDoc'
-              }
-            },
-            {
-              $lookup: {
-                from: 'clients',
-                localField: 'jobDoc.client_id',
-                foreignField: '_id',
-                as: 'clientDoc'
-              }
-            },
-            {
-              $addFields: {
-                job_id: { $arrayElemAt: ["$jobDoc.job_id", 0] },
-                project_name: { $arrayElemAt: ["$jobDoc.project_name", 0] },
-                client_name: { $arrayElemAt: ["$clientDoc.client_name", 0] }
-              }
-            }
-          ],
-          as: 'sampleLotData'
+        $unwind: {
+          path: "$request_items",
+          preserveNullAndEmptyArrays: true
         }
       },
       {
-        $addFields: {
-          job_id: { $arrayElemAt: ["$sampleLotData.job_id", 0] },
-          client_name: { $arrayElemAt: ["$sampleLotData.client_name", 0] },
-          project_name: { $arrayElemAt: ["$sampleLotData.project_name", 0] }
+        $lookup: {
+          from: 'sample_lots',
+          localField: 'request_id',
+          foreignField: '_id',
+          as: 'sampleLot'
         }
       },
-      { $project: { sampleLotData: 0 } }
+      {
+        $unwind: {
+          path: "$sampleLot",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: 'jobs',
+          localField: 'sampleLot.job_id',
+          foreignField: '_id',
+          as: 'job'
+        }
+      },
+      {
+        $unwind: {
+          path: "$job",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: 'clients',
+          localField: 'job.client_id',
+          foreignField: '_id',
+          as: 'client'
+        }
+      },
+      {
+        $unwind: {
+          path: "$client",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $group: {
+          _id: "$_id",
+          request_no: { $first: "$request_no" },
+          request_items: { $push: "$request_items" },
+          job_id: { $first: "$job.job_id" },
+          project_name: { $first: "$job.project_name" },
+          client_name: { $first: "$client.client_name" },
+          is_active: { $first: "$is_active" },
+          created_at: { $first: "$created_at" },
+          updated_at: { $first: "$updated_at" }
+        }
+      },
     ]
     
     const result = await collection.aggregate(pipeline).toArray()
@@ -103,24 +101,47 @@ export async function GET(
       return d && !isNaN(d.getTime()) ? d : undefined 
     }
     
-    // Enrich each request_item/sample_lot with specimen_ids resolved from specimen_oids
-    const items = Array.isArray(doc.request_items) ? doc.request_items : (Array.isArray(doc.sample_lots) ? doc.sample_lots : [])
-    const allOids: string[] = items.flatMap((it: any) => Array.isArray(it.specimen_oids) ? it.specimen_oids.map((x: any) => String(x)) : [])
+    // Get request items from the document
+    const requestItems = Array.isArray(doc.request_items) ? doc.request_items : []
+    
+    // Collect all specimen OIDs from all request items
+    const allOids: string[] = requestItems.flatMap((item: any) => {
+      if (Array.isArray(item.specimen_oids)) {
+        return item.specimen_oids.map((oid: any) => String(oid))
+      }
+      return []
+    })
+    
     let oidToId = new Map<string, string>()
     if (allOids.length) {
       const specimensCol = db.collection('specimens')
-      const specs = await specimensCol.find({ _id: { $in: allOids.filter((s) => ObjectId.isValid(s)).map((s) => new ObjectId(s)) } }).project({ specimen_id: 1 }).toArray()
+      const validOids = allOids.filter((s) => ObjectId.isValid(s)).map((s) => new ObjectId(s))
+      
+      const specs = await specimensCol.find({ _id: { $in: validOids } }).project({ specimen_id: 1 }).toArray()
+      
       oidToId = new Map(specs.map((s: any) => [String(s._id), String(s.specimen_id)]))
     }
-    const enrichedItems = items.map((it: any) => ({
-      ...it,
-      specimen_ids: Array.isArray(it.specimen_oids) ? it.specimen_oids.map((x: any) => oidToId.get(String(x)) || null).filter(Boolean) : []
-    }))
+    
+    // Enrich each request item with specimen_ids
+    const enrichedItems = requestItems.map((item: any) => {
+      const specimenIds = Array.isArray(item.specimen_oids) 
+        ? item.specimen_oids.map((oid: any) => oidToId.get(String(oid)) || null).filter(Boolean)
+        : []
+      
+      return {
+        ...item,
+        specimen_ids: specimenIds
+      }
+    })
+
+    // Collect all unique specimen IDs from all request items
+    const allSpecimenIds = [...new Set(enrichedItems.flatMap((item: any) => item.specimen_ids || []))]
 
     return NextResponse.json({
       id: doc._id.toString(),
       request_no: doc.request_no,
       request_items: enrichedItems,
+      specimen_ids: allSpecimenIds,
       job_id: doc.job_id || "",
       client_name: doc.client_name || "",
       project_name: doc.project_name || "",

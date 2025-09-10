@@ -32,11 +32,9 @@ export default function ClientsPage() {
                 return clientService.getAll(currentPage)
             }
         },
-        staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh for 5 minutes
+        staleTime: 0, // Always refetch when page changes
         gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache for 10 minutes (renamed from cacheTime)
-        placeholderData: (previousData) => {
-            return previousData
-        },
+        // Remove placeholderData to ensure queries refetch when page changes
     })
 
     const clients = clientsData?.results || []

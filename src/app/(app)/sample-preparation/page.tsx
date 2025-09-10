@@ -11,28 +11,50 @@ import { ROUTES } from "@/constants/routes"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ServerPagination } from "@/components/ui/server-pagination"
-import { FilterSearch } from "@/components/ui/filter-search"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { PencilIcon, TrashIcon } from "lucide-react"
+import { formatDateSafe } from "@/utils/hydration-fix"
+import { AdvancedSearch } from "@/components/sample-preparation/advanced-search"
+import { SamplePrepDrawer } from "@/components/sample-preparation/sample-prep-drawer"
 
 export default function SamplePreparationPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [currentPage, setCurrentPage] = useState(1)
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchFilters, setSearchFilters] = useState({
+    query: "",
+    jobId: "",
+    clientName: "",
+    projectName: "",
+    specimenId: "",
+    dateFrom: "",
+    dateTo: ""
+  })
+  const [selectedSamplePrepId, setSelectedSamplePrepId] = useState<string | null>(null)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   // Fetch data
   const { data, error, isFetching } = useQuery({
-    queryKey: ['sample-preparations', currentPage, searchQuery],
-    queryFn: () => searchQuery
-      ? samplePreparationService.search(searchQuery, currentPage)
-      : samplePreparationService.getAll(currentPage),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryKey: ['sample-preparations', currentPage, searchFilters],
+    queryFn: () => {
+      const hasFilters = Object.values(searchFilters).some(value => value.trim() !== "")
+      if (hasFilters) {
+        return samplePreparationService.search(searchFilters.query, currentPage, {
+          jobId: searchFilters.jobId,
+          clientName: searchFilters.clientName,
+          projectName: searchFilters.projectName,
+          specimenId: searchFilters.specimenId,
+          dateFrom: searchFilters.dateFrom,
+          dateTo: searchFilters.dateTo
+        })
+      }
+      return samplePreparationService.getAll(currentPage)
+    },
+    staleTime: 0, // Always refetch when page changes
     gcTime: 10 * 60 * 1000, // 10 minutes
-    placeholderData: (previousData) => previousData,
   })
 
   // Handle errors with useEffect
@@ -66,8 +88,21 @@ export default function SamplePreparationPage() {
     deleteMutation.mutate(id)
   }, [deleteMutation])
 
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchQuery(value)
+  const handleSearch = useCallback((filters: typeof searchFilters) => {
+    setSearchFilters(filters)
+    setCurrentPage(1)
+  }, [])
+
+  const handleClearSearch = useCallback(() => {
+    setSearchFilters({
+      query: "",
+      jobId: "",
+      clientName: "",
+      projectName: "",
+      specimenId: "",
+      dateFrom: "",
+      dateTo: ""
+    })
     setCurrentPage(1)
   }, [])
 
@@ -75,11 +110,21 @@ export default function SamplePreparationPage() {
     setCurrentPage(page)
   }, [])
 
+  const handleRowClick = useCallback((row: { original: SamplePreparationResponse }) => {
+    setSelectedSamplePrepId(row.original.id)
+    setIsDrawerOpen(true)
+  }, [])
+
+  const handleCloseDrawer = useCallback(() => {
+    setIsDrawerOpen(false)
+    setSelectedSamplePrepId(null)
+  }, [])
+
   const columns: ColumnDef<SamplePreparationResponse>[] = useMemo(() => [
     {
       id: "serial",
       header: "S.No",
-      cell: ({ row }) => row.index + 1,
+      cell: ({ row }) => (currentPage - 1) * pageSize + row.index + 1,
       meta: { className: "w-fit min-w-fit px-4" },
       enableSorting: false,
       enableHiding: false,
@@ -118,12 +163,28 @@ export default function SamplePreparationPage() {
       accessorKey: "specimen_ids",
       id: "specimenIds", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Specimen IDs" />, 
-      cell: ({ row }) => <span className="text-center">{row.original.specimen_ids.join(", ")}</span>
+      cell: ({ row }) => {
+        const specimenIds = row.original.specimen_ids || []
+        if (specimenIds.length === 0) {
+          return <span className="text-muted-foreground">No specimens</span>
+        }
+        if (specimenIds.length <= 3) {
+          return <span className="text-sm">{specimenIds.join(", ")}</span>
+        }
+        return (
+          <span className="text-sm">
+            {specimenIds.slice(0, 3).join(", ")}... (+{specimenIds.length - 3} more)
+          </span>
+        )
+      }
     },
     {
       accessorKey: "created_at",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Request Date" />, 
-      cell: ({ row }) => new Date(row.original.created_at).toLocaleDateString()
+      cell: ({ row }) => {
+        const formattedDate = formatDateSafe(row.original.created_at)
+        return formattedDate ? <span>{formattedDate}</span> : <span className="text-muted-foreground">Invalid Date</span>
+      }
     },
     {
       id: "actions",
@@ -150,28 +211,19 @@ export default function SamplePreparationPage() {
       enableSorting: false,
       enableHiding: false,
     },
-  ], [doDelete])
+  ], [doDelete, currentPage, pageSize])
 
   // Define toolbar and footer callbacks outside of JSX
   const toolbar = useCallback((table: TanstackTable<SamplePreparationResponse>) => {
     return (
-      <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
-        <FilterSearch
-          placeholder="Search sample preparations..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-          className="w-full"
-          inputClassName="max-w-md"
-        />
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <DataTableViewOptions table={table} />
-          <Button asChild size="sm">
-            <Link href={ROUTES.APP.SAMPLE_PREPARATION.NEW}>New Preparation</Link>
-          </Button>
-        </div>
+      <div className="flex items-center gap-2 w-full justify-end">
+        <DataTableViewOptions table={table} />
+        <Button asChild size="sm">
+          <Link href={ROUTES.APP.SAMPLE_PREPARATION.NEW}>New Preparation</Link>
+        </Button>
       </div>
     )
-  }, [searchQuery, handleSearchChange])
+  }, [])
 
   const footer = useCallback((table: TanstackTable<SamplePreparationResponse>) => (
     <ServerPagination
@@ -186,18 +238,29 @@ export default function SamplePreparationPage() {
   ), [currentPage, totalCount, hasNext, hasPrevious, handlePageChange, isFetching])
 
   return (
-    <DataTable
-      columns={columns}
-      data={items}
-      empty={<span className="text-muted-foreground">No sample preparations yet</span>}
-      pageSize={20}
-      tableKey="sample-preparation"
-      onRowClick={(row) => {
-        router.push(ROUTES.APP.SAMPLE_PREPARATION.EDIT(row.original.id))
-      }}
-      toolbar={toolbar}
-      footer={footer}
-    />
+    <div className="space-y-4">
+      <AdvancedSearch
+        onSearch={handleSearch}
+        onClear={handleClearSearch}
+        isLoading={isFetching}
+      />
+      <DataTable
+        columns={columns}
+        data={items}
+        empty={<span className="text-muted-foreground">No sample preparations yet</span>}
+        pageSize={20}
+        tableKey="sample-preparation"
+        onRowClick={handleRowClick}
+        toolbar={toolbar}
+        footer={footer}
+      />
+      
+      <SamplePrepDrawer
+        isOpen={isDrawerOpen}
+        onClose={handleCloseDrawer}
+        samplePrepId={selectedSamplePrepId}
+      />
+    </div>
   )
 }
 

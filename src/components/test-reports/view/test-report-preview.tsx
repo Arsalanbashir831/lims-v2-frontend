@@ -162,10 +162,15 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
     const [loading, setLoading] = useState(true);
     const [qr, setQr] = useState<string | null>(null);
 
-    const baseUrl =
-        (process.env.NEXT_PUBLIC_FRONTEND_URL as string | undefined) ||
-        (process.env.FRONTEND_URL as string | undefined) ||
-        (typeof window !== "undefined" ? window.location.origin : "");
+    const [baseUrl, setBaseUrl] = useState("")
+    
+    useEffect(() => {
+        const url = (process.env.NEXT_PUBLIC_FRONTEND_URL as string | undefined) ||
+                   (process.env.FRONTEND_URL as string | undefined) ||
+                   (typeof window !== "undefined" ? window.location.origin : "");
+        setBaseUrl(url)
+    }, [])
+    
     const publicUrl = `${baseUrl}${ROUTES.PUBLIC.TEST_REPORT_PREVIEW(id ?? "")}`;
 
     useEffect(() => {

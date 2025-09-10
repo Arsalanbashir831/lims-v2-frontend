@@ -21,8 +21,33 @@ export const samplePreparationService = {
     return response as SamplePreparationResponse
   },
 
-  async search(query: string, page: number = 1): Promise<SamplePreparationListResponse> {
-    const response = await api.get(`sample-preparations/search?q=${encodeURIComponent(query)}&page=${page}`).json()
+  async search(
+    query: string, 
+    page: number = 1,
+    filters?: {
+      jobId?: string
+      clientName?: string
+      projectName?: string
+      specimenId?: string
+      dateFrom?: string
+      dateTo?: string
+    }
+  ): Promise<SamplePreparationListResponse> {
+    const params = new URLSearchParams({
+      q: query,
+      page: page.toString()
+    })
+
+    if (filters) {
+      if (filters.jobId) params.append('jobId', filters.jobId)
+      if (filters.clientName) params.append('clientName', filters.clientName)
+      if (filters.projectName) params.append('projectName', filters.projectName)
+      if (filters.specimenId) params.append('specimenId', filters.specimenId)
+      if (filters.dateFrom) params.append('dateFrom', filters.dateFrom)
+      if (filters.dateTo) params.append('dateTo', filters.dateTo)
+    }
+
+    const response = await api.get(`sample-preparations/search?${params.toString()}`).json()
     return response as SamplePreparationListResponse
   },
 

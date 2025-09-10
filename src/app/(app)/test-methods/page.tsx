@@ -7,6 +7,7 @@ import { testMethodService, TestMethod } from "@/lib/test-methods"
 import { toast } from "sonner"
 import { DataTable } from "@/components/ui/data-table"
 import { truncateText, formatColumnsPreview } from "@/lib/format"
+import { formatDateSafe } from "@/utils/hydration-fix"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { PencilIcon, TrashIcon } from "lucide-react"
 import { FilterSearch } from "@/components/ui/filter-search"
@@ -27,9 +28,9 @@ export default function TestMethodsPage() {
     const { data: tmData, isFetching } = useQuery({
         queryKey: ['test-methods', currentPage, searchQuery],
         queryFn: () => (searchQuery.trim() ? testMethodService.search(searchQuery.trim(), currentPage) : testMethodService.getAll(currentPage)),
-        staleTime: 5 * 60 * 1000,
+        staleTime: 0, // Always refetch when page changes
         gcTime: 10 * 60 * 1000,
-        placeholderData: (prev) => prev,
+        // Remove placeholderData to ensure queries refetch when page changes
     })
 
     const items = tmData?.results ?? []
@@ -47,11 +48,16 @@ export default function TestMethodsPage() {
     })
     const doDelete = useCallback((id: string) => { deleteMutation.mutate(id) }, [deleteMutation])
 
+    const handleSearchChange = useCallback((value: string) => {
+        setSearchQuery(value)
+        setCurrentPage(1)
+    }, [])
+
     const columns: ColumnDef<TestMethod>[] = useMemo(() => [
         {
             id: "serial",
             header: "S.No",
-            cell: ({ row }) => row.index + 1,
+            cell: ({ row }) => (currentPage - 1) * pageSize + row.index + 1,
             meta: { className: "w-fit min-w-fit px-4" },
             enableSorting: false,
             enableHiding: false,
@@ -69,16 +75,24 @@ export default function TestMethodsPage() {
         {
             id: "columns",
             header: "Columns",
-            cell: ({ row }) => <span>{formatColumnsPreview(row.original.test_columns, 3)}</span>,
+            cell: ({ row }) => {
+                try {
+                    const columns = row.original.test_columns || [];
+                    return <span>{formatColumnsPreview(columns, 3)}</span>;
+                } catch {
+                    return <span className="text-muted-foreground">Error</span>;
+                }
+            },
         },
         {
             accessorKey: "updatedAt",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Updated" />,
             cell: ({ row }) => {
                 const updatedAt = row.original.updatedAt;
-                return updatedAt
-                    ? new Date(updatedAt).toLocaleString()
-                    : <span className="text-muted-foreground">N/A</span>;
+                if (!updatedAt) return <span className="text-muted-foreground">N/A</span>;
+                
+                const formattedDate = formatDateSafe(updatedAt);
+                return formattedDate ? <span>{formattedDate}</span> : <span className="text-muted-foreground">Invalid Date</span>;
             },
         },
         {
@@ -98,7 +112,7 @@ export default function TestMethodsPage() {
                 </div>
             ),
         },
-    ], [doDelete])
+    ], [doDelete, currentPage, pageSize])
 
     return (
         <DataTable
@@ -114,7 +128,7 @@ export default function TestMethodsPage() {
                         <FilterSearch
                             placeholder="Search name..."
                             value={searchQuery}
-                            onChange={(value) => { setSearchQuery(value); setCurrentPage(1) }}
+                            onChange={handleSearchChange}
                             className="w-full"
                             inputClassName="max-w-md"
                         />
@@ -127,7 +141,7 @@ export default function TestMethodsPage() {
                     </div>
                 )
             }, [searchQuery])}
-            footer={useCallback((table: TanstackTable<TestMethod>) => (
+            footer={useCallback((_table: TanstackTable<TestMethod>) => (
                 <ServerPagination
                     currentPage={currentPage}
                     totalCount={totalCount}

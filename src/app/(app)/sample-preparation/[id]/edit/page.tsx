@@ -21,16 +21,18 @@ export default function EditSamplePreparationPage() {
       try {
         const rec = await samplePreparationService.getById(id)
         
-        // Map the new API response structure to form data
+        // Map the API response structure to form data
         const apiResponse = rec as any
+        console.log('Sample preparation data for edit:', apiResponse)
+        
         const mappedData: SamplePreparationFormData = {
-          id: apiResponse.request_id || apiResponse.id || '',
-          job: apiResponse.job || apiResponse.job_id || '',
-          test_items: (apiResponse.request_items || apiResponse.test_items || []).map((item: any) => {            
+          id: apiResponse.id || '',
+          job: apiResponse.job_id || '', // Use job_id directly since we removed job selector
+          test_items: (apiResponse.request_items || []).map((item: any, index: number) => {            
             return {
-              id: item.id?.toString() || '',
-              sample: 0, // will be mapped after job lookup
-              request_id_for_edit: item.request_id || '',
+              id: item.id?.toString() || `item-${index}`,
+              sample: 0, // Will be mapped to correct sample ID when job data loads
+              request_id_for_edit: item.sample_lot_id || item.request_id || apiResponse.id || '',
               item_description: item.item_description || '',
               test_method: item.test_method_oid || item.test_method || '',
               dimensions: item.dimension_spec || item.dimensions || '',
@@ -38,17 +40,24 @@ export default function EditSamplePreparationPage() {
               requested_by: item.request_by || item.requested_by || '',
               remarks: item.remarks || '',
               planned_test_date: item.planned_test_date || '',
-              specimens: Array.isArray(item.specimen_oids) || Array.isArray(item.specimen_ids)
-                ? (item.specimen_oids || []).map((oid: string, idx: number) => ({
-                    id: String(oid),
-                    specimen_id: Array.isArray(item.specimen_ids) ? String((item.specimen_ids as any[])[idx] || "") : "",
+              specimens: Array.isArray(item.specimen_ids) && item.specimen_ids.length > 0
+                ? item.specimen_ids.map((specimenId: string, idx: number) => ({
+                    id: `specimen-${idx}`,
+                    specimen_id: String(specimenId),
                     isFromInitialData: true,
-                  })).filter((s: { specimen_id: string }) => s.specimen_id)
+                  }))
+                : Array.isArray(item.specimen_oids) && item.specimen_oids.length > 0
+                ? item.specimen_oids.map((oid: string, idx: number) => ({
+                    id: String(oid),
+                    specimen_id: String(oid), // Fallback to OID if specimen_ids not available
+                    isFromInitialData: true,
+                  }))
                 : []
             }
           })
         }
         
+        console.log('Mapped form data:', mappedData)
         setInitial(mappedData)
       } catch (error) {
         console.error("Failed to load sample preparation:", error)

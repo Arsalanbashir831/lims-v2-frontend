@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useMemo, useState, useEffect } from "react"
+import { useCurrentDate } from "@/hooks/use-client-only"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -25,9 +26,10 @@ interface Props {
 }
 
 export function DiscardedMaterialForm({ initialData, onSubmit, readOnly = false }: Props) {
+  const currentDate = useCurrentDate()
   const [jobId, setJobId] = useState(initialData?.jobId ?? "")
   const [discardReason, setDiscardReason] = useState(initialData?.discardReason ?? "")
-  const [discardDate, setDiscardDate] = useState(initialData?.discardDate ?? new Date().toISOString().split('T')[0])
+  const [discardDate, setDiscardDate] = useState(initialData?.discardDate ?? "")
   const [selectedSpecimens, setSelectedSpecimens] = useState<string[]>(initialData?.items?.map(item => item.specimenId) ?? [])
   const [openSpecimenSelect, setOpenSpecimenSelect] = useState(false)
 
@@ -68,7 +70,7 @@ export function DiscardedMaterialForm({ initialData, onSubmit, readOnly = false 
           itemNo: item.indexNo,
           itemDescription: item.description,
           testMethod: item.testMethodName,
-          testConductedDate: item.plannedTestDate || new Date().toISOString().split('T')[0],
+          testConductedDate: item.plannedTestDate || "",
         })
       })
     })

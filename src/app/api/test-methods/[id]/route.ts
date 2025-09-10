@@ -7,9 +7,10 @@ import { ObjectId } from 'mongodb'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -18,7 +19,7 @@ export async function GET(
     const collection = db.collection('test_methods')
 
     const doc = await collection.findOne({
-      _id: new ObjectId(params.id),
+      _id: new ObjectId(id),
       $or: [{ is_active: true }, { is_active: { $exists: false } }]
     })
     if (!doc) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -41,9 +42,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -63,10 +65,10 @@ export async function PATCH(
       updatedAt: new Date(),
     }
 
-    const result = await collection.updateOne({ _id: new ObjectId(params.id) }, { $set: update })
+    const result = await collection.updateOne({ _id: new ObjectId(id) }, { $set: update })
     if (result.matchedCount === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    const doc = await collection.findOne({ _id: new ObjectId(params.id) })
+    const doc = await collection.findOne({ _id: new ObjectId(id) })
     if (!doc) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     return NextResponse.json({
@@ -90,9 +92,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -101,7 +104,7 @@ export async function DELETE(
     const collection = db.collection('test_methods')
 
     const result = await collection.updateOne(
-      { _id: new ObjectId(params.id) },
+      { _id: new ObjectId(id) },
       { $set: { is_active: false, updatedAt: new Date() } }
     )
     if (result.matchedCount === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 })

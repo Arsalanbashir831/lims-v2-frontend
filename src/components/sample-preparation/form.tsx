@@ -13,10 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { useSidebar } from "../ui/sidebar"
 import { cn } from "@/lib/utils"
+import { generateStableId } from "@/utils/hydration-fix"
 import { samplePreparationService } from "@/lib/sample-preparation-new"
 import { CreateSamplePreparationData } from "@/lib/schemas/sample-preparation"
 import { sampleInformationService } from "@/lib/sample-information"
-import { JobSelectorForPreparation } from "@/components/common/job-selector-for-preparation"
+import { testMethodService } from "@/lib/test-methods"
 import { SpecimenBadge } from "./specimen-badge"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
@@ -73,7 +74,7 @@ interface CompleteJob {
 
 function createPreparationItem(data: Partial<PreparationItem>): PreparationItem {
   return {
-    id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: generateStableId('item'),
     sample: data.sample ?? 0,
     test_method: data.test_method ?? "",
     dimensions: data.dimensions ?? "",
@@ -96,16 +97,89 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
   const { state } = useSidebar();
   const [jobId, setJobId] = useState(initialData && 'job' in initialData ? String(initialData.job) : "")
   const [items, setItems] = useState<PreparationItem[]>(initialData && 'test_items' in initialData ? (initialData.test_items as PreparationItem[]) : [])
+  
+  // For edit mode, ensure jobId is set from initial data
+  useEffect(() => {
+    if (initialData && 'job' in initialData && initialData.job) {
+      setJobId(String(initialData.job))
+    }
+  }, [initialData])
+
+  // Initialize item descriptions from initial data
+  useEffect(() => {
+    if (initialData && 'test_items' in initialData && initialData.test_items) {
+      const descriptions: Record<string, string> = {}
+      initialData.test_items.forEach((item: any) => {
+        if (item.id && item.item_description) {
+          descriptions[item.id] = item.item_description
+        }
+      })
+      setItemDescriptionByRow(descriptions)
+    }
+  }, [initialData])
+
   const [specimenInputByRow, setSpecimenInputByRow] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [completeJob, setCompleteJob] = useState<CompleteJob | null>(null)
   const [sampleIdMap, setSampleIdMap] = useState<Record<number, string>>({})
   const [itemDescriptionByRow, setItemDescriptionByRow] = useState<Record<string, string>>({})
   const [deletedSpecimenOids, setDeletedSpecimenOids] = useState<string[]>([])
+  const [testMethodNames, setTestMethodNames] = useState<Record<string, string>>({})
+  const [loadingTestMethodNames, setLoadingTestMethodNames] = useState(false)
+  const [itemsInitialized, setItemsInitialized] = useState(false)
 
   const isEditing = Boolean(initialData)
 
   const maxWidth = useMemo(() => (state === "expanded" ? "lg:max-w-[calc(100vw-21.5rem)]" : "lg:max-w-screen"), [state])
+
+  // Fetch test method names for display
+  const fetchTestMethodNames = async (testMethodIds: string[]) => {
+    if (testMethodIds.length === 0) return
+    
+    setLoadingTestMethodNames(true)
+    const names: Record<string, string> = {}
+    
+    try {
+      for (const id of testMethodIds) {
+        try {
+          const testMethod = await testMethodService.getById(id)
+          names[id] = testMethod.test_name || id // Use test_name field from schema
+        } catch (error) {
+          console.warn(`Failed to fetch test method ${id}:`, error)
+          names[id] = id // Fallback to ID if fetch fails
+        }
+      }
+      setTestMethodNames(prev => ({ ...prev, ...names }))
+    } finally {
+      setLoadingTestMethodNames(false)
+    }
+  }
+
+  // Optimized test method name fetching - only when both job and items are loaded
+  useEffect(() => {
+    if (completeJob && items.length > 0) {
+      // Collect all unique test method IDs to fetch names
+      const allTestMethodIds = new Set<string>()
+      
+      // Add test methods from current items
+      items.forEach((item) => {
+        if (item.test_method) {
+          allTestMethodIds.add(item.test_method)
+        }
+      })
+      
+      // Add test methods from available samples
+      completeJob.samples.forEach(sample => {
+        sample.test_methods.forEach((methodId: string) => allTestMethodIds.add(methodId))
+      })
+      
+      // Only fetch if we have IDs and they're not already loaded
+      const idsToFetch = Array.from(allTestMethodIds).filter(id => !testMethodNames[id])
+      if (idsToFetch.length > 0) {
+        fetchTestMethodNames(idsToFetch)
+      }
+    }
+  }, [completeJob, items, testMethodNames])
 
   // Helper available via old lib for UI rows
 
@@ -180,15 +254,25 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
           })
         } else {
           // In edit mode, convert stored request_id to local numeric sample index
-          setItems(prev => prev.map(it => {
-            if (it.sample && it.sample > 0) return it
-            const entry = Object.entries(idMap).find(([, lotId]) => lotId === (it.request_id_for_edit || ""))
-            if (entry) {
-              const numericId = parseInt(entry[0], 10)
-              return { ...it, sample: numericId }
-            }
-            return it
-          }))
+          console.log('Mapping samples in edit mode. idMap:', idMap)
+          setItems(prev => {
+            const mapped = prev.map(it => {
+              if (it.sample && it.sample > 0) {
+                console.log(`Item ${it.id} already has sample: ${it.sample}`)
+                return it
+              }
+              const entry = Object.entries(idMap).find(([, lotId]) => lotId === (it.request_id_for_edit || ""))
+              if (entry) {
+                const numericId = parseInt(entry[0], 10)
+                console.log(`Item ${it.id} mapped to sample: ${numericId} (from lotId: ${entry[1]})`)
+                return { ...it, sample: numericId }
+              }
+              console.log(`Item ${it.id} could not be mapped. request_id_for_edit: ${it.request_id_for_edit}`)
+              return it
+            })
+            console.log('Final mapped items:', mapped)
+            return mapped
+          })
         }
       } catch (error) {
         console.error("Failed to load complete job:", error)
@@ -204,13 +288,16 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
   // Map initial data to form fields when component mounts
   useEffect(() => {
     if (initialData && isEditing) {
+      console.log('Setting initial data in edit mode:', initialData)
       if (initialData.job) setJobId(String(initialData.job))
       if (initialData.test_items) {
         const mapped = (initialData.test_items as PreparationItem[]).map((it, idx) => ({
           ...it,
           id: it.id || `${idx}`,
         }))
+        console.log('Mapped test items:', mapped)
         setItems(mapped)
+        setItemsInitialized(true)
       }
     }
   }, [initialData, isEditing])
@@ -331,25 +418,6 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
   return (
     <form onSubmit={onSubmit} className="grid gap-6">
 
-      <Card className="border-muted/40">
-        <CardHeader>
-          <CardTitle className="text-xl">Select Job</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          <div className="grid gap-2">
-            <Label>Job ID</Label>
-            <JobSelectorForPreparation
-              value={jobId}
-              onValueChange={(selectedJobId) => {
-                setJobId(selectedJobId || "")
-              }}
-              placeholder="Select a job..."
-              disabled={readOnly || isEditing}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
       {Boolean(jobId) && (
         <Card className="border-muted/40">
           <CardHeader className="grid grid-cols-2">
@@ -374,8 +442,8 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                     <TableHead className="w-[40px]">#</TableHead>
                     <TableHead className="w-[220px]">Sample</TableHead>
                     <TableHead>Test Method</TableHead>
-                    <TableHead>Dimensions</TableHead>
-                    <TableHead>Item Description</TableHead>
+                    <TableHead className="w-[200px]">Dimensions</TableHead>
+                    <TableHead className="w-[300px]">Item Description</TableHead>
                     
                     <TableHead>No. of Specimens</TableHead>
                     <TableHead>Planned Test Date</TableHead>
@@ -386,7 +454,20 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map((row, index) => {
+                  {isEditing && !itemsInitialized ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8">
+                        <div className="text-sm text-muted-foreground">Loading test items...</div>
+                      </TableCell>
+                    </TableRow>
+                  ) : items.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8">
+                        <div className="text-sm text-muted-foreground">No test items added yet</div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    items.map((row, index) => {
                     const availableSamples = (completeJob?.samples ?? []) as SampleSummary[]
                     const selectedSample = availableSamples.find((s: SampleSummary) => s.id === row.sample)
                     const availableMethods = selectedSample ?
@@ -431,13 +512,22 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                             disabled={readOnly}
                           >
                             <SelectTrigger className="w-56 h-10" disabled={readOnly}>
-                              <SelectValue placeholder={availableMethods.length > 0 ? "Select method" : "Loading methods..."} />
+                              <SelectValue placeholder={
+                                loadingTestMethodNames 
+                                  ? "Loading names..." 
+                                  : availableMethods.length > 0 
+                                    ? "Select method" 
+                                    : "Loading methods..."
+                              } />
                             </SelectTrigger>
                             <SelectContent>
                               {availableMethods.length > 0 ? (
-                                availableMethods.map((method: { id: string; name: string }) => (
-                                  <SelectItem key={method.id} value={method.id}>{method.name}</SelectItem>
-                                  ))
+                                availableMethods.map((method: { id: string; name: string }) => {
+                                  const methodName = testMethodNames[method.id] || method.name || method.id
+                                  return (
+                                    <SelectItem key={method.id} value={method.id}>{methodName}</SelectItem>
+                                  )
+                                })
                                 ) : (
                                 <div className="px-2 py-1 text-sm text-muted-foreground">
                                   {completeJob ? "No methods available" : "Loading methods..."}
@@ -447,7 +537,13 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                           </Select>
                         </TableCell>
                         <TableCell>
-                          <Input placeholder="Dimensions" value={row.dimensions || ""} onChange={(e) => updateItemField(row.id || index.toString(), "dimensions" as any, e.target.value)} disabled={readOnly} />
+                          <Input 
+                            placeholder="Dimensions" 
+                            value={row.dimensions || ""} 
+                            onChange={(e) => updateItemField(row.id || index.toString(), "dimensions" as any, e.target.value)} 
+                            disabled={readOnly}
+                            className="w-[180px]"
+                          />
                         </TableCell>
                         <TableCell>
                           <Input
@@ -455,6 +551,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                             value={itemDescriptionByRow[row.id || index.toString()] ?? ""}
                             onChange={(e) => setItemDescriptionByRow(prev => ({ ...prev, [row.id || index.toString()]: e.target.value }))}
                             disabled={readOnly}
+                            className="w-[280px]"
                           />
                         </TableCell>
                         
@@ -530,7 +627,8 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                         </TableCell>
                       </TableRow>
                     )
-                  })}
+                  })
+                  )}
                 </TableBody>
               </Table>
               <ScrollBar orientation="horizontal" />

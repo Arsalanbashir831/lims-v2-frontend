@@ -30,62 +30,81 @@ type DataTableProps<TData, TValue> = {
   tableKey?: string
   onRowClick?: (row: Row<TData>) => void
   bodyMaxHeightClassName?: string
+  manualPagination?: boolean // Add this to control pagination mode
 }
 
-export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, toolbar, footer, tableKey, onRowClick, bodyMaxHeightClassName }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, toolbar, footer, tableKey, onRowClick, bodyMaxHeightClassName, manualPagination = true }: DataTableProps<TData, TValue>) {
   const { state } = useSidebar()
   const maxWidth = useMemo(() => (state === "expanded" ? "lg:max-w-[calc(100vw-20rem)]" : "lg:max-w-screen"), [state])
 
-  const [sorting, setSorting] = useState<SortingState>(() => {
-    if (!tableKey || typeof window === "undefined") return []
-    try {
-      const raw = window.localStorage.getItem(`lims:dt:sorting:${tableKey}`)
-      return raw ? (JSON.parse(raw) as SortingState) : []
-    } catch {
-      return []
-    }
-  })
+  const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => {
-    if (!tableKey || typeof window === "undefined") return {}
-    try {
-      const raw = window.localStorage.getItem(`lims:dt:visibility:${tableKey}`)
-      return raw ? (JSON.parse(raw) as VisibilityState) : {}
-    } catch {
-      return {}
-    }
-  })
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
-  const initialPageSize = useMemo(() => {
-    if (!tableKey || typeof window === "undefined") return pageSize
-    const raw = window.localStorage.getItem(`lims:dt:pageSize:${tableKey}`)
-    const parsed = raw ? Number(raw) : undefined
-    return parsed && !Number.isNaN(parsed) ? parsed : pageSize
-  }, [tableKey, pageSize])
-  const initialPageIndex = useMemo(() => {
-    if (!tableKey || typeof window === "undefined") return 0
-    const raw = window.localStorage.getItem(`lims:dt:pageIndex:${tableKey}`)
-    const parsed = raw ? Number(raw) : undefined
-    return parsed && !Number.isNaN(parsed) ? parsed : 0
-  }, [tableKey])
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: initialPageIndex, pageSize: initialPageSize })
+  const [isClient, setIsClient] = useState(false)
 
-  const table = useReactTable({
-    data,
-    columns,
-    state: { sorting, columnFilters, columnVisibility, rowSelection, pagination },
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination,
-    autoResetPageIndex: false,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    initialState: { pagination: { pageSize: initialPageSize } },
-  })
+  // Initialize client-side state after hydration
+  useEffect(() => {
+    setIsClient(true)
+    if (!tableKey) return
+
+    try {
+      // Load sorting
+      const sortingRaw = window.localStorage.getItem(`lims:dt:sorting:${tableKey}`)
+      if (sortingRaw) {
+        setSorting(JSON.parse(sortingRaw) as SortingState)
+      }
+
+      // Load column visibility
+      const visibilityRaw = window.localStorage.getItem(`lims:dt:visibility:${tableKey}`)
+      if (visibilityRaw) {
+        setColumnVisibility(JSON.parse(visibilityRaw) as VisibilityState)
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [tableKey])
+
+  // For server-side pagination, we don't need to manage pagination state
+  // The parent component handles pagination via ServerPagination
+  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: pageSize })
+
+  // Create table configuration based on pagination mode
+  const tableConfig = manualPagination 
+    ? {
+        // Server-side pagination configuration
+        data,
+        columns,
+        state: { sorting, columnFilters, columnVisibility, rowSelection },
+        onSortingChange: setSorting,
+        onColumnFiltersChange: setColumnFilters,
+        onColumnVisibilityChange: setColumnVisibility,
+        onRowSelectionChange: setRowSelection,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        manualPagination: true,
+        pageCount: -1, // This tells the table we're using server-side pagination
+      }
+    : {
+        // Client-side pagination configuration
+        data,
+        columns,
+        state: { sorting, columnFilters, columnVisibility, rowSelection, pagination },
+        onSortingChange: setSorting,
+        onColumnFiltersChange: setColumnFilters,
+        onColumnVisibilityChange: setColumnVisibility,
+        onRowSelectionChange: setRowSelection,
+        onPaginationChange: setPagination,
+        autoResetPageIndex: false,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        manualPagination: false,
+      }
+
+  const table = useReactTable(tableConfig)
 
   useEffect(() => {
     if (!tableKey || typeof window === "undefined") return
@@ -101,21 +120,8 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
     } catch { }
   }, [tableKey, sorting])
 
-  useEffect(() => {
-    if (!tableKey || typeof window === "undefined") return
-    try {
-      const size = table.getState().pagination.pageSize
-      window.localStorage.setItem(`lims:dt:pageSize:${tableKey}`, String(size))
-    } catch { }
-  }, [tableKey, table.getState().pagination.pageSize])
-
-  useEffect(() => {
-    if (!tableKey || typeof window === "undefined") return
-    try {
-      const index = table.getState().pagination.pageIndex
-      window.localStorage.setItem(`lims:dt:pageIndex:${tableKey}`, String(index))
-    } catch { }
-  }, [tableKey, table.getState().pagination.pageIndex])
+  // Note: Pagination state is managed by the parent component for server-side pagination
+  // No need to save pagination state to localStorage
 
   return (
     <div className="flex flex-col gap-2 h-[calc(100vh-10rem)]">
@@ -124,6 +130,7 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
           {toolbar(table)}
         </div>
       ) : null}
+      
       <ScrollArea className={cn("relative flex-1 overflow-auto w-full", maxWidth)}>
         <ScrollBar orientation="horizontal" />
         <Table className="min-w-full">
@@ -178,6 +185,7 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
           </TableBody>
         </Table>
       </ScrollArea>
+      
       {footer ? (
         <div className="mt-2">
           {footer(table)}
