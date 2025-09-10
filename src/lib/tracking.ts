@@ -1,5 +1,5 @@
 import { listSampleReceivings, type SampleReceiving } from "@/lib/sample-receiving"
-import { samplePreparationService, type SamplePreparation } from "@/lib/sample-preparation"
+import { samplePreparationService } from "@/lib/sample-preparation-new"
 import { listTestReports, type TestReport } from "@/lib/test-reports"
 import { listDiscardedMaterials, type DiscardedMaterial } from "@/lib/discarded-materials"
 
@@ -18,7 +18,7 @@ export interface TrackingRow {
   reportIssueDate?: string
   discardDate?: string
   receiving?: SampleReceiving
-  preparations?: SamplePreparation[]
+  // preparations?: SamplePreparation[]
   reports?: TestReport[]
   discards?: DiscardedMaterial[]
 }
@@ -30,7 +30,7 @@ export async function computeTrackingRows(): Promise<TrackingRow[]> {
   const reports = listTestReports()
   const discards = listDiscardedMaterials()
 
-  const prepByReceiving = new Map<string, SamplePreparation[]>()
+  const prepByReceiving = new Map<string, any[]>()
   for (const p of preparations) {
     // Note: The new structure uses job_id instead of sampleReceivingId
     // We'll need to map this differently or update the tracking logic
@@ -60,7 +60,7 @@ export async function computeTrackingRows(): Promise<TrackingRow[]> {
     const discList = discardsBySample.get(rec.sampleId) ?? []
 
     const itemsCount = rec.items?.length ?? 0
-    const specimensCount = preps.reduce((sum, p) => sum + p.items.reduce((n, it) => n + (it.specimen_ids?.length ?? 0), 0), 0)
+    const specimensCount = preps.reduce((sum, p) => sum + p.items.reduce((n: any, it: { specimen_ids: string | any[] }) => n + (it.specimen_ids?.length ?? 0), 0), 0)
 
     let latestStatus: TrackingStatus = "received"
     if (discList.length > 0) latestStatus = "discarded"
@@ -69,7 +69,7 @@ export async function computeTrackingRows(): Promise<TrackingRow[]> {
 
     const receivedDate = rec.receiveDate
     const preparationDate = preps[0]?.created_at
-    const reportIssueDate = repList[0]?.certificate?.issueDate
+    const reportIssueDate = repList[0]?.certificate?.issue_date
     const discardDate = discList[0]?.discardDate
 
     return {

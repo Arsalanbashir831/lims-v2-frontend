@@ -5,7 +5,8 @@ import { useCallback, useMemo, useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/button"
-import { samplePreparationService, SamplePreparation } from "@/lib/sample-preparation"
+import { samplePreparationService } from "@/lib/sample-preparation-new"
+import { SamplePreparationResponse } from "@/lib/schemas/sample-preparation"
 import { ROUTES } from "@/constants/routes"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -74,7 +75,7 @@ export default function SamplePreparationPage() {
     setCurrentPage(page)
   }, [])
 
-  const columns: ColumnDef<SamplePreparation>[] = useMemo(() => [
+  const columns: ColumnDef<SamplePreparationResponse>[] = useMemo(() => [
     {
       id: "serial",
       header: "S.No",
@@ -87,107 +88,37 @@ export default function SamplePreparationPage() {
       accessorKey: "job_id",
       id: "job", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Job ID" />, 
-      cell: ({ row }) => {
-        // Handle both list and detail response formats
-        if ('job_id' in row.original) {
-          return <span className="font-medium">{row.original.job_id}</span>
-        }
-        return <span className="font-medium">{row.original.job || '-'}</span>
-      },
-      sortingFn: (rowA, rowB) => {
-        const aValue = 'job_id' in rowA.original ? rowA.original.job_id : rowA.original.job || ''
-        const bValue = 'job_id' in rowB.original ? rowB.original.job_id : rowB.original.job || ''
-        return aValue.localeCompare(bValue)
-      }
+      cell: ({ row }) => <span className="font-medium">{row.original.job_id}</span>
     },
     {
-      accessorKey: "job_project_name",
+      accessorKey: "project_name",
       id: "project", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Project" />, 
-      cell: ({ row }) => {
-        // Handle both list and detail response formats
-        if ('job_project_name' in row.original) {
-          return <span className="max-w-[200px] truncate">{row.original.job_project_name}</span>
-        }
-        return <span className="max-w-[200px] truncate">-</span>
-      },
-      sortingFn: (rowA, rowB) => {
-        const aValue = 'job_project_name' in rowA.original ? rowA.original.job_project_name : ''
-        const bValue = 'job_project_name' in rowB.original ? rowB.original.job_project_name : ''
-        return aValue.localeCompare(bValue)
-      }
+      cell: ({ row }) => <span className="max-w-[200px] truncate">{row.original.project_name}</span>
     },
     {
+      accessorKey: "client_name",
       id: "client", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Client" />, 
-      cell: ({ row }) => {
-        // Handle both list and detail response formats
-        if ('client_name' in row.original && row.original.client_name) {
-          return <span className="max-w-[150px] truncate">{String(row.original.client_name)}</span>
-        }
-        return <span className="max-w-[150px] truncate">-</span>
-      },
-      sortingFn: (rowA, rowB) => {
-        const aValue = 'client_name' in rowA.original && rowA.original.client_name ? String(rowA.original.client_name) : ''
-        const bValue = 'client_name' in rowB.original && rowB.original.client_name ? String(rowB.original.client_name) : ''
-        return aValue.localeCompare(bValue)
-      }
+      cell: ({ row }) => <span className="max-w-[150px] truncate">{row.original.client_name}</span>
     },
     {
-      accessorKey: "request_id",
+      accessorKey: "request_no",
       id: "requestNo", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Request #" />, 
-      cell: ({ row }) => {
-        // Handle both list and detail response formats
-        if ('request_id' in row.original) {
-          return <span className="font-mono text-sm">{row.original.request_id}</span>
-        }
-        return <span className="font-mono text-sm">-</span>
-      },
-      sortingFn: (rowA, rowB) => {
-        const aValue = 'request_id' in rowA.original ? rowA.original.request_id : ''
-        const bValue = 'request_id' in rowB.original ? rowB.original.request_id : ''
-        return aValue.localeCompare(bValue)
-      }
+      cell: ({ row }) => <span className="font-mono text-sm">{row.original.request_no}</span>
     },
     {
-      accessorKey: "test_items_count",
+      accessorKey: "no_of_request_items",
       id: "totalSamples", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Total no. of Samples" />, 
-      cell: ({ row }) => {
-        // Handle both list and detail response formats
-        if ('test_items_count' in row.original) {
-          return <span className="text-center">{row.original.test_items_count}</span>
-        }
-        return <span className="text-center">{row.original.test_items?.length || 0}</span>
-      },
-      sortingFn: (rowA, rowB) => {
-        const aValue = 'test_items_count' in rowA.original ? rowA.original.test_items_count : (rowA.original.test_items?.length || 0)
-        const bValue = 'test_items_count' in rowB.original ? rowB.original.test_items_count : (rowB.original.test_items?.length || 0)
-        return aValue - bValue
-      }
+      cell: ({ row }) => <span className="text-center">{row.original.no_of_request_items}</span>
     },
     {
-      accessorKey: "total_specimens",
+      accessorKey: "specimen_ids",
       id: "specimenIds", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Specimen IDs" />, 
-      cell: ({ row }) => {
-        // Handle both list and detail response formats
-        if ('total_specimens' in row.original) {
-          return <span className="text-center">Total: {row.original.total_specimens}</span>
-        }
-        if (row.original.test_items) {
-          const ids = Array.from(new Set(row.original.test_items.flatMap(i => i.specimens.map(s => s.specimen_id)))).filter(Boolean)
-          const preview = ids.slice(0, 5).join(", ")
-          return ids.length > 5 ? `${preview} +${ids.length - 5}` : (preview || "-")
-        }
-        return "-"
-      },
-      sortingFn: (rowA, rowB) => {
-        const aValue = 'total_specimens' in rowA.original ? rowA.original.total_specimens : (rowA.original.test_items?.flatMap(i => i.specimens).length || 0)
-        const bValue = 'total_specimens' in rowB.original ? rowB.original.total_specimens : (rowB.original.test_items?.flatMap(i => i.specimens).length || 0)
-        return aValue - bValue
-      }
+      cell: ({ row }) => <span className="text-center">{row.original.specimen_ids.join(", ")}</span>
     },
     {
       accessorKey: "created_at",
@@ -197,37 +128,32 @@ export default function SamplePreparationPage() {
     {
       id: "actions",
       header: () => "Actions",
-      cell: ({ row }) => {
-        // Handle both list and detail response formats for ID
-        const recordId = 'request_id' in row.original ? row.original.request_id : row.original.id
-        
-        return (
-          <div className="text-right space-x-2 inline-flex">
-            <Button variant="secondary" size="sm" asChild>
-              <Link href={ROUTES.APP.SAMPLE_PREPARATION.EDIT(recordId)}>
-                <PencilIcon className="w-4 h-4" />
-              </Link>
-            </Button>
-            <ConfirmPopover
-              title="Delete this sample preparation?"
-              confirmText="Delete"
-              onConfirm={() => doDelete(recordId)}
-              trigger={
-                <Button variant="destructive" size="sm">
-                  <TrashIcon className="w-4 h-4" />
-                </Button>
-              }
-            />
-          </div>
-        )
-      },
+      cell: ({ row }) => (
+        <div className="text-right space-x-2 inline-flex">
+          <Button variant="secondary" size="sm" asChild>
+            <Link href={ROUTES.APP.SAMPLE_PREPARATION.EDIT(row.original.id)}>
+              <PencilIcon className="w-4 h-4" />
+            </Link>
+          </Button>
+          <ConfirmPopover
+            title="Delete this sample preparation?"
+            confirmText="Delete"
+            onConfirm={() => doDelete(row.original.id)}
+            trigger={
+              <Button variant="destructive" size="sm">
+                <TrashIcon className="w-4 h-4" />
+              </Button>
+            }
+          />
+        </div>
+      ),
       enableSorting: false,
       enableHiding: false,
     },
   ], [doDelete])
 
   // Define toolbar and footer callbacks outside of JSX
-  const toolbar = useCallback((table: TanstackTable<SamplePreparation>) => {
+  const toolbar = useCallback((table: TanstackTable<SamplePreparationResponse>) => {
     return (
       <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
         <FilterSearch
@@ -247,7 +173,7 @@ export default function SamplePreparationPage() {
     )
   }, [searchQuery, handleSearchChange])
 
-  const footer = useCallback((table: TanstackTable<SamplePreparation>) => (
+  const footer = useCallback((table: TanstackTable<SamplePreparationResponse>) => (
     <ServerPagination
       currentPage={currentPage}
       totalCount={totalCount}
@@ -267,8 +193,7 @@ export default function SamplePreparationPage() {
       pageSize={20}
       tableKey="sample-preparation"
       onRowClick={(row) => {
-        const recordId = 'request_id' in row.original ? row.original.request_id : row.original.id
-        router.push(ROUTES.APP.SAMPLE_PREPARATION.EDIT(recordId))
+        router.push(ROUTES.APP.SAMPLE_PREPARATION.EDIT(row.original.id))
       }}
       toolbar={toolbar}
       footer={footer}

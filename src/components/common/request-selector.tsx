@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { samplePreparationService } from "@/lib/sample-preparation"
+import { samplePreparationService } from "@/lib/sample-preparation-new"
 
 interface Request {
   id?: string
@@ -55,11 +55,7 @@ export function RequestSelector({
         const response = searchQuery.trim() 
           ? await samplePreparationService.search(searchQuery, 1)
           : await samplePreparationService.getAll(1)
-        
-        console.log("Search query:", searchQuery)
-        console.log("API response:", response)
-        console.log("Requests set:", response.results)
-        
+          
         // Convert API response to Request interface
         const convertedRequests: Request[] = response.results.map((item: any) => ({
           id: item.id,

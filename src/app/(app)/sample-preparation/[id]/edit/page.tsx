@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { toast } from "sonner"
 import { SamplePreparationForm, type SamplePreparationFormData } from "@/components/sample-preparation/form"
-import { samplePreparationService } from "@/lib/sample-preparation"
+import { samplePreparationService } from "@/lib/sample-preparation-new"
 import { Button } from "@/components/ui/button"
 import { PencilIcon, XIcon } from "lucide-react"
 import { FormHeader } from "@/components/common/form-header"
@@ -26,22 +26,25 @@ export default function EditSamplePreparationPage() {
         const mappedData: SamplePreparationFormData = {
           id: apiResponse.request_id || apiResponse.id || '',
           job: apiResponse.job || apiResponse.job_id || '',
-          test_items: (apiResponse.test_items || []).map((item: any) => {            
+          test_items: (apiResponse.request_items || apiResponse.test_items || []).map((item: any) => {            
             return {
               id: item.id?.toString() || '',
-              sample: item.sample_id || '', // Keep as string for now, will be converted to number when complete job loads
-              test_method: item.test_method_details?.id || item.test_method_name || '', // Use test_method_details.id if available, fallback to name
-              dimensions: item.dimensions || '',
-              no_of_samples: parseInt(item.no_of_samples) || 0,
-              no_of_specimens: parseInt(item.no_of_specimens) || 0,
-              requested_by: item.requested_by || '',
+              sample: 0, // will be mapped after job lookup
+              request_id_for_edit: item.request_id || '',
+              item_description: item.item_description || '',
+              test_method: item.test_method_oid || item.test_method || '',
+              dimensions: item.dimension_spec || item.dimensions || '',
+              no_of_specimens: Number(item.no_of_specimens) || (Array.isArray(item.specimen_oids) ? item.specimen_oids.length : 0),
+              requested_by: item.request_by || item.requested_by || '',
               remarks: item.remarks || '',
               planned_test_date: item.planned_test_date || '',
-              specimens: item.specimens?.map((spec: any) => ({
-                id: spec.id?.toString() || '',
-                specimen_id: spec.specimen_id || '',
-                isFromInitialData: true // Mark specimens from initial data
-              })) || []
+              specimens: Array.isArray(item.specimen_oids) || Array.isArray(item.specimen_ids)
+                ? (item.specimen_oids || []).map((oid: string, idx: number) => ({
+                    id: String(oid),
+                    specimen_id: Array.isArray(item.specimen_ids) ? String((item.specimen_ids as any[])[idx] || "") : "",
+                    isFromInitialData: true,
+                  })).filter((s: { specimen_id: string }) => s.specimen_id)
+                : []
             }
           })
         }

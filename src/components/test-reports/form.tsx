@@ -7,13 +7,11 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { PlusIcon, TrashIcon } from "lucide-react"
 import type { TestReport } from "@/lib/test-reports"
 import { generateReportNo, type CertificateDetails, type ReportItem } from "@/lib/test-reports"
-import { samplePreparationService } from "@/lib/sample-preparation"
+import { samplePreparationService } from "@/lib/sample-preparation-new"
 import { listSampleReceivings } from "@/lib/sample-receiving"
 import { completeCertificateService, type CompleteCertificate } from "@/lib/complete-certificates"
 import { DynamicTable, type DynamicColumn, type DynamicRow } from "@/components/pqr/form/dynamic-table"
@@ -74,11 +72,9 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
     
     const loadDetailedPreparationData = async () => {
       try {
-        console.log('Loading detailed preparation data for request:', selectedRequest.request_id)
         
         // Call GET_SAMPLE_PREPARATION API to get all details
         const detailedData = await samplePreparationService.getById(selectedRequest.request_id)
-        console.log('Loaded detailed preparation data:', detailedData)
         
         // Map the detailed data to certificate fields
         const apiResponse = detailedData as any
@@ -99,14 +95,12 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
           reviewed_by: certificate.reviewed_by,
         }
         
-        console.log('Auto-filling certificate with detailed data:', newCertificate)
         setCertificate(newCertificate)
         
         // Seed items based on the detailed preparation data
         if (apiResponse.test_items && apiResponse.test_items.length > 0) {
           const seeded: ReportItem[] = apiResponse.test_items.map((item: any, index: number) => {
-            console.log(`Processing test item ${index + 1}:`, item)
-            
+             
             // Create dynamic columns based on test_method_details.test_columns
             const dynamicColumns: DynamicColumn[] = item.test_method_details?.test_columns?.map((columnName: string, colIndex: number) => ({
               id: `col-${colIndex}`,
@@ -144,14 +138,12 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
               data: initialData,
             }
           })
-          console.log('Seeded test items with dynamic columns:', seeded)
           setItems(seeded)
         }
       } catch (error) {
         console.error("Failed to load detailed preparation data:", error)
         
         // Fallback to basic request data if detailed API fails
-        console.log('Falling back to basic request data for auto-fill')
         const fallbackCertificate = {
           date_of_sampling: certificate.date_of_sampling,
           date_of_testing: certificate.date_of_testing,
@@ -268,11 +260,8 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
         })
       }
 
-      console.log('Submitting certificate data:', certificateData)
-      
       // Call the API
       const response = await completeCertificateService.create(certificateData)
-      console.log('Certificate created successfully:', response)
       
       // Call the original onSubmit for local storage (if needed)
       onSubmit({ 
@@ -300,7 +289,6 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
             <RequestSelector
               value={selectedRequest?.request_id || selectedRequest?.id || ""}
               onValueChange={(requestId, request) => {
-                console.log('RequestSelector onValueChange:', { requestId, request })
                 setPreparationId(request?.request_id || requestId || "")
                 setSelectedRequest(request)
               }}

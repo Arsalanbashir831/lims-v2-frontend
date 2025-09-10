@@ -61,10 +61,18 @@ export const API_ROUTES = {
     SEARCH_SAMPLE_DETAILS: "sample-details/search",
 
     // Sample Preparation (Complete Requests)
-    ADD_SAMPLE_PREPARATION: "sample-preparation",
-    DELETE_SAMPLE_PREPARATION: (id: string) => `sample-preparation/${id}`,
-    ALL_SAMPLE_PREPARATIONS: "sample-preparation",
-    GET_SAMPLE_PREPARATION: (id: string) => `sample-preparation/${id}`,
+    ADD_SAMPLE_PREPARATION: "sample-preparations",
+    UPDATE_SAMPLE_PREPARATION: (id: string) => `sample-preparations/${id}`,
+    DELETE_SAMPLE_PREPARATION: (id: string) => `sample-preparations/${id}`,
+    ALL_SAMPLE_PREPARATIONS: "sample-preparations",
+    SAMPLE_PREPARATION_BY_ID: (id: string) => `sample-preparations/${id}`,
+    SEARCH_SAMPLE_PREPARATIONS: "sample-preparations/search",
+
+    // Specimens
+    ADD_SPECIMEN: "specimens",
+    UPDATE_SPECIMEN: (id: string) => `specimens/${id}`,
+    DELETE_SPECIMEN: (id: string) => `specimens/${id}`,
+    SPECIMEN_BY_ID: (id: string) => `specimens/${id}`,
 
     // Complete Certificates
     ADD_COMPLETE_CERTIFICATE: "complete-certificates",
