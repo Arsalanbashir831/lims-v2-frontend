@@ -1,0 +1,275 @@
+[
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee512"
+    },
+    "client_id": 1,
+    "client_name": "AASIA STEEL COMPANY"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee513"
+    },
+    "client_id": 2,
+    "client_name": "AL OTHMAN INDUSTRIAL MARKETING CO."
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee514"
+    },
+    "client_id": 3,
+    "client_name": "AL RASHID FASTENERS AND ENGINEERING FABRICATION SERVICES"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee515"
+    },
+    "client_id": 4,
+    "client_name": "AL-KAAFA"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee516"
+    },
+    "client_id": 5,
+    "client_name": "AL-USAIMI STEEL CO"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee517"
+    },
+    "client_id": 6,
+    "client_name": "ALI N. AL NASSAR & PARTNERS CO."
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee518"
+    },
+    "client_id": 7,
+    "client_name": "ALRASHED FASTNERS AND ENGINEERING FABRICATION SERVICE"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee519"
+    },
+    "client_id": 8,
+    "client_name": "ATECO"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee51a"
+    },
+    "client_id": 9,
+    "client_name": "Bena Steel Industries"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee51b"
+    },
+    "client_id": 10,
+    "client_name": "CHINA HARBOUR ENGINEERING ARABIA Co Ltd"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee51c"
+    },
+    "client_id": 11,
+    "client_name": "Crown Specialized for Steel Contracting Co. Ltd."
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee51d"
+    },
+    "client_id": 12,
+    "client_name": "Erne Fittings Middle East Co. Ltd"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee51e"
+    },
+    "client_id": 13,
+    "client_name": "Gerab National Enterprises Co. Ltd"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee51f"
+    },
+    "client_id": 14,
+    "client_name": "GLOBAL PROFICIENCY TESTING"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee520"
+    },
+    "client_id": 15,
+    "client_name": "GLOBAL PT PROVIDER"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee521"
+    },
+    "client_id": 16,
+    "client_name": "GRIPCO"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee522"
+    },
+    "client_id": 17,
+    "client_name": "GULF HEAVY INDUSTRIES  COMPANY"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee523"
+    },
+    "client_id": 18,
+    "client_name": "HAMAD JAMAN AL AJMI METAL INDUSTRIES FACTORY"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee524"
+    },
+    "client_id": 19,
+    "client_name": "HIT AL Jubail Factory for Steel Fabrication and Galvanizing"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee525"
+    },
+    "client_id": 20,
+    "client_name": "ICAD COMPANY"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee526"
+    },
+    "client_id": 21,
+    "client_name": "KALPATARU PROJECTS INTERNATIONAL LIMITED"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee527"
+    },
+    "client_id": 22,
+    "client_name": "L&T"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee528"
+    },
+    "client_id": 23,
+    "client_name": "L&T HYDROCARBON SAUDI COMPANY, FABRICATION BRANCH"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee529"
+    },
+    "client_id": 24,
+    "client_name": "L&T Saudi Integrated Manufacturing Factory -KSA"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee52a"
+    },
+    "client_id": 25,
+    "client_name": "L&T VALVES"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee52b"
+    },
+    "client_id": 26,
+    "client_name": "MASDAR TECHNICAL SERVICES"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee52c"
+    },
+    "client_id": 27,
+    "client_name": "MASFIC INNOVATIVE SOLUTION"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee52d"
+    },
+    "client_id": 28,
+    "client_name": "MAZHAR MOHIUDDIEN, QA/QC MANAGER"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee52e"
+    },
+    "client_id": 29,
+    "client_name": "MECHANICAL AND CHEMICAL TESTING OF PPGA (0.46 X1210-FW)"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee52f"
+    },
+    "client_id": 30,
+    "client_name": "MIS ARABIA"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee530"
+    },
+    "client_id": 31,
+    "client_name": "MSFI"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee531"
+    },
+    "client_id": 32,
+    "client_name": "NEOM"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee532"
+    },
+    "client_id": 33,
+    "client_name": "NIST"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee533"
+    },
+    "client_id": 34,
+    "client_name": "SABIC"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee534"
+    },
+    "client_id": 35,
+    "client_name": "SINSINA INDUSTRIAL WORKS AND METAL CONSTRUCTION CO"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee535"
+    },
+    "client_id": 36,
+    "client_name": "ZAMIL STEEL PRE - PRE ENGINEERING BUILDING LTD., KSA"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee536"
+    },
+    "client_id": 37,
+    "client_name": "ZEECO MIDDLE EAST LTD"
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee537"
+    },
+    "client_id": 38,
+    "client_name": "Zeepline Co."
+  },
+  {
+    "_id": {
+      "$oid": "68be728838b66424c8eee538"
+    },
+    "client_id": 39,
+    "client_name": "ZUWA GENERAL CONTRACTING"
+  }
+]
