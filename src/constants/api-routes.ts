@@ -93,5 +93,20 @@ export const API_ROUTES = {
     ALL_SAMPLE_LOTS: "sample-lots/",
     SAMPLE_LOT_BY_ID: (id: string) => `sample-lots/${id}/`,
     SEARCH_SAMPLE_LOTS: "sample-lots/search/",
+
+    // Dashboard Stats
+    CLIENTS_STATS: "clients/stats/",
+    JOBS_STATS: "jobs/stats/",
+    JOBS_STATS_CURRENT_MONTH: "jobs/stats/current-month/",
+    SAMPLE_LOTS_STATS: "sample-lots/stats/",
+    SAMPLE_LOTS_STATS_CURRENT_MONTH: "sample-lots/stats/current-month/",
+    SAMPLE_PREPARATIONS_STATS: "sample-preparations/stats/",
+    SPECIMENS_STATS: "specimens/stats/",
+    TEST_METHODS_STATS: "test-methods/stats/",
+    CERTIFICATES_STATS: "certificates/stats/",
+    CERTIFICATE_ITEMS_STATS: "certificate-items/stats/",
+    EQUIPMENT_STATS: "equipment/stats/",
+    CALIBRATION_TESTS_STATS: "calibration-tests/stats/",
+    PROFICIENCY_TESTS_STATS: "proficiency-tests/stats/",
   }
 }
