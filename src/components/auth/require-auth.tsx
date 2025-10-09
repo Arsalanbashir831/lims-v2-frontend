@@ -10,11 +10,13 @@ export function RequireAuth({ children }: PropsWithChildren) {
   const router = useRouter()
 
   useEffect(() => {
+    // Only redirect if we're not loading and definitely not authenticated
     if (!isLoading && !isAuthenticated) {
       router.replace("/login")
     }
   }, [isAuthenticated, isLoading, router])
 
+  // Show loading state while checking authentication
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -26,8 +28,9 @@ export function RequireAuth({ children }: PropsWithChildren) {
     )
   }
 
+  // Don't render anything while redirecting
   if (!isAuthenticated) {
-    return null // Will redirect to login
+    return null
   }
 
   return <>{children}</>

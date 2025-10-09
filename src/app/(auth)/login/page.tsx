@@ -12,6 +12,7 @@ import { getHomeRouteForRole } from "@/lib/auth/roles"
 import { UserRole } from "@/lib/schemas/user"
 import { ROUTES } from "@/constants/routes"
 import { useAuth } from "@/hooks/use-auth"
+import { RedirectIfAuthenticated } from "@/components/auth/redirect-if-auth"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -41,16 +42,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="w-full">
-      {/* Form Header */}
-      <div className="mb-6 text-left">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Sign In</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Enter your credentials to access your account</p>
-      </div>
+    <RedirectIfAuthenticated>
+      <div className="w-full">
+        {/* Form Header */}
+        <div className="mb-6 text-left">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Sign In</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Enter your credentials to access your account</p>
+        </div>
 
-      {/* Login Form */}
+        {/* Login Form */}
 
-      <form className="space-y-6" onSubmit={onSubmit}>
+        <form className="space-y-6" onSubmit={onSubmit}>
         <div className="space-y-2">
           <Label htmlFor="email" className="text-sm font-medium">Email</Label>
           <div className="relative">
@@ -110,6 +112,7 @@ export default function LoginPage() {
         </div>
       </form>
     </div>
+    </RedirectIfAuthenticated>
   )
 }
 

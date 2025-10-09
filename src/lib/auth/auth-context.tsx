@@ -29,7 +29,13 @@ export const AUTH_QUERY_KEYS = {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  // Initialize authentication state based on stored tokens
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return TokenStorage.hasValidTokens()
+    }
+    return false
+  })
   const queryClient = useQueryClient()
 
   // Query for user profile with caching
@@ -58,10 +64,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     if (user && !userError) {
       setIsAuthenticated(true)
-    } else if (userError || !user) {
-      setIsAuthenticated(false)
+    } else if (userError) {
+      // Only set to false if there's an actual error (like 401)
+      if (userError && typeof userError === 'object' && 'status' in userError && userError.status === 401) {
+        setIsAuthenticated(false)
+        TokenStorage.clearTokens()
+      }
+    } else if (!user && !userLoading) {
+      // Only set to false if we're not loading and have no user
+      const hasTokens = TokenStorage.hasValidTokens()
+      if (!hasTokens) {
+        setIsAuthenticated(false)
+      }
     }
-  }, [user, userError])
+  }, [user, userError, userLoading])
 
   // Login mutation with cache invalidation
   const loginMutation = useMutation({
