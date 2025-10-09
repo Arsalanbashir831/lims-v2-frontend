@@ -17,15 +17,16 @@ import { generateStableId } from "@/utils/hydration-fix"
 import { samplePreparationService } from "@/lib/sample-preparation-new"
 import { CreateSamplePreparationData } from "@/lib/schemas/sample-preparation"
 import { sampleInformationService } from "@/lib/sample-information"
-import { testMethodService } from "@/lib/test-methods"
 import { SpecimenBadge } from "./specimen-badge"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
 import { useQueryClient } from "@tanstack/react-query"
+import { JobSelector } from "../common/job-selector"
 
 export interface SamplePreparationFormData {
   id?: string
   job?: string
+  request_id?: string // Single sample lot ID
   test_items?: PreparationItem[]
 }
 
@@ -39,21 +40,20 @@ interface SpecimenDraft {
 interface PreparationItem {
   id?: string
   indexNo?: number
-  sample: number
   test_method: string
   dimensions?: string
+  item_description?: string
   no_of_specimens: number
   requested_by?: string
   remarks?: string
   planned_test_date?: string
   specimens: SpecimenDraft[]
-  request_id_for_edit?: string
 }
 
 interface SampleSummary {
   id: number
   sample_id: string
-  item_description: string
+  description: string
   test_methods: string[]
   test_method_names: string[]
 }
@@ -75,9 +75,9 @@ interface CompleteJob {
 function createPreparationItem(data: Partial<PreparationItem>): PreparationItem {
   return {
     id: generateStableId('item'),
-    sample: data.sample ?? 0,
     test_method: data.test_method ?? "",
     dimensions: data.dimensions ?? "",
+    item_description: data.item_description ?? "",
     no_of_specimens: data.no_of_specimens ?? 0,
     requested_by: data.requested_by,
     remarks: data.remarks,
@@ -96,12 +96,16 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
   const queryClient = useQueryClient()
   const { state } = useSidebar();
   const [jobId, setJobId] = useState(initialData && 'job' in initialData ? String(initialData.job) : "")
+  const [requestId, setRequestId] = useState(initialData && 'request_id' in initialData ? String(initialData.request_id) : "")
   const [items, setItems] = useState<PreparationItem[]>(initialData && 'test_items' in initialData ? (initialData.test_items as PreparationItem[]) : [])
   
-  // For edit mode, ensure jobId is set from initial data
+  // For edit mode, ensure jobId and requestId are set from initial data
   useEffect(() => {
     if (initialData && 'job' in initialData && initialData.job) {
       setJobId(String(initialData.job))
+    }
+    if (initialData && 'request_id' in initialData && initialData.request_id) {
+      setRequestId(String(initialData.request_id))
     }
   }, [initialData])
 
@@ -110,8 +114,8 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
     if (initialData && 'test_items' in initialData && initialData.test_items) {
       const descriptions: Record<string, string> = {}
       initialData.test_items.forEach((item: any) => {
-        if (item.id && item.item_description) {
-          descriptions[item.id] = item.item_description
+        if (item.id && item.description) {
+          descriptions[item.id] = item.description
         }
       })
       setItemDescriptionByRow(descriptions)
@@ -132,29 +136,6 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
 
   const maxWidth = useMemo(() => (state === "expanded" ? "lg:max-w-[calc(100vw-21.5rem)]" : "lg:max-w-screen"), [state])
 
-  // Fetch test method names for display
-  const fetchTestMethodNames = async (testMethodIds: string[]) => {
-    if (testMethodIds.length === 0) return
-    
-    setLoadingTestMethodNames(true)
-    const names: Record<string, string> = {}
-    
-    try {
-      for (const id of testMethodIds) {
-        try {
-          const testMethod = await testMethodService.getById(id)
-          names[id] = testMethod.test_name || id // Use test_name field from schema
-        } catch (error) {
-          console.warn(`Failed to fetch test method ${id}:`, error)
-          names[id] = id // Fallback to ID if fetch fails
-        }
-      }
-      setTestMethodNames(prev => ({ ...prev, ...names }))
-    } finally {
-      setLoadingTestMethodNames(false)
-    }
-  }
-
   // Optimized test method name fetching - only when both job and items are loaded
   useEffect(() => {
     if (completeJob && items.length > 0) {
@@ -172,12 +153,6 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
       completeJob.samples.forEach(sample => {
         sample.test_methods.forEach((methodId: string) => allTestMethodIds.add(methodId))
       })
-      
-      // Only fetch if we have IDs and they're not already loaded
-      const idsToFetch = Array.from(allTestMethodIds).filter(id => !testMethodNames[id])
-      if (idsToFetch.length > 0) {
-        fetchTestMethodNames(idsToFetch)
-      }
     }
   }, [completeJob, items, testMethodNames])
 
@@ -201,7 +176,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
         const localSamples = (agg.lots || []).map((lot: any, idx: number) => ({
           id: idx + 1, // local numeric id used for selection
           sample_id: lot.item_no || String(idx + 1),
-          item_description: lot.item_description || "",
+          description: lot.description || "",
           mtc_no: undefined,
           sample_type: undefined,
           material_type: undefined,
@@ -240,39 +215,10 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
         setCompleteJob(localJob)
 
         if (!isEditing) {
-          setItems(prev => {
-            if (prev.length === 0 && localJob.samples.length > 0) {
-              const firstSample = (localJob as any).samples[0]
-              return [createPreparationItem({
-                sample: firstSample.id,
-                test_method: firstSample.test_methods[0] || "",
-                no_of_specimens: 1,
-                specimens: [],
-              })]
-            }
-            return prev
-          })
+          // In create mode, don't auto-add items - wait for user to select sample lot and add manually
         } else {
-          // In edit mode, convert stored request_id to local numeric sample index
-          console.log('Mapping samples in edit mode. idMap:', idMap)
-          setItems(prev => {
-            const mapped = prev.map(it => {
-              if (it.sample && it.sample > 0) {
-                console.log(`Item ${it.id} already has sample: ${it.sample}`)
-                return it
-              }
-              const entry = Object.entries(idMap).find(([, lotId]) => lotId === (it.request_id_for_edit || ""))
-              if (entry) {
-                const numericId = parseInt(entry[0], 10)
-                console.log(`Item ${it.id} mapped to sample: ${numericId} (from lotId: ${entry[1]})`)
-                return { ...it, sample: numericId }
-              }
-              console.log(`Item ${it.id} could not be mapped. request_id_for_edit: ${it.request_id_for_edit}`)
-              return it
-            })
-            console.log('Final mapped items:', mapped)
-            return mapped
-          })
+          // In edit mode, items are already loaded from initialData
+          console.log('Edit mode - items loaded from initial data')
         }
       } catch (error) {
         console.error("Failed to load complete job:", error)
@@ -303,14 +249,16 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
   }, [initialData, isEditing])
 
   const addItem = useCallback(() => {
-    if (!completeJob || completeJob.samples.length === 0) return
+    if (!completeJob || !requestId) return
+    const selectedSampleLot = completeJob.samples.find((s: SampleSummary) => 
+      String(sampleIdMap[s.id] || s.id) === requestId
+    )
     setItems(prev => [...prev, createPreparationItem({
-      sample: completeJob.samples[0].id,
-      test_method: completeJob.samples[0].test_methods[0] || "",
+      test_method: selectedSampleLot?.test_methods[0] || "",
       no_of_specimens: 1,
       specimens: [],
     })])
-  }, [completeJob])
+  }, [completeJob, requestId, sampleIdMap])
 
   const removeItem = useCallback((id: string) => {
     setItems(prev => prev.filter(i => i.id !== id).map((i, idx) => ({ ...i, indexNo: idx + 1 })))
@@ -356,6 +304,11 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
       return
     }
 
+    if (!String(requestId).trim()) {
+      toast.error("Sample lot is required")
+      return
+    }
+
     if (items.length === 0) {
       toast.error("At least one request item is required")
       return
@@ -376,13 +329,13 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
 
     const payload: CreateSamplePreparationData = {
       request_no: "",
+      request_id: requestId, // Single request_id at top level
       request_items: items.map((i) => ({
-        item_description: itemDescriptionByRow[i.id || ""] || i.dimensions || "",
+        item_description: i.item_description || "",
         planned_test_date: i.planned_test_date || "",
         dimension_spec: i.dimensions || "",
         request_by: i.requested_by || "",
         remarks: i.remarks || "",
-        request_id: sampleIdMap[i.sample] ?? String(i.sample || ""),
         test_method_oid: i.test_method || "",
         // pass specimen_ids tokens; keep specimen_oids empty (backend fills)
         specimen_oids: [],
@@ -417,8 +370,48 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
 
   return (
     <form onSubmit={onSubmit} className="grid gap-6">
+      <Card className="border-muted/40">
+        <CardHeader>
+          <CardTitle className="text-xl">Select Job</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid gap-2">
+            <Label>Job ID</Label>
+            <JobSelector
+              value={jobId}
+              onValueChange={(selectedJobId) => {
+                setJobId(selectedJobId || "")
+                setRequestId("") // Clear sample lot when job changes
+              }}
+              placeholder="Select a job..."
+              disabled={readOnly || isEditing}
+            />
+          </div>
+          {jobId && completeJob && (
+            <div className="grid gap-2">
+              <Label>Sample Lot</Label>
+              <Select 
+                value={requestId} 
+                onValueChange={setRequestId}
+                disabled={readOnly || isEditing}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select sample lot..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {completeJob.samples.map((sample) => (
+                    <SelectItem key={sample.id} value={String(sampleIdMap[sample.id] || sample.id)}>
+                      {sample.sample_id} — {sample.description}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {Boolean(jobId) && (
+      {Boolean(jobId) && Boolean(requestId) && (
         <Card className="border-muted/40">
           <CardHeader className="grid grid-cols-2">
             <div>
@@ -440,11 +433,9 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[40px]">#</TableHead>
-                    <TableHead className="w-[220px]">Sample</TableHead>
                     <TableHead>Test Method</TableHead>
                     <TableHead className="w-[200px]">Dimensions</TableHead>
                     <TableHead className="w-[300px]">Item Description</TableHead>
-                    
                     <TableHead>No. of Specimens</TableHead>
                     <TableHead>Planned Test Date</TableHead>
                     <TableHead>Requested By</TableHead>
@@ -456,53 +447,31 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                 <TableBody>
                   {isEditing && !itemsInitialized ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
+                      <TableCell colSpan={10} className="text-center py-8">
                         <div className="text-sm text-muted-foreground">Loading test items...</div>
                       </TableCell>
                     </TableRow>
                   ) : items.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
+                      <TableCell colSpan={10} className="text-center py-8">
                         <div className="text-sm text-muted-foreground">No test items added yet</div>
                       </TableCell>
                     </TableRow>
                   ) : (
                     items.map((row, index) => {
-                    const availableSamples = (completeJob?.samples ?? []) as SampleSummary[]
-                    const selectedSample = availableSamples.find((s: SampleSummary) => s.id === row.sample)
-                    const availableMethods = selectedSample ?
-                      selectedSample.test_methods.map((id: string, methodIndex: number) => ({
+                    // Get the selected sample lot from requestId
+                    const selectedSampleLot = completeJob?.samples.find((s: SampleSummary) => 
+                      String(sampleIdMap[s.id] || s.id) === requestId
+                    )
+                    const availableMethods = selectedSampleLot ?
+                      selectedSampleLot.test_methods.map((id: string, methodIndex: number) => ({
                         id,
-                        name: selectedSample.test_method_names[methodIndex] || `Method ${methodIndex + 1}`
+                        name: selectedSampleLot.test_method_names[methodIndex] || `Method ${methodIndex + 1}`
                       })) : []
 
                     return (
                       <TableRow key={row.id || index}>
                         <TableCell className="font-medium">{index + 1}</TableCell>
-                        <TableCell>
-                          <Select value={row.sample?.toString() || ""} onValueChange={(val) => {
-                            const sample = availableSamples.find((s: SampleSummary) => s.id.toString() === val)
-                            updateItemField(row.id || index.toString(), "sample" as any, parseInt(val))
-                            if (sample) {
-                              updateItemField(row.id || index.toString(), "test_method" as any, sample.test_methods[0] || "")
-                            }
-                          }} disabled={readOnly}>
-                            <SelectTrigger className="w-[270px] h-10" disabled={readOnly}>
-                              <SelectValue placeholder={availableSamples.length > 0 ? "Select sample..." : "Loading samples..."} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableSamples.length > 0 ? (
-                                availableSamples.map((sample: SampleSummary) => (
-                                  <SelectItem key={sample.id} value={sample.id.toString()}>
-                                    {sample.sample_id} — {sample.item_description.slice(0, 60)}
-                                </SelectItem>
-                                ))
-                              ) : (
-                                <div className="px-2 py-1 text-sm text-muted-foreground">Loading samples...</div>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
                         <TableCell>
                           <Select
                             value={row.test_method}
@@ -548,8 +517,8 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                         <TableCell>
                           <Input
                             placeholder="Item description"
-                            value={itemDescriptionByRow[row.id || index.toString()] ?? ""}
-                            onChange={(e) => setItemDescriptionByRow(prev => ({ ...prev, [row.id || index.toString()]: e.target.value }))}
+                            value={row.item_description || ""}
+                            onChange={(e) => updateItemField(row.id || index.toString(), "item_description" as any, e.target.value)}
                             disabled={readOnly}
                             className="w-[280px]"
                           />

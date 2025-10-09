@@ -38,14 +38,6 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
   const queryClient = useQueryClient()
   const { state } = useSidebar()
   const [job, setJob] = useState(initial?.job?.job_id ?? "")
-  // const [description, setDescription] = useState("")
-  // const [mtcNo, setMtcNo] = useState("")
-  // const [sampleType, setSampleType] = useState("")
-  // const [materialType, setMaterialType] = useState("")
-  // const [heatNo, setHeatNo] = useState("")
-  // const [storageLocation, setStorageLocation] = useState("")
-  // const [condition, setCondition] = useState("")
-  // const [testMethods, setTestMethods] = useState<string[]>([])
   const selectedJob = useMemo(() => {
     return {
       job_id: job,
@@ -108,14 +100,6 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
   useEffect(() => {
     if (initial) {
       setJob(initial.job.job_id ?? "")
-      // setDescription("")
-      // setMtcNo("")
-      // setSampleType("")
-      // setMaterialType("")
-      // setHeatNo("")
-      // setStorageLocation("")
-      // setCondition("")
-      // setTestMethods([])
     }
   }, [initial])
 

@@ -41,8 +41,24 @@ export async function GET(request: NextRequest) {
       {
         $lookup: {
           from: 'sample_lots',
-          localField: 'request_id',
-          foreignField: '_id',
+          let: { requestId: "$request_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    // Match if request_id is already an ObjectId
+                    { $eq: ["$_id", "$$requestId"] },
+                    // Match if request_id is a string that needs to be converted
+                    { $eq: [
+                      "$_id", 
+                      { $convert: { input: "$$requestId", to: "objectId", onError: null, onNull: null } }
+                    ]}
+                  ]
+                }
+              }
+            }
+          ],
           as: 'sampleLot'
         }
       },
@@ -89,8 +105,21 @@ export async function GET(request: NextRequest) {
       {
         $lookup: {
           from: 'specimens',
-          localField: 'request_items.specimen_oids',
-          foreignField: '_id',
+          let: { specimenOid: "$request_items.specimen_oids" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    // Match if specimen_oid is already an ObjectId
+                    { $eq: ["$_id", "$$specimenOid"] },
+                    // Match if specimen_oid is a string that needs to be converted
+                    { $eq: ["$_id", { $convert: { input: "$$specimenOid", to: "objectId", onError: null, onNull: null } }] }
+                  ]
+                }
+              }
+            }
+          ],
           as: 'specimenDoc'
         }
       },
@@ -198,10 +227,10 @@ export async function POST(request: NextRequest) {
         // Insert all
         const docs = allTokens.map(token => ({ specimen_id: token }))
         const ins = await specimensCol.insertMany(docs, { ordered: true })
-        const idByToken = new Map<string, string>()
+        const idByToken = new Map<string, ObjectId>()
         let idx = 0
         for (const key of Object.keys(ins.insertedIds)) {
-          idByToken.set(allTokens[idx], (ins.insertedIds as any)[key].toString())
+          idByToken.set(allTokens[idx], (ins.insertedIds as any)[key]) // Store as ObjectId, not string
           idx++
         }
         // Replace per item
@@ -217,6 +246,9 @@ export async function POST(request: NextRequest) {
     }
 
     const validatedData = CreateSamplePreparationSchema.parse(draft)
+
+    // Convert request_id to ObjectId for storage
+    const requestObjectId = new ObjectId(validatedData.request_id)
 
     // Generate request_no if not provided using counters (year-scoped)
     if (!validatedData.request_no) {
@@ -249,6 +281,7 @@ export async function POST(request: NextRequest) {
 
     const doc = {
       ...validatedData,
+      request_id: requestObjectId, // Store as ObjectId
       created_at: new Date(),
       updated_at: new Date(),
       is_active: true,
@@ -258,7 +291,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       id: result.insertedId.toString(),
-      ...validatedData,
+      ...validatedData, // This still has the original string request_id for response consistency
       is_active: true,
       created_at: doc.created_at.toISOString(),
       updated_at: doc.updated_at.toISOString(),

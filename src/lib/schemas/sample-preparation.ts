@@ -9,17 +9,15 @@ export const SpecimenSchema = z.object({
 
 export type Specimen = z.infer<typeof SpecimenSchema>
 
-// Request item schema
+// Request item schema (no request_id here, it's at parent level)
 export const RequestItemSchema = z.object({
   item_description: z.string(),
   planned_test_date: z.string(),
   dimension_spec: z.string(),
   request_by: z.string(),
   remarks: z.string().optional(),
-  request_id: z.string(),
   test_method_oid: z.string(),
   specimen_oids: z.array(z.string()).default([]),
-  specimen_ids: z.array(z.string()).optional().default([]),
 })
 
 export type RequestItem = z.infer<typeof RequestItemSchema>
@@ -28,6 +26,7 @@ export type RequestItem = z.infer<typeof RequestItemSchema>
 export const SamplePreparationSchema = z.object({
   id: z.string().optional(),
   request_no: z.string(),
+  request_id: z.string(), // Single request_id (sample_lot id) at top level
   request_items: z.array(RequestItemSchema),
   created_at: z.union([z.string(), z.date()]).optional(),
   updated_at: z.union([z.string(), z.date()]).optional(),

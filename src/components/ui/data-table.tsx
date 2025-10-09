@@ -31,9 +31,10 @@ type DataTableProps<TData, TValue> = {
   onRowClick?: (row: Row<TData>) => void
   bodyMaxHeightClassName?: string
   manualPagination?: boolean // Add this to control pagination mode
+  className?: string
 }
 
-export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, toolbar, footer, tableKey, onRowClick, bodyMaxHeightClassName, manualPagination = true }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, toolbar, footer, tableKey, onRowClick, bodyMaxHeightClassName, manualPagination = true, className }: DataTableProps<TData, TValue>) {
   const { state } = useSidebar()
   const maxWidth = useMemo(() => (state === "expanded" ? "lg:max-w-[calc(100vw-20rem)]" : "lg:max-w-screen"), [state])
 
@@ -124,7 +125,7 @@ export function DataTable<TData, TValue>({ columns, data, empty, pageSize = 10, 
   // No need to save pagination state to localStorage
 
   return (
-    <div className="flex flex-col gap-2 h-[calc(100vh-10rem)]">
+    <div className={cn("flex flex-col gap-2 h-[calc(100vh-10rem)]", className)}>
       {toolbar ? (
         <div className="flex items-center justify-between gap-2 p-2">
           {toolbar(table)}

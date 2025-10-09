@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { samplePreparationService } from "@/lib/sample-preparation-new"
 import { SamplePreparationResponse } from "@/lib/schemas/sample-preparation"
 import { ROUTES } from "@/constants/routes"
-import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ServerPagination } from "@/components/ui/server-pagination"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -21,7 +20,6 @@ import { AdvancedSearch } from "@/components/sample-preparation/advanced-search"
 import { SamplePrepDrawer } from "@/components/sample-preparation/sample-prep-drawer"
 
 export default function SamplePreparationPage() {
-  const router = useRouter()
   const queryClient = useQueryClient()
   const [currentPage, setCurrentPage] = useState(1)
   const [searchFilters, setSearchFilters] = useState({
@@ -139,13 +137,13 @@ export default function SamplePreparationPage() {
       accessorKey: "project_name",
       id: "project", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Project" />, 
-      cell: ({ row }) => <span className="max-w-[200px] truncate">{row.original.project_name}</span>
+      cell: ({ row }) => <div className="font-medium truncate max-w-[28ch]">{row.original.project_name}</div>
     },
     {
       accessorKey: "client_name",
       id: "client", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Client" />, 
-      cell: ({ row }) => <span className="max-w-[150px] truncate">{row.original.client_name}</span>
+      cell: ({ row }) => <div className="font-medium truncate max-w-[28ch]">{row.original.client_name}</div>
     },
     {
       accessorKey: "request_no",
@@ -155,8 +153,8 @@ export default function SamplePreparationPage() {
     },
     {
       accessorKey: "no_of_request_items",
-      id: "totalSamples", 
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Total no. of Samples" />, 
+      id: "totalItems", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Total Items" />, 
       cell: ({ row }) => <span className="text-center">{row.original.no_of_request_items}</span>
     },
     {
@@ -169,7 +167,7 @@ export default function SamplePreparationPage() {
           return <span className="text-muted-foreground">No specimens</span>
         }
         if (specimenIds.length <= 3) {
-          return <span className="text-sm">{specimenIds.join(", ")}</span>
+          return <div className="text-sm">{specimenIds.join(", ")}</div>
         }
         return (
           <span className="text-sm">
@@ -225,7 +223,7 @@ export default function SamplePreparationPage() {
     )
   }, [])
 
-  const footer = useCallback((table: TanstackTable<SamplePreparationResponse>) => (
+  const footer = useCallback((_table: TanstackTable<SamplePreparationResponse>) => (
     <ServerPagination
       currentPage={currentPage}
       totalCount={totalCount}
@@ -253,6 +251,7 @@ export default function SamplePreparationPage() {
         onRowClick={handleRowClick}
         toolbar={toolbar}
         footer={footer}
+        className="h-[calc(100vh-16rem)]"
       />
       
       <SamplePrepDrawer

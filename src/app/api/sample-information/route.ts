@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth/config"
 import clientPromise from "@/lib/auth/mongodb"
+import { ObjectId } from 'mongodb'
 import { CreateSampleInformationSchema } from "@/lib/schemas/sample-information"
 
 function pad4(n: number) { return String(n).padStart(4, '0') }
@@ -62,15 +63,26 @@ export async function GET(request: NextRequest) {
         { $sort: { created_at: -1 } },
         { $skip: skip },
         { $limit: limit },
-        { $addFields: {
-            clientObjectId: {
-              $convert: { input: "$client_id", to: "objectId", onError: null, onNull: null }
-            }
-        }},
         { $lookup: {
             from: 'clients',
-            localField: 'clientObjectId',
-            foreignField: '_id',
+            let: { clientId: "$client_id" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $or: [
+                      // Match if client_id is already an ObjectId
+                      { $eq: ["$_id", "$$clientId"] },
+                      // Match if client_id is a string that needs to be converted
+                      { $eq: [
+                        "$_id", 
+                        { $convert: { input: "$$clientId", to: "objectId", onError: null, onNull: null } }
+                      ]}
+                    ]
+                  }
+                }
+              }
+            ],
             as: 'clientDoc'
         }},
         { $addFields: {
@@ -100,7 +112,7 @@ export async function GET(request: NextRequest) {
         { $addFields: {
             sample_count: { $size: "$sampleLots" }
         }},
-        { $project: { clientDoc: 0, clientObjectId: 0, sampleLots: 0 } }
+        { $project: { clientDoc: 0, sampleLots: 0 } }
       ]).toArray(),
       collection.countDocuments(query)
     ])
@@ -144,17 +156,27 @@ export async function POST(request: NextRequest) {
       received_by: body.received_by === "" ? null : body.received_by,
       project_name: body.project_name === "" ? null : body.project_name,
       remarks: body.remarks === "" ? null : body.remarks,
-      client_id: String(body.client_id),
+      client_id: String(body.client_id), // Keep as string for validation
     }
     const data = CreateSampleInformationSchema.parse(normalized)
+    
+    // Convert client_id to ObjectId for storage
+    const clientObjectId = new ObjectId(data.client_id)
     const now = new Date()
     // Retry up to 10 times on duplicate key (job_id)
     for (let attempt = 0; attempt < 10; attempt++) {
       const job_id = await generateJobId(db)
-      const doc = { ...data, job_id, is_active: true, created_at: now, updated_at: now }
+      const doc = { ...data, client_id: clientObjectId, job_id, is_active: true, created_at: now, updated_at: now }
       try {
         const result = await collection.insertOne(doc)
-        return NextResponse.json({ id: result.insertedId.toString(), ...doc, created_at: doc.created_at.toISOString(), updated_at: doc.updated_at.toISOString() }, { status: 201 })
+        // Return the original string client_id in the response for API consistency
+        return NextResponse.json({ 
+          id: result.insertedId.toString(), 
+          ...doc, 
+          client_id: data.client_id, // Return original string for response
+          created_at: doc.created_at.toISOString(), 
+          updated_at: doc.updated_at.toISOString() 
+        }, { status: 201 })
       } catch (e: any) {
         if (e?.code === 11000) {
           // Duplicate job_id, try next sequence

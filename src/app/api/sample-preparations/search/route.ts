@@ -90,8 +90,24 @@ export async function GET(request: NextRequest) {
       {
         $lookup: {
           from: 'sample_lots',
-          localField: 'request_id',
-          foreignField: '_id',
+          let: { requestId: "$request_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    // Match if request_id is already an ObjectId
+                    { $eq: ["$_id", "$$requestId"] },
+                    // Match if request_id is a string that needs to be converted
+                    { $eq: [
+                      "$_id", 
+                      { $convert: { input: "$$requestId", to: "objectId", onError: null, onNull: null } }
+                    ]}
+                  ]
+                }
+              }
+            }
+          ],
           as: 'sampleLot'
         }
       },
@@ -138,8 +154,21 @@ export async function GET(request: NextRequest) {
       {
         $lookup: {
           from: 'specimens',
-          localField: 'request_items.specimen_oids',
-          foreignField: '_id',
+          let: { specimenOid: "$request_items.specimen_oids" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    // Match if specimen_oid is already an ObjectId
+                    { $eq: ["$_id", "$$specimenOid"] },
+                    // Match if specimen_oid is a string that needs to be converted
+                    { $eq: ["$_id", { $convert: { input: "$$specimenOid", to: "objectId", onError: null, onNull: null } }] }
+                  ]
+                }
+              }
+            }
+          ],
           as: 'specimenDoc'
         }
       },

@@ -23,12 +23,27 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const db = client.db("lims")
     const collection = db.collection("sample_lots")
 
-    const doc = await collection.findOne({ _id: new ObjectId(id) })
-    if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    // Use aggregation to join with jobs collection to get job_id string
+    const pipeline = [
+      { $match: { _id: new ObjectId(id) } },
+      {
+        $lookup: {
+          from: 'jobs',
+          localField: 'job_id',
+          foreignField: '_id',
+          as: 'jobDoc'
+        }
+      }
+    ]
+
+    const results = await collection.aggregate(pipeline).toArray()
+    if (results.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    
+    const doc = results[0]
 
     const mapped = {
       id: doc._id.toString(),
-      job_id: doc.job_id,
+      job_id: doc.jobDoc?.[0]?.job_id || doc.job_id?.toString() || "", // Get job_id string from joined job document
       item_no: doc.item_no,
       sample_type: doc.sample_type ?? null,
       material_type: doc.material_type ?? null,

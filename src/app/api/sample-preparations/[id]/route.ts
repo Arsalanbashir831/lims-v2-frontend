@@ -37,8 +37,24 @@ export async function GET(
       {
         $lookup: {
           from: 'sample_lots',
-          localField: 'request_id',
-          foreignField: '_id',
+          let: { requestId: "$request_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    // Match if request_id is already an ObjectId
+                    { $eq: ["$_id", "$$requestId"] },
+                    // Match if request_id is a string that needs to be converted
+                    { $eq: [
+                      "$_id", 
+                      { $convert: { input: "$$requestId", to: "objectId", onError: null, onNull: null } }
+                    ]}
+                  ]
+                }
+              }
+            }
+          ],
           as: 'sampleLot'
         }
       },
@@ -171,7 +187,57 @@ export async function PATCH(
     const baseFilter = { $or: [{ is_active: true }, { is_active: { $exists: false } }] }
     
     const body = await request.json()
-    const validatedData = UpdateSamplePreparationSchema.parse(body)
+    
+    // Handle specimen creation/conversion like in POST route
+    const specimensCol = db.collection('specimens')
+    await specimensCol.createIndex({ specimen_id: 1 }, { unique: true }).catch(() => {})
+
+    const draft = { ...body }
+    if (Array.isArray(draft.request_items)) {
+      const allTokens: string[] = []
+      draft.request_items.forEach((it: any) => {
+        if (Array.isArray(it.specimen_ids)) {
+          for (const t of it.specimen_ids) {
+            const token = String(t || '').trim()
+            if (token) allTokens.push(token)
+          }
+        }
+      })
+
+      // Check duplicates within payload
+      const dupInPayload = allTokens.filter((v, i, a) => a.indexOf(v) !== i)
+      if (dupInPayload.length) {
+        return NextResponse.json({ error: 'Duplicate specimen IDs in payload', details: Array.from(new Set(dupInPayload)) }, { status: 400 })
+      }
+
+      if (allTokens.length) {
+        const existing = await specimensCol.find({ specimen_id: { $in: allTokens } }).project({ specimen_id: 1 }).toArray()
+        if (existing.length) {
+          const taken = existing.map((d: any) => d.specimen_id)
+          return NextResponse.json({ error: 'Specimen ID already exists', details: taken }, { status: 400 })
+        }
+        // Insert all new specimens
+        const docs = allTokens.map(token => ({ specimen_id: token }))
+        const ins = await specimensCol.insertMany(docs, { ordered: true })
+        const idByToken = new Map<string, ObjectId>()
+        let idx = 0
+        for (const key of Object.keys(ins.insertedIds)) {
+          idByToken.set(allTokens[idx], (ins.insertedIds as any)[key]) // Store as ObjectId, not string
+          idx++
+        }
+        // Replace per item
+        draft.request_items = draft.request_items.map((it: any) => {
+          if (Array.isArray(it.specimen_ids)) {
+            const specimen_oids = it.specimen_ids.map((t: string) => idByToken.get(String(t))!).filter(Boolean)
+            const { specimen_ids, ...rest } = it
+            return { ...rest, specimen_oids }
+          }
+          return it
+        })
+      }
+    }
+    
+    const validatedData = UpdateSamplePreparationSchema.parse(draft)
     
     const doc = await collection.findOne({ 
       ...(isObjectId ? { _id: new ObjectId(id) } : { request_no: id }), 

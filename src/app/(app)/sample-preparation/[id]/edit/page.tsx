@@ -27,12 +27,11 @@ export default function EditSamplePreparationPage() {
         
         const mappedData: SamplePreparationFormData = {
           id: apiResponse.id || '',
-          job: apiResponse.job_id || '', // Use job_id directly since we removed job selector
+          job: apiResponse.job_id || '',
+          request_id: apiResponse.request_id || '', // Single request_id at top level
           test_items: (apiResponse.request_items || []).map((item: any, index: number) => {            
             return {
               id: item.id?.toString() || `item-${index}`,
-              sample: 0, // Will be mapped to correct sample ID when job data loads
-              request_id_for_edit: item.sample_lot_id || item.request_id || apiResponse.id || '',
               item_description: item.item_description || '',
               test_method: item.test_method_oid || item.test_method || '',
               dimensions: item.dimension_spec || item.dimensions || '',

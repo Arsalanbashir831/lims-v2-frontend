@@ -58,9 +58,9 @@ export function AdvancedSearch({ onSearch, onClear, isLoading = false }: Advance
   const hasActiveFilters = Object.values(filters).some(value => value.trim() !== "")
 
   return (
-    <Card className="w-full">
+    <Card className="w-full py-2 px-6">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CardHeader className="pb-3">
+        <CardHeader className="p-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Search className="h-4 w-4" />
@@ -79,7 +79,7 @@ export function AdvancedSearch({ onSearch, onClear, isLoading = false }: Advance
         </CardHeader>
 
         <CollapsibleContent>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pb-2">
             {/* General Search */}
             <div className="space-y-2">
               <Label htmlFor="query">General Search</Label>
