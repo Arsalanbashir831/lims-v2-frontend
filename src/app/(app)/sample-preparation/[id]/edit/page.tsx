@@ -18,12 +18,6 @@ export default function EditSamplePreparationPage() {
 
   // Use the new hook for data fetching
   const { data: rec, error, isLoading } = useSamplePreparationDetail(id || '')
-  
-  // Debug logging for data fetching
-  console.log('Edit page - ID:', id)
-  console.log('Edit page - Data:', rec)
-  console.log('Edit page - Error:', error)
-  console.log('Edit page - Loading:', isLoading)
 
   useEffect(() => {
     if (!rec || !id) return
@@ -32,8 +26,6 @@ export default function EditSamplePreparationPage() {
         
         // Map the new API response structure to form data
         const apiResponse = rec as any
-        console.log('Sample preparation data for edit:', apiResponse)
-        console.log('rec data:', rec)
         
         // Get the first sample lot for job information
         const firstSampleLot = apiResponse.sample_lots?.[0]
@@ -46,17 +38,11 @@ export default function EditSamplePreparationPage() {
         
         if (businessJobId) {
           try {
-            console.log('Searching for job with business ID:', businessJobId)
             // Search for the job by business ID to get the document ID
             const jobSearchResponse = await sampleInformationService.search(businessJobId, 1)
-            console.log('Job search response:', jobSearchResponse)
             const matchingJob = jobSearchResponse.results.find((job: any) => job.job_id === businessJobId)
-            console.log('Matching job:', matchingJob)
             if (matchingJob) {
               jobDocumentId = matchingJob.id
-              console.log('Found job document ID:', jobDocumentId)
-            } else {
-              console.log('No matching job found')
             }
           } catch (error) {
             console.error('Failed to find job document ID:', error)
@@ -88,8 +74,6 @@ export default function EditSamplePreparationPage() {
           })
         }
         
-        console.log('Mapped form data:', mappedData)
-        console.log('Setting initial data:', mappedData)
         setInitial(mappedData)
       } catch (error) {
         console.error("Failed to load sample preparation:", error)
@@ -126,14 +110,11 @@ export default function EditSamplePreparationPage() {
         )}
       </FormHeader>
       {initial ? (
-        <>
-          {console.log('Rendering form with initial data:', initial)}
           <SamplePreparationForm 
             key={`${id}-${initial.id}-${isEditing}`} 
             initialData={initial} 
             readOnly={!isEditing} 
           />
-        </>
       ) : (
         <p className="text-sm text-muted-foreground">Loading…</p>
       )}

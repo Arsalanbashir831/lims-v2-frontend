@@ -182,6 +182,18 @@ export function SamplePrepDrawer({ isOpen, onClose, samplePrepId }: SamplePrepDr
                       </>
                     )}
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Project Name</label>
+                    <p className="text-sm bg-muted/50 px-3 py-2 rounded-md border">
+                      {samplePrep.sample_lots[0]?.project_name || "N/A"}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Client Name</label>
+                    <p className="text-sm bg-muted/50 px-3 py-2 rounded-md border">
+                      {samplePrep.sample_lots[0]?.client_name || "N/A"}
+                    </p>
+                  </div>
                 </div>
               </div>
 

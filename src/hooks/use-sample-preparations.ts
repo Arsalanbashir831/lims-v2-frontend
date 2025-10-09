@@ -16,15 +16,9 @@ export function useSamplePreparations(page: number = 1, searchQuery?: string, fi
   // Check if there are actual filter values (not just empty strings)
   const hasFilters = searchQuery?.trim() || (filters && Object.values(filters).some(value => value && value.toString().trim() !== ''))
   
-  // Debug logging
-  console.log('useSamplePreparations - searchQuery:', searchQuery)
-  console.log('useSamplePreparations - filters:', filters)
-  console.log('useSamplePreparations - hasFilters:', hasFilters)
-  
   return useQuery({
     queryKey: hasFilters ? SAMPLE_PREPARATIONS_QUERY_KEYS.search(searchQuery || '', page, filters) : SAMPLE_PREPARATIONS_QUERY_KEYS.list(page, searchQuery, filters),
     queryFn: () => {
-      console.log('useSamplePreparations - calling API:', hasFilters ? 'search' : 'getAll')
       if (hasFilters) {
         return samplePreparationService.search(searchQuery?.trim() || '', page, filters)
       }

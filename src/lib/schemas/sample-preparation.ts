@@ -61,6 +61,8 @@ export const SampleLotResponseSchema = z.object({
   planned_test_date: z.string().nullable(),
   dimension_spec: z.string().nullable(),
   request_by: z.string().nullable(),
+  client_name: z.string().nullable(),
+  project_name: z.string().nullable(),
   remarks: z.string().nullable(),
   sample_lot_id: z.string(),
   test_method: z.object({

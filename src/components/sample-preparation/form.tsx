@@ -101,28 +101,17 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
   const createSamplePrepMutation = useCreateSamplePreparation()
   const updateSamplePrepMutation = useUpdateSamplePreparation()
   const deleteSpecimenMutation = useDeleteSpecimen()
-  
-  // Debug logging
-  console.log('SamplePreparationForm - initialData:', initialData)
-  console.log('SamplePreparationForm - readOnly:', readOnly)
-  
+
   const [jobId, setJobId] = useState(initialData && 'job' in initialData ? String(initialData.job) : "")
   const [requestId, setRequestId] = useState(initialData && 'request_id' in initialData ? String(initialData.request_id) : "")
   const [items, setItems] = useState<PreparationItem[]>(initialData && 'test_items' in initialData ? (initialData.test_items as PreparationItem[]) : [])
-  
-  console.log('SamplePreparationForm - jobId:', jobId)
-  console.log('SamplePreparationForm - requestId:', requestId)
-  console.log('SamplePreparationForm - items:', items)
-  
+
   // For edit mode, ensure jobId and requestId are set from initial data
   useEffect(() => {
-    console.log('useEffect - initialData changed:', initialData)
     if (initialData && 'job' in initialData && initialData.job) {
-      console.log('Setting jobId from initialData:', initialData.job)
       setJobId(String(initialData.job))
     }
     if (initialData && 'request_id' in initialData && initialData.request_id) {
-      console.log('Setting requestId from initialData:', initialData.request_id)
       setRequestId(String(initialData.request_id))
     }
   }, [initialData])
@@ -159,14 +148,14 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
     if (completeJob && items.length > 0) {
       // Collect all unique test method IDs to fetch names
       const allTestMethodIds = new Set<string>()
-      
+
       // Add test methods from current items
       items.forEach((item) => {
         if (item.test_method) {
           allTestMethodIds.add(item.test_method)
         }
       })
-      
+
       // Add test methods from available samples
       completeJob.samples.forEach(sample => {
         sample.test_methods.forEach((methodId: string) => allTestMethodIds.add(methodId))
@@ -187,7 +176,6 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
 
       try {
         setLoading(true)
-        console.log('Loading sample lots for jobId:', jobId)
         // Use the new sample lots by job ID endpoint
         const response = await sampleLotService.getByJobDocumentId(jobId)
 
@@ -228,17 +216,10 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
 
         // Map local numeric sample id -> real lot id (ObjectId string)
         const idMap: Record<number, string> = {}
-        ;(response.data || []).forEach((lot: any, idx: number) => { idMap[idx + 1] = String(lot.id) })
+          ; (response.data || []).forEach((lot: any, idx: number) => { idMap[idx + 1] = String(lot.id) })
 
         setSampleIdMap(idMap)
         setCompleteJob(localJob)
-
-        if (!isEditing) {
-          // In create mode, don't auto-add items - wait for user to select sample lot and add manually
-        } else {
-          // In edit mode, items are already loaded from initialData
-          console.log('Edit mode - items loaded from initial data')
-        }
       } catch (error) {
         console.error("Failed to load complete job:", error)
         toast.error("Failed to load job details")
@@ -253,14 +234,12 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
   // Map initial data to form fields when component mounts
   useEffect(() => {
     if (initialData && isEditing) {
-      console.log('Setting initial data in edit mode:', initialData)
       if (initialData.job) setJobId(String(initialData.job))
       if (initialData.test_items) {
         const mapped = (initialData.test_items as PreparationItem[]).map((it, idx) => ({
           ...it,
           id: it.id || `${idx}`,
         }))
-        console.log('Mapped test items:', mapped)
         setItems(mapped)
         setItemsInitialized(true)
       }
@@ -269,7 +248,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
 
   const addItem = useCallback(() => {
     if (!completeJob || !requestId) return
-    const selectedSampleLot = completeJob.samples.find((s: SampleSummary) => 
+    const selectedSampleLot = completeJob.samples.find((s: SampleSummary) =>
       String(sampleIdMap[s.id] || s.id) === requestId
     )
     setItems(prev => [...prev, createPreparationItem({
@@ -349,80 +328,72 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
     try {
       // Step 1: Smart specimen handling - only create/update what's needed
       let specimenIdToDocumentIdMap: Record<string, string> = {}
-      
+
       if (isEditing && initialData && 'test_items' in initialData && initialData.test_items) {
         // In edit mode, we need to be smart about specimen handling
         const initialSpecimens = initialData.test_items.flatMap(item => item.specimens || [])
         const initialSpecimenIds = new Set(initialSpecimens.map(spec => spec.specimen_id))
-        
+
         // Find new specimens (not in initial data)
-        const newSpecimens = items.flatMap(item => 
-          item.specimens.filter(specimen => 
+        const newSpecimens = items.flatMap(item =>
+          item.specimens.filter(specimen =>
             specimen.specimen_id && !initialSpecimenIds.has(specimen.specimen_id)
           )
         )
-        
+
         // Find updated specimens (in initial data but with different specimen_id)
-        const updatedSpecimens = items.flatMap(item => 
+        const updatedSpecimens = items.flatMap(item =>
           item.specimens.filter(specimen => {
             if (!specimen.specimen_id) return false
             const initialSpec = initialSpecimens.find(init => init.id === specimen.id)
             return initialSpec && initialSpec.specimen_id !== specimen.specimen_id
           })
         )
-        
-        console.log('Edit mode - Initial specimens:', initialSpecimens)
-        console.log('Edit mode - New specimens:', newSpecimens)
-        console.log('Edit mode - Updated specimens:', updatedSpecimens)
-        
+
         // Create mapping for existing specimens (from initial data)
         initialSpecimens.forEach(spec => {
           if (spec.specimen_id && spec.id) {
             specimenIdToDocumentIdMap[spec.specimen_id] = spec.id
           }
         })
-        
+
         // Create new specimens
         if (newSpecimens.length > 0) {
           const newSpecimensData = newSpecimens.map(specimen => ({ specimen_id: specimen.specimen_id }))
           const specimensResponse = await parallelCreateSpecimensMutation.mutateAsync(newSpecimensData)
-          
+
           if (specimensResponse.errors.length > 0) {
             const errorMessages = specimensResponse.errors.map(err => `${err.specimen_id}: ${err.error}`).join(', ')
             toast.error(`Failed to create some specimens: ${errorMessages}`)
             return
           }
-          
+
           // Add new specimens to mapping
           specimensResponse.success.forEach(specimen => {
             specimenIdToDocumentIdMap[specimen.specimen_id] = specimen.id
           })
         }
-        
+
         // TODO: Handle updated specimens (update API calls)
         if (updatedSpecimens.length > 0) {
-          console.log('Updated specimens need to be handled:', updatedSpecimens)
           // For now, we'll skip updating specimens to avoid complexity
           // In the future, we can implement specimen update logic here
         }
-        
+
         // Handle deleted specimens - find specimens that were in initial data but not in current items
         const currentSpecimens = items.flatMap(item => item.specimens || [])
         const currentSpecimenIds = new Set(currentSpecimens.map(spec => spec.specimen_id))
-        const deletedSpecimens = initialSpecimens.filter(spec => 
+        const deletedSpecimens = initialSpecimens.filter(spec =>
           spec.specimen_id && !currentSpecimenIds.has(spec.specimen_id)
         )
-        
-        console.log('Edit mode - Deleted specimens:', deletedSpecimens)
-        
+
+
         // Delete specimens that were removed
         if (deletedSpecimens.length > 0) {
-          console.log('Deleting specimens:', deletedSpecimens.map(spec => spec.specimen_id))
           for (const specimen of deletedSpecimens) {
             if (specimen.id) {
               try {
                 await deleteSpecimenMutation.mutateAsync(specimen.id)
-                console.log(`Deleted specimen ${specimen.specimen_id} with document ID ${specimen.id}`)
               } catch (error) {
                 console.error(`Failed to delete specimen ${specimen.specimen_id}:`, error)
                 // Don't fail the entire operation for individual specimen deletion errors
@@ -430,23 +401,23 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
             }
           }
         }
-        
+
       } else {
         // Create mode - create all specimens
-        const allSpecimenIds = items.flatMap(item => 
+        const allSpecimenIds = items.flatMap(item =>
           item.specimens.map(specimen => specimen.specimen_id).filter(Boolean)
         )
-        
+
         if (allSpecimenIds.length > 0) {
           const specimensData = allSpecimenIds.map(specimenId => ({ specimen_id: specimenId }))
           const specimensResponse = await parallelCreateSpecimensMutation.mutateAsync(specimensData)
-          
+
           if (specimensResponse.errors.length > 0) {
             const errorMessages = specimensResponse.errors.map(err => `${err.specimen_id}: ${err.error}`).join(', ')
             toast.error(`Failed to create some specimens: ${errorMessages}`)
             return
           }
-          
+
           specimensResponse.success.forEach(specimen => {
             specimenIdToDocumentIdMap[specimen.specimen_id] = specimen.id
           })
@@ -454,8 +425,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
       }
 
       // Step 2: Create sample preparation with specimen document IDs
-      console.log('Final specimen mapping:', specimenIdToDocumentIdMap)
-      
+
       const payload: NewSamplePreparation = {
         sample_lots: items.map((item) => ({
           item_description: item.item_description || "",
@@ -464,7 +434,6 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
           specimen_oids: item.specimens
             .map(specimen => {
               const documentId = specimenIdToDocumentIdMap[specimen.specimen_id]
-              console.log(`Mapping specimen ${specimen.specimen_id} to document ID: ${documentId}`)
               return documentId
             })
             .filter(Boolean), // Filter out any undefined values
@@ -474,23 +443,21 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
           remarks: item.remarks || undefined,
         }))
       }
-      
-      console.log('Final payload:', payload)
 
       if (isEditing && initialData && 'id' in initialData && initialData.id) {
         // Update existing sample preparation
         await updateSamplePrepMutation.mutateAsync({ id: initialData.id, data: payload as any })
-        
+
         // Force cache invalidation for the specific item
         queryClient.invalidateQueries({ queryKey: ['sample-preparations', 'detail', initialData.id] })
-        
+
         toast.success("Sample preparation updated successfully")
       } else {
         // Create new sample preparation
         await createSamplePrepMutation.mutateAsync(payload as any)
         toast.success("Sample preparation created successfully")
       }
-      
+
       router.push(ROUTES.APP.SAMPLE_PREPARATION.ROOT)
     } catch (error) {
       console.error('Submit failed:', error)
@@ -521,8 +488,8 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
           {jobId && completeJob && (
             <div className="grid gap-2">
               <Label>Sample Lot</Label>
-              <Select 
-                value={requestId} 
+              <Select
+                value={requestId}
                 onValueChange={setRequestId}
                 disabled={readOnly || isEditing}
               >
@@ -550,195 +517,195 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
               <p className="text-sm text-muted-foreground mt-1">Add one row per distinct test setup.</p>
             </div>
             {!readOnly && (
-            <Button type="button" size="sm" onClick={addItem} className="max-w-[120px] justify-self-end" disabled={!completeJob}>
-              <PlusIcon className="w-4 h-4 mr-1" />Add Row
-            </Button>
+              <Button type="button" size="sm" onClick={addItem} className="max-w-[120px] justify-self-end" disabled={!completeJob}>
+                <PlusIcon className="w-4 h-4 mr-1" />Add Row
+              </Button>
             )}
           </CardHeader>
           <CardContent className="px-2">
-          {loading && !completeJob ? (
-            <div className="py-6 text-center text-sm text-muted-foreground">Loading job details...</div>
-          ) : (
-          <ScrollArea className={cn("w-full max-w-screen", maxWidth)}>
-              <Table className="min-w-[1200px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[40px]">#</TableHead>
-                    <TableHead>Test Method</TableHead>
-                    <TableHead className="w-[200px]">Dimensions</TableHead>
-                    <TableHead className="w-[300px]">Item Description</TableHead>
-                    <TableHead>No. of Specimens</TableHead>
-                    <TableHead>Planned Test Date</TableHead>
-                    <TableHead>Requested By</TableHead>
-                    <TableHead>Specimen IDs</TableHead>
-                    <TableHead className="w-[200px]">Remarks</TableHead>
-                    <TableHead className="w-[80px] text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isEditing && !itemsInitialized ? (
+            {loading && !completeJob ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">Loading job details...</div>
+            ) : (
+              <ScrollArea className={cn("w-full max-w-screen", maxWidth)}>
+                <Table className="min-w-[1200px]">
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-8">
-                        <div className="text-sm text-muted-foreground">Loading test items...</div>
-                      </TableCell>
+                      <TableHead className="w-[40px]">#</TableHead>
+                      <TableHead>Test Method</TableHead>
+                      <TableHead className="w-[200px]">Dimensions</TableHead>
+                      <TableHead className="w-[300px]">Item Description</TableHead>
+                      <TableHead>No. of Specimens</TableHead>
+                      <TableHead>Planned Test Date</TableHead>
+                      <TableHead>Requested By</TableHead>
+                      <TableHead>Specimen IDs</TableHead>
+                      <TableHead className="w-[200px]">Remarks</TableHead>
+                      <TableHead className="w-[80px] text-right">Actions</TableHead>
                     </TableRow>
-                  ) : items.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={10} className="text-center py-8">
-                        <div className="text-sm text-muted-foreground">No test items added yet</div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    items.map((row, index) => {
-                    // Get the selected sample lot from requestId
-                    const selectedSampleLot = completeJob?.samples.find((s: SampleSummary) => 
-                      String(sampleIdMap[s.id] || s.id) === requestId
-                    )
-                    const availableMethods = selectedSampleLot ?
-                      selectedSampleLot.test_methods.map((id: string, methodIndex: number) => ({
-                        id,
-                        name: selectedSampleLot.test_method_names[methodIndex] || `Method ${methodIndex + 1}`
-                      })) : []
-
-                    return (
-                      <TableRow key={row.id || index}>
-                        <TableCell className="font-medium">{index + 1}</TableCell>
-                        <TableCell>
-                          <Select
-                            value={row.test_method}
-                            onValueChange={(val) => {
-                              updateItemField(row.id || index.toString(), "test_method" as any, val)
-                            }}
-                            disabled={readOnly}
-                          >
-                            <SelectTrigger className="w-56 h-10" disabled={readOnly}>
-                              <SelectValue placeholder={
-                                loadingTestMethodNames 
-                                  ? "Loading names..." 
-                                  : availableMethods.length > 0 
-                                    ? "Select method" 
-                                    : "Loading methods..."
-                              } />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableMethods.length > 0 ? (
-                                availableMethods.map((method: { id: string; name: string }) => {
-                                  const methodName = testMethodNames[method.id] || method.name || method.id
-                                  return (
-                                    <SelectItem key={method.id} value={method.id}>{methodName}</SelectItem>
-                                  )
-                                })
-                                ) : (
-                                <div className="px-2 py-1 text-sm text-muted-foreground">
-                                  {completeJob ? "No methods available" : "Loading methods..."}
-                                </div>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <Input 
-                            placeholder="Dimensions" 
-                            value={row.dimensions || ""} 
-                            onChange={(e) => updateItemField(row.id || index.toString(), "dimensions" as any, e.target.value)} 
-                            disabled={readOnly}
-                            className="w-[180px]"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            placeholder="Item description"
-                            value={row.item_description || ""}
-                            onChange={(e) => updateItemField(row.id || index.toString(), "item_description" as any, e.target.value)}
-                            disabled={readOnly}
-                            className="w-[280px]"
-                          />
-                        </TableCell>
-                        
-                        <TableCell>
-                          <Input type="number" min={0} value={row.no_of_specimens} onChange={(e) => updateItemField(row.id || index.toString(), "no_of_specimens" as any, Number(e.target.value))} disabled={readOnly} />
-                        </TableCell>
-                        <TableCell>
-                          <Input type="date" value={row.planned_test_date || ""} onChange={(e) => updateItemField(row.id || index.toString(), "planned_test_date" as any, e.target.value)} disabled={readOnly} />
-                        </TableCell>
-                        <TableCell>
-                          <Input className="w-[120px]" placeholder="Requested by" value={row.requested_by || ""} onChange={(e) => updateItemField(row.id || index.toString(), "requested_by" as any, e.target.value)} disabled={readOnly} />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {row.specimens.map((specimen: SpecimenDraft) => (
-                              <SpecimenBadge
-                                key={specimen.id || specimen.specimen_id}
-                                specimen={specimen}
-                                onDelete={(specimenId) => removeSpecimenId(row.id || index.toString(), specimenId)}
-                                onUpdate={async (specimenId, newSpecimenId) => {
-                                  try {
-                                    // Note: We'll need to implement specimen update in the specimens service
-                                    // await specimensService.update(specimenId, { specimen_id: newSpecimenId })
-                                    setItems(prev => prev.map(item => ({
-                                      ...item,
-                                      specimens: item.specimens.map((spec: SpecimenDraft) => spec.id === specimenId ? { ...spec, specimen_id: newSpecimenId } : spec)
-                                    })))
-                                    toast.success("Specimen updated successfully")
-                                  } catch (e) {
-                                    toast.error("Failed to update specimen")
-                                  }
-                                }}
-                                disabled={readOnly}
-                              />
-                            ))}
-                            <Input
-                              className="h-8 w-56"
-                              placeholder="Type ID, press comma/space/Enter"
-                              value={specimenInputByRow[row.id || index.toString()] ?? ""}
-                              onChange={(e) => setSpecimenInputByRow(prev => ({ ...prev, [row.id || index.toString()]: e.target.value }))}
-                              onKeyDown={(e) => {
-                                if (e.key === "," || e.key === " " || e.key === "Enter") {
-                                  e.preventDefault()
-                                  commitSpecimenToken(row.id || index.toString())
-                                } else if (e.key === "Backspace" && (specimenInputByRow[row.id || index.toString()] ?? "") === "" && row.specimens.length > 0) {
-                                  removeSpecimenId(row.id || index.toString(), row.specimens[row.specimens.length - 1]?.id || "")
-                                }
-                              }}
-                              onBlur={() => commitSpecimenToken(row.id || index.toString())}
-                              onPaste={(e) => {
-                                const txt = e.clipboardData.getData("text")
-                                if (!txt) return
-                                e.preventDefault()
-                                const tokens = txt.split(/[\,\s]+/).map(s => s.trim()).filter(Boolean)
-                                for (const t of tokens) commitSpecimenToken(row.id || index.toString(), t)
-                              }}
-                              disabled={readOnly}
-                            />
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">Max {row.no_of_specimens} unique IDs</div>
-                        </TableCell>
-                        <TableCell>
-                          <Input className="w-[120px]" placeholder="Remarks" value={row.remarks || ""} onChange={(e) => updateItemField(row.id || index.toString(), "remarks" as any, e.target.value)} disabled={readOnly} />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {!readOnly && (
-                            <ConfirmPopover
-                              title="Delete this testing item?"
-                              confirmText="Delete"
-                              onConfirm={() => removeItem(row.id || index.toString())}
-                              trigger={<Button type="button" variant="ghost" size="sm"><TrashIcon className="w-4 h-4" /></Button>}
-                            />
-                          )}
+                  </TableHeader>
+                  <TableBody>
+                    {isEditing && !itemsInitialized ? (
+                      <TableRow>
+                        <TableCell colSpan={10} className="text-center py-8">
+                          <div className="text-sm text-muted-foreground">Loading test items...</div>
                         </TableCell>
                       </TableRow>
-                    )
-                  })
-                  )}
-                </TableBody>
-              </Table>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-          )}
+                    ) : items.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={10} className="text-center py-8">
+                          <div className="text-sm text-muted-foreground">No test items added yet</div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      items.map((row, index) => {
+                        // Get the selected sample lot from requestId
+                        const selectedSampleLot = completeJob?.samples.find((s: SampleSummary) =>
+                          String(sampleIdMap[s.id] || s.id) === requestId
+                        )
+                        const availableMethods = selectedSampleLot ?
+                          selectedSampleLot.test_methods.map((id: string, methodIndex: number) => ({
+                            id,
+                            name: selectedSampleLot.test_method_names[methodIndex] || `Method ${methodIndex + 1}`
+                          })) : []
+
+                        return (
+                          <TableRow key={row.id || index}>
+                            <TableCell className="font-medium">{index + 1}</TableCell>
+                            <TableCell>
+                              <Select
+                                value={row.test_method}
+                                onValueChange={(val) => {
+                                  updateItemField(row.id || index.toString(), "test_method" as any, val)
+                                }}
+                                disabled={readOnly}
+                              >
+                                <SelectTrigger className="w-56 h-10" disabled={readOnly}>
+                                  <SelectValue placeholder={
+                                    loadingTestMethodNames
+                                      ? "Loading names..."
+                                      : availableMethods.length > 0
+                                        ? "Select method"
+                                        : "Loading methods..."
+                                  } />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableMethods.length > 0 ? (
+                                    availableMethods.map((method: { id: string; name: string }) => {
+                                      const methodName = testMethodNames[method.id] || method.name || method.id
+                                      return (
+                                        <SelectItem key={method.id} value={method.id}>{methodName}</SelectItem>
+                                      )
+                                    })
+                                  ) : (
+                                    <div className="px-2 py-1 text-sm text-muted-foreground">
+                                      {completeJob ? "No methods available" : "Loading methods..."}
+                                    </div>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                placeholder="Dimensions"
+                                value={row.dimensions || ""}
+                                onChange={(e) => updateItemField(row.id || index.toString(), "dimensions" as any, e.target.value)}
+                                disabled={readOnly}
+                                className="w-[180px]"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                placeholder="Item description"
+                                value={row.item_description || ""}
+                                onChange={(e) => updateItemField(row.id || index.toString(), "item_description" as any, e.target.value)}
+                                disabled={readOnly}
+                                className="w-[280px]"
+                              />
+                            </TableCell>
+
+                            <TableCell>
+                              <Input type="number" min={0} value={row.no_of_specimens} onChange={(e) => updateItemField(row.id || index.toString(), "no_of_specimens" as any, Number(e.target.value))} disabled={readOnly} />
+                            </TableCell>
+                            <TableCell>
+                              <Input type="date" value={row.planned_test_date || ""} onChange={(e) => updateItemField(row.id || index.toString(), "planned_test_date" as any, e.target.value)} disabled={readOnly} />
+                            </TableCell>
+                            <TableCell>
+                              <Input className="w-[120px]" placeholder="Requested by" value={row.requested_by || ""} onChange={(e) => updateItemField(row.id || index.toString(), "requested_by" as any, e.target.value)} disabled={readOnly} />
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {row.specimens.map((specimen: SpecimenDraft) => (
+                                  <SpecimenBadge
+                                    key={specimen.id || specimen.specimen_id}
+                                    specimen={specimen}
+                                    onDelete={(specimenId) => removeSpecimenId(row.id || index.toString(), specimenId)}
+                                    onUpdate={async (specimenId, newSpecimenId) => {
+                                      try {
+                                        // Note: We'll need to implement specimen update in the specimens service
+                                        // await specimensService.update(specimenId, { specimen_id: newSpecimenId })
+                                        setItems(prev => prev.map(item => ({
+                                          ...item,
+                                          specimens: item.specimens.map((spec: SpecimenDraft) => spec.id === specimenId ? { ...spec, specimen_id: newSpecimenId } : spec)
+                                        })))
+                                        toast.success("Specimen updated successfully")
+                                      } catch (e) {
+                                        toast.error("Failed to update specimen")
+                                      }
+                                    }}
+                                    disabled={readOnly}
+                                  />
+                                ))}
+                                <Input
+                                  className="h-8 w-56"
+                                  placeholder="Type ID, press comma/space/Enter"
+                                  value={specimenInputByRow[row.id || index.toString()] ?? ""}
+                                  onChange={(e) => setSpecimenInputByRow(prev => ({ ...prev, [row.id || index.toString()]: e.target.value }))}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "," || e.key === " " || e.key === "Enter") {
+                                      e.preventDefault()
+                                      commitSpecimenToken(row.id || index.toString())
+                                    } else if (e.key === "Backspace" && (specimenInputByRow[row.id || index.toString()] ?? "") === "" && row.specimens.length > 0) {
+                                      removeSpecimenId(row.id || index.toString(), row.specimens[row.specimens.length - 1]?.id || "")
+                                    }
+                                  }}
+                                  onBlur={() => commitSpecimenToken(row.id || index.toString())}
+                                  onPaste={(e) => {
+                                    const txt = e.clipboardData.getData("text")
+                                    if (!txt) return
+                                    e.preventDefault()
+                                    const tokens = txt.split(/[\,\s]+/).map(s => s.trim()).filter(Boolean)
+                                    for (const t of tokens) commitSpecimenToken(row.id || index.toString(), t)
+                                  }}
+                                  disabled={readOnly}
+                                />
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">Max {row.no_of_specimens} unique IDs</div>
+                            </TableCell>
+                            <TableCell>
+                              <Input className="w-[120px]" placeholder="Remarks" value={row.remarks || ""} onChange={(e) => updateItemField(row.id || index.toString(), "remarks" as any, e.target.value)} disabled={readOnly} />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {!readOnly && (
+                                <ConfirmPopover
+                                  title="Delete this testing item?"
+                                  confirmText="Delete"
+                                  onConfirm={() => removeItem(row.id || index.toString())}
+                                  trigger={<Button type="button" variant="ghost" size="sm"><TrashIcon className="w-4 h-4" /></Button>}
+                                />
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            )}
           </CardContent>
         </Card>
       )}
-      
+
       {!readOnly && (
         <div className="sticky bottom-0 bg-background/80 dark:bg-background/10 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2">
           <div className="flex justify-end">

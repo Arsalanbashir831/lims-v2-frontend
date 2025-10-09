@@ -36,15 +36,9 @@ export default function SamplePreparationPage() {
   const { data, error, isFetching } = useSamplePreparations(currentPage, searchFilters.query, searchFilters)
   const deleteMutation = useDeleteSamplePreparation()
 
-  // Debug logging
-  console.log('Sample preparation data:', data)
-  console.log('Error:', error)
-  console.log('Is fetching:', isFetching)
-
   // Handle errors with useEffect
   useEffect(() => {
     if (error) {
-      console.error('Sample preparation fetch error:', error)
       toast.error("Failed to load sample preparations")
     }
   }, [error])
@@ -110,8 +104,8 @@ export default function SamplePreparationPage() {
     },
     {
       accessorKey: "job_id",
-      id: "job", 
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Job ID" />, 
+      id: "job",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Job ID" />,
       cell: ({ row }) => {
         const firstSampleLot = row.original.sample_lots?.[0]
         return <span className="font-medium">{firstSampleLot?.job_id || 'N/A'}</span>
@@ -119,43 +113,43 @@ export default function SamplePreparationPage() {
     },
     {
       accessorKey: "project_name",
-      id: "project", 
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Project" />, 
+      id: "project",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Project" />,
       cell: ({ row }) => {
         const firstSampleLot = row.original.sample_lots?.[0]
-        return <div className="font-medium truncate max-w-[28ch]">{firstSampleLot?.item_description || 'N/A'}</div>
+        return <div className="font-medium truncate max-w-[28ch]">{firstSampleLot?.project_name || 'N/A'}</div>
       }
     },
     {
       accessorKey: "client_name",
-      id: "client", 
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Client" />, 
+      id: "client",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Client" />,
       cell: ({ row }) => {
-        // For now, we'll show the request number as client info is not in the response
-        return <div className="font-medium truncate max-w-[28ch]">{row.original.request_no}</div>
+        const firstSampleLot = row.original.sample_lots?.[0]
+        return <div className="font-medium truncate max-w-[28ch]">{firstSampleLot?.client_name || 'N/A'}</div>
       }
     },
     {
       accessorKey: "request_no",
-      id: "requestNo", 
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Request #" />, 
+      id: "requestNo",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Request #" />,
       cell: ({ row }) => <span className="font-mono text-sm">{row.original.request_no}</span>
     },
     {
       accessorKey: "sample_lots_count",
-      id: "totalItems", 
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Total Items" />, 
+      id: "totalItems",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Total Items" />,
       cell: ({ row }) => <span className="text-center">{row.original.sample_lots_count}</span>
     },
     {
       accessorKey: "specimens",
-      id: "specimenIds", 
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Specimen IDs" />, 
+      id: "specimenIds",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Specimen IDs" />,
       cell: ({ row }) => {
         // Get all specimens from all sample lots
         const allSpecimens = row.original.sample_lots?.flatMap(lot => lot.specimens || []) || []
         const specimenIds = allSpecimens.map(spec => spec.specimen_id)
-        
+
         if (specimenIds.length === 0) {
           return <span className="text-muted-foreground">No specimens</span>
         }
@@ -171,7 +165,7 @@ export default function SamplePreparationPage() {
     },
     {
       accessorKey: "created_at",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Request Date" />, 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Request Date" />,
       cell: ({ row }) => {
         const formattedDate = formatDateSafe(row.original.created_at)
         return formattedDate ? <span>{formattedDate}</span> : <span className="text-muted-foreground">Invalid Date</span>
@@ -246,7 +240,7 @@ export default function SamplePreparationPage() {
         footer={footer}
         className="h-[calc(100vh-16rem)]"
       />
-      
+
       <SamplePrepDrawer
         isOpen={isDrawerOpen}
         onClose={handleCloseDrawer}

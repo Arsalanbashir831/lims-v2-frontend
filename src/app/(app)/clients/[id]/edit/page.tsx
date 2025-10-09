@@ -22,14 +22,10 @@ export default function EditClientPage() {
   const { data: client, isLoading: loading, error } = useQuery({
     queryKey: ['clients', id],
     queryFn: () => {
-      console.log(`🔄 Fetching client details for ID: ${id}`)
       return clientService.getById(id)
     },
     enabled: !!id,
   })
-
-  // Debug logging
-  console.log("📊 Edit page - client data:", client)
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateClientData) => clientService.update(id, data),
