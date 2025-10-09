@@ -16,12 +16,12 @@ export const API_ROUTES = {
     SEARCH_CLIENTS: "clients/search/",
 
     // Equipments
-    ADD_EQUIPMENT: "equipments/",
-    UPDATE_EQUIPMENT: (id: string) => `equipments/${id}/`,
-    DELETE_EQUIPMENT: (id: string) => `equipments/${id}/`,
-    ALL_EQUIPMENTS: "equipments/",
-    EQUIPMENT_BY_ID: (id: string) => `equipments/${id}/`,
-    SEARCH_EQUIPMENTS: "equipments/search/",
+    ADD_EQUIPMENT: "equipment/",
+    UPDATE_EQUIPMENT: (id: string) => `equipment/${id}/`,
+    DELETE_EQUIPMENT: (id: string) => `equipment/${id}/`,
+    ALL_EQUIPMENTS: "equipment/",
+    EQUIPMENT_BY_ID: (id: string) => `equipment/${id}/`,
+    SEARCH_EQUIPMENTS: "equipment/search/",
 
     // Proficiency Tests
     ADD_PROF_TEST: "proficiency-testing/",

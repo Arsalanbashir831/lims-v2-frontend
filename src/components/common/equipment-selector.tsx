@@ -10,8 +10,8 @@ import { calibrationTestingService } from "@/services/calibration-testing.servic
 
 interface Equipment {
   id: string
-  equipmentName: string
-  equipmentSerial?: string
+  equipment_name: string
+  equipment_serial?: string
   calibrationVendor?: string
   calibrationDate?: string
   calibrationDueDate?: string
@@ -59,8 +59,8 @@ export function EquipmentSelector({
         // Convert API response to Equipment interface
         const convertedEquipments: Equipment[] = response.results.map((item: any) => ({
           id: item.id,
-          equipmentName: item.equipmentName,
-          equipmentSerial: item.equipmentSerial,
+          equipment_name: item.equipment_name,
+          equipment_serial: item.equipment_serial,
           calibrationVendor: item.calibrationVendor,
           calibrationDate: item.calibrationDate,
           calibrationDueDate: item.calibrationDueDate,
@@ -124,9 +124,9 @@ export function EquipmentSelector({
         >
           {selectedEquipment ? (
             <div className="flex flex-col items-start">
-              <p className="font-medium">{selectedEquipment.equipmentName}</p>
-              {selectedEquipment.equipmentSerial && (
-                <p className="text-xs text-muted-foreground">Serial: {selectedEquipment.equipmentSerial}</p>
+              <p className="font-medium">{selectedEquipment.equipment_name}</p>
+              {selectedEquipment.equipment_serial && (
+                <p className="text-xs text-muted-foreground">Serial: {selectedEquipment.equipment_serial}</p>
               )}
             </div>
           ) : (
@@ -165,10 +165,10 @@ export function EquipmentSelector({
                   >
                     <div className="flex items-center justify-between w-full">
                       <div className="flex flex-col items-start">
-                        <p className="font-medium">{equipment.equipmentName}</p>
-                        {equipment.equipmentSerial && (
+                        <p className="font-medium">{equipment.equipment_name}</p>
+                        {equipment.equipment_serial && (
                           <p className="text-xs text-muted-foreground">
-                            Serial: {equipment.equipmentSerial}
+                            Serial: {equipment.equipment_serial}
                           </p>
                         )}
                         {equipment.calibrationVendor && (

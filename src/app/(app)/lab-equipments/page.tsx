@@ -49,13 +49,13 @@ export default function LabEquipmentsPage() {
 
   const columns: ColumnDef<Equipment>[] = useMemo(() => [
     { id: "rowNumber", header: "S.No", cell: ({ row }) => row.index + 1, meta: { className: "w-fit min-w-fit px-4" }, enableSorting: false, enableHiding: false },
-    { accessorKey: "equipmentName", header: ({ column }) => <DataTableColumnHeader column={column} title="Equipment Name" /> },
-    { accessorKey: "equipmentSerial", header: ({ column }) => <DataTableColumnHeader column={column} title="Equipment Serial" /> },
+    { accessorKey: "equipment_name", header: ({ column }) => <DataTableColumnHeader column={column} title="Equipment Name" /> },
+    { accessorKey: "equipment_serial", header: ({ column }) => <DataTableColumnHeader column={column} title="Equipment Serial" /> },
     { accessorKey: "status", header: ({ column }) => <DataTableColumnHeader column={column} title="Status" /> },
-    { accessorKey: "lastVerification", header: ({ column }) => <DataTableColumnHeader column={column} title="Last Verification" /> },
-    { accessorKey: "verificationDue", header: ({ column }) => <DataTableColumnHeader column={column} title="Verification Due" /> },
-    { accessorKey: "createdBy", header: ({ column }) => <DataTableColumnHeader column={column} title="Created By" /> },
-    { accessorKey: "updatedBy", header: ({ column }) => <DataTableColumnHeader column={column} title="Updated By" /> },
+    { accessorKey: "last_verification", header: ({ column }) => <DataTableColumnHeader column={column} title="Last Verification" /> },
+    { accessorKey: "verification_due", header: ({ column }) => <DataTableColumnHeader column={column} title="Verification Due" /> },
+    { accessorKey: "created_by", header: ({ column }) => <DataTableColumnHeader column={column} title="Created By" /> },
+    { accessorKey: "updated_by", header: ({ column }) => <DataTableColumnHeader column={column} title="Updated By" /> },
     { accessorKey: "remarks", header: ({ column }) => <DataTableColumnHeader column={column} title="Remarks" /> },
     {
       id: "actions",

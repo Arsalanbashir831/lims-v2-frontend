@@ -19,13 +19,13 @@ export function EquipmentForm({ initial, readOnly = false }: Props) {
   const queryClient = useQueryClient()
   const isEditing = useMemo(() => Boolean(initial), [initial])
 
-  const [name, setName] = useState((initial as any)?.equipmentName ?? "")
-  const [serial, setSerial] = useState((initial as any)?.equipmentSerial ?? "")
+  const [name, setName] = useState((initial as any)?.equipment_name ?? "")
+  const [serial, setSerial] = useState((initial as any)?.equipment_serial ?? "")
   const [status, setStatus] = useState(initial?.status ?? "")
-  const [lastInternalVerificationDate, setLastInternalVerificationDate] = useState((initial as any)?.lastVerification ?? "")
-  const [internalVerificationDueDate, setInternalVerificationDueDate] = useState((initial as any)?.verificationDue ?? "")
-  const [createdBy, setCreatedBy] = useState(initial?.createdBy ?? "")
-  const [updatedBy, setUpdatedBy] = useState(initial?.updatedBy ?? "")
+  const [lastInternalVerificationDate, setLastInternalVerificationDate] = useState((initial as any)?.last_verification ?? "")
+  const [internalVerificationDueDate, setInternalVerificationDueDate] = useState((initial as any)?.verification_due ?? "")
+  const [createdBy, setCreatedBy] = useState(initial?.created_by ?? "")
+  const [updatedBy, setUpdatedBy] = useState(initial?.updated_by ?? "")
   const [remarks, setRemarks] = useState(initial?.remarks ?? "")
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -35,13 +35,13 @@ export function EquipmentForm({ initial, readOnly = false }: Props) {
       return
     }
     const payload: CreateEquipmentData = {
-      equipmentName: name.trim(),
-      equipmentSerial: serial.trim() || undefined,
+      equipment_name: name.trim(),
+      equipment_serial: serial.trim() || undefined,
       status: status.trim() || undefined,
-      lastVerification: lastInternalVerificationDate || undefined,
-      verificationDue: internalVerificationDueDate || undefined,
-      createdBy: createdBy.trim() || undefined,
-      updatedBy: updatedBy.trim() || undefined,
+      last_verification: lastInternalVerificationDate || undefined,
+      verification_due: internalVerificationDueDate || undefined,
+      created_by: createdBy.trim() || undefined,
+      updated_by: updatedBy.trim() || undefined,
       remarks: remarks.trim() || undefined,
       is_active: true,
     }
