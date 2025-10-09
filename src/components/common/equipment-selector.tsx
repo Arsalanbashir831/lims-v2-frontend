@@ -12,10 +12,10 @@ interface Equipment {
   id: string
   equipment_name: string
   equipment_serial?: string
-  calibrationVendor?: string
-  calibrationDate?: string
-  calibrationDueDate?: string
-  calibrationCertification?: string
+  calibration_vendor?: string
+  calibration_date?: string
+  calibration_due_date?: string
+  calibration_certification?: string
   remarks?: string
   is_active?: boolean
 }
@@ -54,19 +54,19 @@ export function EquipmentSelector({
         
         console.log("Search query:", searchQuery)
         console.log("API response:", response)
-        console.log("Equipments set:", response.results)
+        console.log("Equipments set:", response?.results)
         
         // Convert API response to Equipment interface
-        const convertedEquipments: Equipment[] = response.results.map((item: any) => ({
-          id: item.id,
-          equipment_name: item.equipment_name,
-          equipment_serial: item.equipment_serial,
-          calibrationVendor: item.calibrationVendor,
-          calibrationDate: item.calibrationDate,
-          calibrationDueDate: item.calibrationDueDate,
-          calibrationCertification: item.calibrationCertification,
-          remarks: item.remarks,
-          is_active: item.is_active,
+        const convertedEquipments: Equipment[] = (response?.results ?? []).map((item): Equipment => ({
+          id: String(item.id),
+          equipment_name: String(item.equipment_name),
+          equipment_serial: item.equipment_serial ? String(item.equipment_serial) : undefined,
+          calibration_vendor: item.calibration_vendor ? String(item.calibration_vendor) : undefined,
+          calibration_date: item.calibration_date ? String(item.calibration_date) : undefined,
+          calibration_due_date: item.calibration_due_date ? String(item.calibration_due_date) : undefined,
+          calibration_certification: item.calibration_certification ? String(item.calibration_certification) : undefined,
+          remarks: item.remarks ? String(item.remarks) : undefined,
+          is_active: Boolean(item.is_active ?? true),
         }))
         
         setEquipments(convertedEquipments)
@@ -171,14 +171,14 @@ export function EquipmentSelector({
                             Serial: {equipment.equipment_serial}
                           </p>
                         )}
-                        {equipment.calibrationVendor && (
+                        {equipment.calibration_vendor && (
                           <p className="text-xs text-muted-foreground">
-                            Vendor: {equipment.calibrationVendor}
+                            Vendor: {equipment.calibration_vendor}
                           </p>
                         )}
-                        {equipment.calibrationDate && (
+                        {equipment.calibration_date && (
                           <p className="text-xs text-muted-foreground">
-                            Calibrated: {new Date(equipment.calibrationDate).toLocaleDateString()}
+                            Calibrated: {new Date(equipment.calibration_date).toLocaleDateString()}
                           </p>
                         )}
                       </div>

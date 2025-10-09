@@ -32,12 +32,12 @@ export const API_ROUTES = {
     SEARCH_PROF_TESTS: "proficiency-testing/search/",
     
     // Calibration Tests
-    ADD_CALIBRATION_TEST: "calibration-testing/",
-    UPDATE_CALIBRATION_TEST: (id: string) => `calibration-testing/${id}/`,
-    DELETE_CALIBRATION_TEST: (id: string) => `calibration-testing/${id}/`,
-    ALL_CALIBRATION_TESTS: "calibration-testing/",
-    CALIBRATION_TEST_BY_ID: (id: string) => `calibration-testing/${id}/`,
-    SEARCH_CALIBRATION_TESTS: "calibration-testing/search/",
+    ADD_CALIBRATION_TEST: "calibration-tests/",
+    UPDATE_CALIBRATION_TEST: (id: string) => `calibration-tests/${id}/`,
+    DELETE_CALIBRATION_TEST: (id: string) => `calibration-tests/${id}/`,
+    ALL_CALIBRATION_TESTS: "calibration-tests/",
+    CALIBRATION_TEST_BY_ID: (id: string) => `calibration-tests/${id}/`,
+    SEARCH_CALIBRATION_TESTS: "calibration-tests/search/",
 
     // Test Methods
     ADD_TEST_METHOD: "test-methods/",

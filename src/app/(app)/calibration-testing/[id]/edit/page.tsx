@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParams } from "next/navigation"
 import { CalibrationTestingForm } from "@/components/calibration-testing/form"
-import { calibrationTestService, CalibrationTest } from "@/services/calibration-testing.service"
+import { calibrationTestingService, CalibrationTesting } from "@/services/calibration-testing.service"
 import { ROUTES } from "@/constants/routes"
 import { FormHeader } from "@/components/common/form-header"
 import { Button } from "@/components/ui/button"
@@ -12,13 +12,13 @@ import { useQuery } from "@tanstack/react-query"
 
 export default function EditCalibrationTestingPage() {
   const params = useParams<{ id: string }>()
-  const [record, setRecord] = useState<CalibrationTest | undefined>(undefined)
+  const [record, setRecord] = useState<CalibrationTesting | undefined>(undefined)
   const [isEditing, setIsEditing] = useState(false)
 
   const id = params?.id as string
   const { data, isLoading } = useQuery({
     queryKey: ['calibration-tests', id],
-    queryFn: () => calibrationTestService.getById(id),
+    queryFn: () => calibrationTestingService.getById(id),
     enabled: !!id,
   })
 

@@ -48,14 +48,14 @@ export default function CalibrationTestingingPage() {
 
   const columns: ColumnDef<CalibrationTesting>[] = useMemo(() => [
     { id: "serial", header: "S.No", cell: ({ row }) => row.index + 1, meta: { className: "w-fit min-w-fit px-4" }, enableSorting: false, enableHiding: false },
-    { accessorKey: "equipmentName", header: ({ column }) => <DataTableColumnHeader column={column} title="Equipment/Instrument Name" /> },
-    { accessorKey: "equipmentSerial", header: ({ column }) => <DataTableColumnHeader column={column} title="Equipment Serial #" /> },
-    { accessorKey: "calibrationVendor", header: ({ column }) => <DataTableColumnHeader column={column} title="Calibration Vendor" /> },
-    { accessorKey: "calibrationDate", header: ({ column }) => <DataTableColumnHeader column={column} title="Calibration Date" /> },
-    { accessorKey: "calibrationDueDate", header: ({ column }) => <DataTableColumnHeader column={column} title="Calibration Due Date" /> },
-    { accessorKey: "calibrationCertification", header: ({ column }) => <DataTableColumnHeader column={column} title="Calibration Certification" /> },
-    { accessorKey: "createdBy", header: ({ column }) => <DataTableColumnHeader column={column} title="Created by" /> },
-    { accessorKey: "updatedBy", header: ({ column }) => <DataTableColumnHeader column={column} title="Updated by" /> },
+    { accessorKey: "equipment_name", header: ({ column }) => <DataTableColumnHeader column={column} title="Equipment/Instrument Name" /> },
+    { accessorKey: "equipment_serial", header: ({ column }) => <DataTableColumnHeader column={column} title="Equipment Serial #" /> },
+    { accessorKey: "calibration_vendor", header: ({ column }) => <DataTableColumnHeader column={column} title="Calibration Vendor" /> },
+    { accessorKey: "calibration_date", header: ({ column }) => <DataTableColumnHeader column={column} title="Calibration Date" /> },
+    { accessorKey: "calibration_due_date", header: ({ column }) => <DataTableColumnHeader column={column} title="Calibration Due Date" /> },
+    { accessorKey: "calibration_certification", header: ({ column }) => <DataTableColumnHeader column={column} title="Calibration Certification" /> },
+    { accessorKey: "created_by", header: ({ column }) => <DataTableColumnHeader column={column} title="Created by" /> },
+    { accessorKey: "updated_by", header: ({ column }) => <DataTableColumnHeader column={column} title="Updated by" /> },
     { accessorKey: "remarks", header: ({ column }) => <DataTableColumnHeader column={column} title="Remarks" /> },
     {
       id: "actions",

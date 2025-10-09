@@ -19,14 +19,18 @@ export function CalibrationTestingForm({ initial, readOnly = false }: Props) {
   const queryClient = useQueryClient()
   const isEditing = useMemo(() => Boolean(initial), [initial])
 
-  const [equipmentName, setEquipmentName] = useState(initial?.equipmentName ?? "")
-  const [equipmentSerial, setEquipmentSerial] = useState(initial?.equipmentSerial ?? "")
-  const [vendor, setVendor] = useState((initial as any)?.calibrationVendor ?? "")
-  const [calibrationDate, setCalibrationDate] = useState(initial?.calibrationDate ?? "")
-  const [calibrationDueDate, setCalibrationDueDate] = useState(initial?.calibrationDueDate ?? "")
-  const [certification, setCertification] = useState((initial as any)?.calibrationCertification ?? "")
-  const [createdBy, setCreatedBy] = useState(initial?.createdBy ?? "")
-  const [updatedBy, setUpdatedBy] = useState(initial?.updatedBy ?? "")
+  const [equipmentName, setEquipmentName] = useState(initial?.equipment_name ?? "")
+  const [equipmentSerial, setEquipmentSerial] = useState(initial?.equipment_serial ?? "")
+  const [vendor, setVendor] = useState(initial?.calibration_vendor ?? "")
+  const [calibrationDate, setCalibrationDate] = useState(
+    initial?.calibration_date ? String(initial.calibration_date).split('T')[0] : ""
+  )
+  const [calibrationDueDate, setCalibrationDueDate] = useState(
+    initial?.calibration_due_date ? String(initial.calibration_due_date).split('T')[0] : ""
+  )
+  const [certification, setCertification] = useState(initial?.calibration_certification ?? "")
+  const [createdBy, setCreatedBy] = useState(initial?.created_by ?? "")
+  const [updatedBy, setUpdatedBy] = useState(initial?.updated_by ?? "")
   const [remarks, setRemarks] = useState(initial?.remarks ?? "")
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -36,14 +40,14 @@ export function CalibrationTestingForm({ initial, readOnly = false }: Props) {
       return
     }
     const payload: CreateCalibrationTestingData = {
-      equipmentName: equipmentName.trim(),
-      equipmentSerial: equipmentSerial.trim() || undefined,
-      calibrationVendor: vendor.trim() || undefined,
-      calibrationDate: calibrationDate || undefined,
-      calibrationDueDate: calibrationDueDate || undefined,
-      calibrationCertification: certification.trim() || undefined,
-      createdBy: createdBy.trim() || undefined,
-      updatedBy: updatedBy.trim() || undefined,
+      equipment_name: equipmentName.trim(),
+      equipment_serial: equipmentSerial.trim() || undefined,
+      calibration_vendor: vendor.trim() || undefined,
+      calibration_date: calibrationDate || undefined,
+      calibration_due_date: calibrationDueDate || undefined,
+      calibration_certification: certification.trim() || undefined,
+      created_by: createdBy.trim() || undefined,
+      updated_by: updatedBy.trim() || undefined,
       remarks: remarks.trim() || undefined,
       is_active: true,
     }
