@@ -4,8 +4,8 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { ClientSelector, WelderSelector } from "./index"
-import { Client } from "@/lib/clients"
-import { Welder } from "@/lib/welders"
+import { Client } from "@/services/clients.service"
+import { Welder } from "@/components/welders/welder-form"
 
 // Example component showing how to use both selectors
 export function SelectorExamples() {
@@ -33,7 +33,7 @@ export function SelectorExamples() {
             />
             {selectedClient && (
               <div className="text-sm text-muted-foreground">
-                Selected: {selectedClient.name} - {selectedClient.phone}
+                Selected: {selectedClient.client_name} - {selectedClient.phone}
               </div>
             )}
           </div>

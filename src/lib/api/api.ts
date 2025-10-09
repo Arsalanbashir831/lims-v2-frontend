@@ -1,8 +1,8 @@
 import { ROUTES } from "@/constants/routes"
 import ky, { HTTPError } from "ky"
-import { getSession } from "next-auth/react"
+import { TokenStorage } from "@/lib/auth/token-storage"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.2:8000/api"
 
 // Create a base API client
 const baseApi = ky.create({
@@ -12,19 +12,20 @@ const baseApi = ky.create({
   hooks: {
     beforeRequest: [
       async (request) => {
-        // Get session for authentication
-        const session = await getSession()
-        if (session?.user) {
-          // Add any custom headers if needed
-          request.headers.set("Accept", "application/json")
-          // Note: NextAuth handles cookies automatically for same-origin requests
+        // Add authentication token
+        const accessToken = TokenStorage.getAccessToken()
+        if (accessToken) {
+          request.headers.set("Authorization", `Bearer ${accessToken}`)
         }
+        request.headers.set("Accept", "application/json")
+        request.headers.set("Content-Type", "application/json")
       },
     ],
     afterResponse: [
       async (request, _options, response) => {
         if (response.status === 401) {
           // Handle unauthorized - redirect to login
+          TokenStorage.clearTokens()
           window.location.href = ROUTES.AUTH.LOGIN
         }
       },
@@ -33,11 +34,6 @@ const baseApi = ky.create({
 })
 
 export const api = baseApi
-
-// Helper function to get session for API calls
-export async function getApiSession() {
-  return await getSession()
-}
 
 // Helper function to make authenticated API calls
 export async function authenticatedApiCall<T>(

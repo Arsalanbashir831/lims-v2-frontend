@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { SampleInformationForm } from "@/components/sample-information/form"
-import { sampleInformationService } from "@/lib/sample-information"
+import { sampleInformationService } from "@/services/sample-information.service"
 import { Skeleton } from "@/components/ui/skeleton"
 import { FormHeader } from "@/components/common/form-header"
 import { Button } from "@/components/ui/button"

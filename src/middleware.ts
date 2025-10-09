@@ -1,24 +1,23 @@
-import { withAuth } from "next-auth/middleware"
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export default withAuth(
-  function middleware(req) {
-    // Add any additional middleware logic here
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        // Allow access to auth pages without token
-        if (req.nextUrl.pathname.startsWith('/login') || 
-            req.nextUrl.pathname.startsWith('/register')) {
-          return true
-        }
-        
-        // Require token for all other pages
-        return !!token
-      },
-    },
+export function middleware(request: NextRequest) {
+  // Allow access to auth pages
+  if (request.nextUrl.pathname.startsWith('/login') || 
+      request.nextUrl.pathname.startsWith('/register') ||
+      request.nextUrl.pathname.startsWith('/forgot-password')) {
+    return NextResponse.next()
   }
-)
+
+  // Allow access to public pages
+  if (request.nextUrl.pathname.startsWith('/public/')) {
+    return NextResponse.next()
+  }
+
+  // For all other routes, authentication will be handled by client-side components
+  // (RequireAuth component will check authentication and redirect if needed)
+  return NextResponse.next()
+}
 
 export const config = {
   matcher: [

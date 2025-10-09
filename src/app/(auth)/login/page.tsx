@@ -6,43 +6,35 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
 import { Eye, EyeOff, Lock, UserRound } from "lucide-react"
-import { signIn } from "next-auth/react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { getHomeRouteForRole } from "@/lib/auth/roles"
 import { UserRole } from "@/lib/schemas/user"
 import { ROUTES } from "@/constants/routes"
+import { useAuth } from "@/hooks/use-auth"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
+  const { login } = useAuth()
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget as HTMLFormElement
-    const username = (form.username as any).value.trim()
+    const email = (form.email as any).value.trim()
     const password = (form.password as any).value
-    if (!username || !password) return
+    if (!email || !password) return
     setIsLoading(true)
     
     try {
-      const result = await signIn('credentials', {
-        username,
-        password,
-        redirect: false,
-      })
-
-      if (result?.error) {
-        toast.error("Invalid credentials or account not verified")
-      } else if (result?.ok) {
-        toast.success("Signed in successfully")
-        
-        // Redirect to dashboard - the dashboard will handle role-based routing
-        router.push(ROUTES.APP.DASHBOARD)
-      }
+      await login({ email, password })
+      toast.success("Signed in successfully")
+      
+      // Redirect to dashboard - the dashboard will handle role-based routing
+      router.push(ROUTES.APP.DASHBOARD)
     } catch (err: any) {
-      toast.error("Login failed. Please try again.")
+      toast.error(err.message || "Login failed. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -60,10 +52,10 @@ export default function LoginPage() {
 
       <form className="space-y-6" onSubmit={onSubmit}>
         <div className="space-y-2">
-          <Label htmlFor="username" className="text-sm font-medium">Username</Label>
+          <Label htmlFor="email" className="text-sm font-medium">Email</Label>
           <div className="relative">
             <UserRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input id="username" name="username" type="text" placeholder="Enter your Username" className="h-11 pl-10" required />
+            <Input id="email" name="email" type="email" placeholder="Enter your Email" className="h-11 pl-10" required />
           </div>
         </div>
 

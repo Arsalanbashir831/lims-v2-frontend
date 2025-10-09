@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Plus, Trash2, PencilIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { Welder } from "@/components/welders/welder-form"
-import { welderService } from "@/lib/welders"
+import { welderService } from "@/services/welders.service"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import Link from "next/link"
 

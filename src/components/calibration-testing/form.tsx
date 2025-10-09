@@ -6,13 +6,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { CalibrationTest, calibrationTestService, CreateCalibrationTestData, UpdateCalibrationTestData } from "@/lib/calibration-testing"
+import { CalibrationTesting, calibrationTestingService, CreateCalibrationTestingData, UpdateCalibrationTestingData } from "@/services/calibration-testing.service"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
 import { useQueryClient } from "@tanstack/react-query"
 
-type Props = { initial?: CalibrationTest, readOnly?: boolean }
+type Props = { initial?: CalibrationTesting, readOnly?: boolean }
 
 export function CalibrationTestingForm({ initial, readOnly = false }: Props) {
   const router = useRouter()
@@ -35,7 +35,7 @@ export function CalibrationTestingForm({ initial, readOnly = false }: Props) {
       toast.error("Equipment/Instrument Name is required")
       return
     }
-    const payload: CreateCalibrationTestData = {
+    const payload: CreateCalibrationTestingData = {
       equipmentName: equipmentName.trim(),
       equipmentSerial: equipmentSerial.trim() || undefined,
       calibrationVendor: vendor.trim() || undefined,
@@ -49,7 +49,7 @@ export function CalibrationTestingForm({ initial, readOnly = false }: Props) {
     }
 
     if (isEditing && initial) {
-      calibrationTestService.update(initial.id, payload as UpdateCalibrationTestData)
+      calibrationTestingService.update(initial.id, payload as UpdateCalibrationTestingData)
         .then(() => { 
           queryClient.invalidateQueries({ queryKey: ['calibration-tests'] })
           toast.success("Record updated"); 
@@ -59,7 +59,7 @@ export function CalibrationTestingForm({ initial, readOnly = false }: Props) {
       return
     }
 
-    calibrationTestService.create(payload)
+    calibrationTestingService.create(payload)
       .then(() => { 
         queryClient.invalidateQueries({ queryKey: ['calibration-tests'] })
         toast.success("Record created"); 

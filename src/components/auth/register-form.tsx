@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { RegisterUserSchema, UserRoleSchema } from "@/lib/schemas/user"
-import { AuthService } from "@/lib/api/auth-service"
+import { AuthService } from "@/services/auth.service"
 import { ROUTES } from "@/constants/routes"
 
 const registerSchema = RegisterUserSchema.extend({

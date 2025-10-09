@@ -32,7 +32,7 @@ import {
   Award,
   Trash2
 } from "lucide-react"
-import { computeTrackingRows } from "@/lib/tracking"
+import { computeTrackingRows } from "@/services/tracking.service"
 
 // Enhanced mock data for charts and metrics
 const mockData = {

@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import type { TrackingRow } from "@/lib/tracking"
+import type { TrackingRow } from "@/services/tracking.service"
 
 interface Props {
   open: boolean
@@ -19,7 +19,7 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
         <SheetHeader className="p-4 border-b">
           <SheetTitle className="flex items-center justify-between w-full">
             <span>{row?.sampleId} — {row?.projectName}</span>
-            <Badge variant="secondary" className="capitalize">{row?.latestStatus?.replaceAll("_"," ")}</Badge>
+            <Badge variant="secondary" className="capitalize">{row?.status?.replaceAll("_"," ")}</Badge>
           </SheetTitle>
         </SheetHeader>
         <Tabs defaultValue="overview" className="w-full">
@@ -34,13 +34,13 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
             <section className="rounded-lg border">
               <header className="px-4 py-3 border-b flex items-center justify-between">
                 <div className="text-sm font-medium">Summary</div>
-                <Badge variant="secondary" className="capitalize">{row?.latestStatus?.replaceAll("_"," ")}</Badge>
+                <Badge variant="secondary" className="capitalize">{row?.status?.replaceAll("_"," ")}</Badge>
               </header>
               <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
                 <Field label="Client" value={row?.clientName} />
                 <Field label="Project" value={row?.projectName} />
-                <Field label="Items" value={String(row?.itemsCount ?? 0)} />
-                <Field label="Specimens" value={String(row?.specimensCount ?? 0)} />
+                <Field label="Items" value={String(row?.testMethods?.length ?? 0)} />
+                <Field label="Specimens" value={String(row?.equipmentUsed?.length ?? 0)} />
               </div>
             </section>
 
@@ -49,8 +49,8 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
               <ol className="p-4 space-y-3">
                 <TimelineItem title="Received" date={row?.receivedDate} active={!!row?.receivedDate} />
                 <TimelineItem title="Preparation" date={row?.preparationDate} active={!!row?.preparationDate} />
-                <TimelineItem title="Report Issued" date={row?.reportIssueDate} active={!!row?.reportIssueDate} />
-                <TimelineItem title="Discarded" date={row?.discardDate} active={!!row?.discardDate} />
+                <TimelineItem title="Report Issued" date={row?.reportDate} active={!!row?.reportDate} />
+                <TimelineItem title="Discarded" date={row?.discardedDate} active={!!row?.discardedDate} />
               </ol>
             </section>
           </TabsContent>
@@ -66,22 +66,9 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {row?.receiving?.items?.length ? (
-                    row!.receiving!.items!.map((it: any, idx: number) => (
-                      <TableRow key={idx}>
-                        <TableCell className="font-medium">{idx + 1}</TableCell>
-                        <TableCell className="max-w-[360px] truncate" title={it?.description}>{it?.description ?? "—"}</TableCell>
-                        <TableCell>{it?.heatNo ?? "—"}</TableCell>
-                        <TableCell className="max-w-[280px] truncate" title={(it?.testMethods ?? []).join(', ')}>
-                          {(it?.testMethods ?? []).join(", ") || "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">No items</TableCell>
-                    </TableRow>
-                  )}
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground">No items data available</TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </div>
@@ -98,20 +85,9 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {row?.preparations?.length ? (
-                    row!.preparations!.flatMap((p) => p.items.map((it) => ({ p, it }))).map(({ p, it }) => (
-                      <TableRow key={`${p.id}-${it.id}`}>
-                        <TableCell>{p.prepNo}</TableCell>
-                        <TableCell className="max-w-[320px] truncate" title={it.description}>{`Item ${it.indexNo} — ${it.description}`}</TableCell>
-                        <TableCell>{it.testMethodName ?? "—"}</TableCell>
-                        <TableCell className="font-mono">{(it.specimenIds ?? []).join(", ") || "—"}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">No preparation records</TableCell>
-                    </TableRow>
-                  )}
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground">No preparation data available</TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </div>
@@ -127,19 +103,9 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {row?.reports?.length ? (
-                    row!.reports!.map((r) => (
-                      <TableRow key={r.id}>
-                        <TableCell>{r.reportNo}</TableCell>
-                        <TableCell>{r.certificate?.issueDate ?? "—"}</TableCell>
-                        <TableCell>{r.items?.length ?? 0}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground">No reports</TableCell>
-                    </TableRow>
-                  )}
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground">No reports data available</TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </div>
@@ -155,21 +121,9 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {row?.discards?.length ? (
-                    row!.discards!.map((d) => (
-                      <TableRow key={d.id}>
-                        <TableCell className="max-w-[360px] truncate" title={d.discardReason}>{d.discardReason}</TableCell>
-                        <TableCell>{d.discardDate}</TableCell>
-                        <TableCell className="max-w-[280px] truncate" title={(d.items ?? []).map(i=>i.specimenId).join(', ')}>
-                          {(d.items ?? []).map(i => i.specimenId).join(", ") || "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground">No discards</TableCell>
-                    </TableRow>
-                  )}
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground">No discards data available</TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </div>

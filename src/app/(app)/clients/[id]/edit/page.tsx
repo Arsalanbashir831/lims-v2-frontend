@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ClientForm } from "@/components/clients/client-form"
-import { clientService, Client, UpdateClientData } from "@/lib/clients"
+import { clientService, Client, UpdateClientData } from "@/services/clients.service"
 import { ROUTES } from "@/constants/routes"
 import { toast } from "sonner"
 import { FormHeader } from "@/components/common/form-header"

@@ -9,12 +9,75 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { PlusIcon, TrashIcon } from "lucide-react"
-import type { TestReport } from "@/lib/test-reports"
-import { generateReportNo, type CertificateDetails, type ReportItem } from "@/lib/test-reports"
-import { samplePreparationService } from "@/lib/sample-preparation-new"
+// Define types locally for now
+interface TestReport {
+  id: string
+  reportNo: string
+  preparationId: string
+  certificate: CertificateDetails
+  items: ReportItem[]
+}
+
+interface CertificateDetails {
+  date_of_sampling: string
+  date_of_testing: string
+  issue_date: string
+  gripco_ref_no: string
+  revision_no: string
+  client_name: string
+  customer_name_no: string
+  atten: string
+  customer_po: string
+  project_name: string
+  name_of_laboratory: string
+  address: string
+  tested_by: string
+  reviewed_by: string
+}
+
+interface ReportItem {
+  id: string
+  preparationItemId: string
+  specimenId: string
+  testMethodId: string
+  testMethodName: string
+  testEquipment: string
+  testEquipmentId: string
+  samplePrepMethod: string
+  sampleDescription: string
+  materialGrade: string
+  heatNo: string
+  temperature: string
+  humidity: string
+  comments: string
+  columns: any[]
+  data: any[]
+}
+
+const generateReportNo = () => `RPT-${Date.now()}`
+import { samplePreparationService } from "@/services/sample-preparation.service"
 import { listSampleReceivings } from "@/lib/sample-receiving"
 import { generateStableId } from "@/utils/hydration-fix"
-import { completeCertificateService, type CompleteCertificate } from "@/lib/complete-certificates"
+import { completeCertificateService } from "@/services/complete-certificates.service"
+// Define CompleteCertificate locally for now
+interface CompleteCertificate {
+  request_id: string
+  date_of_sampling: string
+  date_of_testing: string
+  issue_date: string
+  gripco_ref_no: string
+  revision_no: string
+  client_name: string
+  customer_name_no: string
+  atten: string
+  customer_po: string
+  project_name: string
+  name_of_laboratory: string
+  address: string
+  tested_by: string
+  reviewed_by: string
+  certificate_items_json: any[]
+}
 import { DynamicTable, type DynamicColumn, type DynamicRow } from "@/components/pqr/form/dynamic-table"
 import { RequestSelector } from "@/components/common/request-selector"
 import { EquipmentSelector } from "@/components/common/equipment-selector"

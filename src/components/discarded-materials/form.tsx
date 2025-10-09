@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Check, ChevronsUpDown, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { CreateDiscardedMaterialData, DiscardedItem } from "@/lib/discarded-materials"
-import { samplePreparationService } from "@/lib/sample-preparation"
+// import { samplePreparationService } from "@/lib/sample-preparation"
 import { listSampleReceivings } from "@/lib/sample-receiving"
 
 interface Props {
@@ -41,8 +41,9 @@ export function DiscardedMaterialForm({ initialData, onSubmit, readOnly = false 
   useEffect(() => {
     const loadPreps = async () => {
       try {
-        const response = await samplePreparationService.getAll(1)
-        setAllPreps(response.results)
+        // const response = await samplePreparationService.getAll(1)
+        // setAllPreps(response.results)
+        setAllPreps([])
       } catch (error) {
         console.error("Failed to load preparations:", error)
       }
@@ -63,8 +64,8 @@ export function DiscardedMaterialForm({ initialData, onSubmit, readOnly = false 
       testConductedDate: string
     }> = []
     
-    selectedPrep.items.forEach(item => {
-      item.specimenIds.forEach(specimenId => {
+    selectedPrep.items.forEach((item: any) => {
+      item.specimenIds.forEach((specimenId: string) => {
         specimens.push({
           specimenId,
           itemNo: item.indexNo,

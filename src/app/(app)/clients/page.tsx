@@ -13,7 +13,7 @@ import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { Plus, Trash2, PencilIcon } from "lucide-react"
 import Link from "next/link"
 import { ROUTES } from "@/constants/routes"
-import { clientService, Client } from "@/lib/clients"
+import { clientService, Client } from "@/services/clients.service"
 import { toast } from "sonner"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 

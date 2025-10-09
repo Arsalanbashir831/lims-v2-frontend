@@ -1,6 +1,10 @@
 export const API_ROUTES = {
   AUTH: {
-    REGISTER: "auth/register",
+    LOGIN: "auth/login/",
+    REGISTER: "auth/register/",
+    VERIFY_TOKEN: "auth/verify/",
+    REFRESH_TOKEN: "auth/refresh/",
+    LOGOUT: "auth/logout/",
   },
   Lab_MANAGERS: {
     // Clients

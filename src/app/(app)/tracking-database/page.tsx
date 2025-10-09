@@ -8,7 +8,7 @@ import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { DataTablePagination } from "@/components/ui/data-table-pagination"
 import { FilterSearch } from "@/components/ui/filter-search"
 import { Badge } from "@/components/ui/badge"
-import { computeTrackingRows, type TrackingRow } from "@/lib/tracking"
+import { computeTrackingRows, type TrackingRow } from "@/services/tracking.service"
 import { TrackingDrawer } from "@/components/tracking/tracking-drawer"
 
 export default function TrackingDatabasePage() {

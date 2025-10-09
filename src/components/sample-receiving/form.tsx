@@ -9,14 +9,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { PlusIcon, TrashIcon, ChevronDown } from "lucide-react"
 import type { SampleReceiving, SampleItem, TestMethodRef } from "@/lib/sample-receiving"
 import { createSampleItem, generateSampleCode } from "@/lib/sample-receiving"
-import { Badge } from "@/components/ui/badge"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useSidebar } from "../ui/sidebar"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ClientSelector } from "@/components/common/client-selector"
-import { Client, clientService } from "@/lib/clients"
+import { Client, clientService } from "@/services/clients.service"
 
 export interface SampleReceivingFormData extends Omit<SampleReceiving, "id" | "createdAt" | "updatedAt"> {}
 

@@ -8,7 +8,7 @@ import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { TestMethod, testMethodService } from "@/lib/test-methods"
+import { testMethodService } from "@/services/test-methods.service"
 import { useQuery } from "@tanstack/react-query"
 
 interface TestMethodsSelectorProps {

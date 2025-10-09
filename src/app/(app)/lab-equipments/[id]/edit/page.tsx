@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParams } from "next/navigation"
 import { EquipmentForm } from "@/components/equipments/form"
-import { equipmentService, Equipment } from "@/lib/equipments"
+import { equipmentService, Equipment } from "@/services/equipments.service"
 import { ROUTES } from "@/constants/routes"
 import { FormHeader } from "@/components/common/form-header"
 import { Button } from "@/components/ui/button"

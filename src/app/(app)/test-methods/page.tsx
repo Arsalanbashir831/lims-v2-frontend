@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useCallback, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { testMethodService, TestMethod } from "@/lib/test-methods"
+import { testMethodService, TestMethod } from "@/services/test-methods.service"
 import { toast } from "sonner"
 import { DataTable } from "@/components/ui/data-table"
 import { truncateText, formatColumnsPreview } from "@/lib/format"

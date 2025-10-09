@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { clientService, Client } from "@/lib/clients"
+import { clientService, Client } from "@/services/clients.service"
 import { useQuery } from "@tanstack/react-query"
 
 interface ClientSelectorProps {

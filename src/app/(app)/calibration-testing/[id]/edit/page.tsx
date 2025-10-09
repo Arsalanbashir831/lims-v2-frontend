@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParams } from "next/navigation"
 import { CalibrationTestingForm } from "@/components/calibration-testing/form"
-import { calibrationTestService, CalibrationTest } from "@/lib/calibration-testing"
+import { calibrationTestService, CalibrationTest } from "@/services/calibration-testing.service"
 import { ROUTES } from "@/constants/routes"
 import { FormHeader } from "@/components/common/form-header"
 import { Button } from "@/components/ui/button"

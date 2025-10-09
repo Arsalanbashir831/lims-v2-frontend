@@ -6,13 +6,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { ProficiencyTest, proficiencyTestService, CreateProficiencyTestData, UpdateProficiencyTestData } from "@/lib/proficiency-testing"
+import { ProficiencyTesting, proficiencyTestingService, CreateProficiencyTestingData, UpdateProficiencyTestingData } from "@/services/proficiency-testing.service"
 import { useRouter } from "next/navigation"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
 
-type Props = { initial?: ProficiencyTest, readOnly?: boolean }
+type Props = { initial?: ProficiencyTesting, readOnly?: boolean }
 
 export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
   const router = useRouter()
@@ -37,7 +37,7 @@ export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
       toast.error("Description is required")
       return
     }
-    const payload: CreateProficiencyTestData = {
+    const payload: CreateProficiencyTestingData = {
       description: description.trim(),
       provider1: provider1.trim() || undefined,
       provider2: provider2.trim() || undefined,
@@ -52,7 +52,7 @@ export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
     console.log("Submitting payload:", payload)
 
     if (isEditing && initial) {
-      proficiencyTestService.update(initial.id, payload as UpdateProficiencyTestData)
+      proficiencyTestingService.update(initial.id, payload as UpdateProficiencyTestingData)
         .then(() => { 
           queryClient.invalidateQueries({ queryKey: ['proficiency-tests'] })
           toast.success("Record updated"); 
@@ -62,7 +62,7 @@ export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
       return
     }
 
-    proficiencyTestService.create(payload)
+    proficiencyTestingService.create(payload)
       .then(() => { 
         queryClient.invalidateQueries({ queryKey: ['proficiency-tests'] })
         toast.success("Record created"); 

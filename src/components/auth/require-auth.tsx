@@ -1,21 +1,21 @@
 "use client"
 
 import { PropsWithChildren } from "react"
-import { useSession } from "next-auth/react"
+import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
 export function RequireAuth({ children }: PropsWithChildren) {
-  const { status } = useSession()
+  const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (!isLoading && !isAuthenticated) {
       router.replace("/login")
     }
-  }, [status, router])
+  }, [isAuthenticated, isLoading, router])
 
-  if (status === "loading") {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -26,7 +26,7 @@ export function RequireAuth({ children }: PropsWithChildren) {
     )
   }
 
-  if (status === "unauthenticated") {
+  if (!isAuthenticated) {
     return null // Will redirect to login
   }
 

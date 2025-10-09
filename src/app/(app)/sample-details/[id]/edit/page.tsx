@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { SampleDetailForm } from "@/components/sample-details/form"
-import { sampleInformationService } from "@/lib/sample-information"
+import { sampleInformationService } from "@/services/sample-information.service"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function EditSampleDetailPage() {

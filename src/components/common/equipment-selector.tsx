@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { calibrationTestService } from "@/lib/calibration-testing"
+import { calibrationTestingService } from "@/services/calibration-testing.service"
 
 interface Equipment {
   id: string
@@ -49,8 +49,8 @@ export function EquipmentSelector({
         setLoading(true)
         // If no search query, load all equipments; otherwise search
         const response = searchQuery.trim() 
-          ? await calibrationTestService.search(searchQuery, 1)
-          : await calibrationTestService.getAll(1)
+          ? await calibrationTestingService.search(searchQuery, 1)
+          : await calibrationTestingService.getAll(1)
         
         console.log("Search query:", searchQuery)
         console.log("API response:", response)

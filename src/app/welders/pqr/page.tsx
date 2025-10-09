@@ -10,7 +10,19 @@ import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { DataTablePagination } from "@/components/ui/data-table-pagination"
 import { FilterSearch } from "@/components/ui/filter-search"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
-import { PqrRecord, listPqrs, deletePqr } from "@/lib/pqr"
+import { pqrService } from "@/services/pqr.service"
+// Define PqrRecord locally for now
+interface PqrRecord {
+  id: string
+  contractorName?: string
+  pqrNo?: string
+  supportingPwpsNo?: string
+  dateOfIssue?: string
+  dateOfWelding?: string
+  biNumber?: string
+  clientEndUser?: string
+  dateOfTesting?: string
+}
 import { toast } from "sonner"
 import { EyeIcon, PencilIcon, TrashIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
@@ -24,7 +36,14 @@ export default function PQRPage() {
 
   const [items, setItems] = useState<PqrRecord[]>([])
   const [query, setQuery] = useState("")
-  const reload = useCallback(() => setItems(listPqrs()), [])
+  const reload = useCallback(async () => {
+    try {
+      const data = await pqrService.getAll()
+      setItems(data)
+    } catch (error) {
+      console.error("Failed to load PQRs:", error)
+    }
+  }, [])
   useEffect(() => { reload() }, [])
 
   const filtered = useMemo(() => {
@@ -39,10 +58,15 @@ export default function PQRPage() {
     )
   }, [items, query])
 
-  const doDelete = useCallback((id: string) => {
-    deletePqr(id)
-    toast.success("Deleted")
-    reload()
+  const doDelete = useCallback(async (id: string) => {
+    try {
+      await pqrService.delete(id)
+      toast.success("Deleted")
+      reload()
+    } catch (error) {
+      console.error("Failed to delete PQR:", error)
+      toast.error("Failed to delete PQR")
+    }
   }, [reload])
 
   const seedDummy = useCallback((id: string) => {

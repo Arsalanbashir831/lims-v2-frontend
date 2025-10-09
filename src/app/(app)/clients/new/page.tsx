@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { ClientForm } from "@/components/clients/client-form"
-import { clientService, CreateClientData } from "@/lib/clients"
+import { clientService, CreateClientData } from "@/services/clients.service"
 import { ROUTES } from "@/constants/routes"
 import { toast } from "sonner"
 import { FormHeader } from "@/components/common/form-header"

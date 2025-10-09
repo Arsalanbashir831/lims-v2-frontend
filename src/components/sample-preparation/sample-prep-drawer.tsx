@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { samplePreparationService } from "@/lib/sample-preparation-new"
-import { testMethodService } from "@/lib/test-methods"
+import { samplePreparationService } from "@/services/sample-preparation.service"
+import { testMethodService } from "@/services/test-methods.service"
 import { SamplePreparationResponse } from "@/lib/schemas/sample-preparation"
 import { formatDateSafe } from "@/utils/hydration-fix"
 import {

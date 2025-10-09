@@ -11,11 +11,11 @@ import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { sampleInformationService } from "@/lib/sample-information"
+import { sampleInformationService } from "@/services/sample-information.service"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback } from "react"
 import { toast } from "sonner"
-import { sampleLotService } from "@/lib/sample-lots"
+import { sampleLotService } from "@/services/sample-lots.service"
 import { ScrollArea } from "../ui/scroll-area"
 
 export default function CompleteDetailsSidebar({

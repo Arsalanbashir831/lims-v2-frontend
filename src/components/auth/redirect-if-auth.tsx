@@ -2,20 +2,20 @@
 
 import { PropsWithChildren, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useSession } from "next-auth/react"
+import { useAuth } from "@/hooks/use-auth"
 import { getHomeRouteForRole } from "@/lib/auth/roles"
 import { UserRole } from "@/lib/schemas/user"
 
 export function RedirectIfAuthenticated({ children }: PropsWithChildren) {
-  const { data: session, status } = useSession()
+  const { user, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
   
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.role) {
-      const homeRoute = getHomeRouteForRole(session.user.role as UserRole)
+    if (!isLoading && isAuthenticated && user?.role) {
+      const homeRoute = getHomeRouteForRole(user.role as UserRole)
       router.replace(homeRoute)
     }
-  }, [session, status, router])
+  }, [user, isAuthenticated, isLoading, router])
   
   return <>{children}</>
 }

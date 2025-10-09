@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParams } from "next/navigation"
 import { ProficiencyTestingForm } from "@/components/proficiency-testing/form"
-import { proficiencyTestService, ProficiencyTest } from "@/lib/proficiency-testing"
+import { proficiencyTestingService, ProficiencyTesting } from "@/services/proficiency-testing.service"
 import { ROUTES } from "@/constants/routes"
 import { FormHeader } from "@/components/common/form-header"
 import { Button } from "@/components/ui/button"
@@ -12,13 +12,13 @@ import { useQuery } from "@tanstack/react-query"
 
 export default function EditProficiencyTestingPage() {
   const params = useParams<{ id: string }>()
-  const [record, setRecord] = useState<ProficiencyTest | undefined>(undefined)
+  const [record, setRecord] = useState<ProficiencyTesting | undefined>(undefined)
   const [isEditing, setIsEditing] = useState(false)
 
   const id = params?.id as string
   const { data, isLoading } = useQuery({
     queryKey: ['proficiency-tests', id],
-    queryFn: () => proficiencyTestService.getById(id),
+    queryFn: () => proficiencyTestingService.getById(id),
     enabled: !!id,
   })
 
