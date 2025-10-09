@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { equipmentService, Equipment, CreateEquipmentData, UpdateEquipmentData } from '@/services/equipments.service'
+import { equipmentService, CreateEquipmentData, UpdateEquipmentData } from '@/services/equipments.service'
 
 // Query keys for consistent caching
 export const EQUIPMENTS_QUERY_KEYS = {

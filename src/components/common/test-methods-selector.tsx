@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Check, ChevronsUpDown, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -8,8 +8,7 @@ import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { testMethodService } from "@/services/test-methods.service"
-import { useQuery } from "@tanstack/react-query"
+import { useTestMethods } from "@/hooks/use-test-methods"
 
 interface TestMethodsSelectorProps {
   value?: string[]
@@ -32,30 +31,28 @@ export function TestMethodsSelector({
 }: TestMethodsSelectorProps) {
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
 
-  // Use React Query for test methods - only load when popover is open or when we have selected values
+  // Debounce search query to avoid API calls on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300) // 300ms debounce delay
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Use the optimized useTestMethods hook - only load when popover is open or when we have selected values
   const shouldLoad = open || value.length > 0
-  const { data: testMethods = [], isLoading: loading } = useQuery({
-    queryKey: ['test-methods', searchQuery.trim() || '__ALL__'],
-    queryFn: () => searchQuery.trim() 
-      ? testMethodService.search(searchQuery, 1)
-      : testMethodService.getAll(1),
-    enabled: shouldLoad,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    select: (data) => data.results,
-  })
+  const { data: testMethodsData, isLoading: loading } = useTestMethods(1, debouncedSearchQuery.trim() || undefined, shouldLoad)
+  
+  const testMethods = testMethodsData?.results ?? []
 
 
-  // Get selected test methods data - use provided selectedMethods or filter from loaded testMethods
+  // Get selected test methods data - filter from loaded testMethods
   const selectedTestMethods = useMemo(() => {
-    if (selectedMethods.length > 0) {
-      // Use provided selected methods (for edit mode)
-      return selectedMethods.filter(method => value.includes(method.id))
-    }
-    // Fallback to filtering from loaded testMethods (for create mode)
     return testMethods.filter(method => value.includes(method.id))
-  }, [testMethods, value, selectedMethods])
+  }, [testMethods, value])
 
   const handleSelect = (methodId: string) => {
     const isSelected = value.includes(methodId)
@@ -106,9 +103,9 @@ export function TestMethodsSelector({
               onValueChange={setSearchQuery}
             />
             <CommandList>
-              {loading ? (
+              {loading || (searchQuery !== debouncedSearchQuery) ? (
                 <div className="px-2 py-1 text-sm text-muted-foreground">
-                  Loading test methods...
+                  {searchQuery !== debouncedSearchQuery ? "Searching..." : "Loading test methods..."}
                 </div>
               ) : testMethods.length === 0 ? (
                 <div className="px-2 py-1 text-sm text-muted-foreground">
@@ -142,7 +139,7 @@ export function TestMethodsSelector({
                           )}
                           <div className="flex items-center gap-1 mt-1">
                             <Badge variant="secondary" className="text-xs">
-                              {method.test_columns.length} columns
+                              {method.test_columns?.length || 0} columns
                             </Badge>
                           </div>
                         </div>

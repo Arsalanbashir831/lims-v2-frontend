@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { sampleInformationService } from "@/services/sample-information.service"
-import { useQuery } from "@tanstack/react-query"
+import { useSampleInformation } from "@/hooks/use-sample-information"
+import { SampleInformationResponse } from "@/services/sample-information.service"
 
 interface Job {
   job_id: string
@@ -18,6 +18,7 @@ interface Job {
 interface JobSelectorProps {
   value?: string
   onValueChange: (value: string) => void
+  onJobSelect?: (job: any) => void
   placeholder?: string
   disabled?: boolean
   className?: string
@@ -27,6 +28,7 @@ interface JobSelectorProps {
 export function JobSelector({ 
   value = "", 
   onValueChange, 
+  onJobSelect,
   placeholder = "Select job...", 
   disabled = false,
   className,
@@ -34,29 +36,38 @@ export function JobSelector({
 }: JobSelectorProps) {
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
 
-  // Use React Query for jobs - only load when popover is open
-  const { data: jobs = [], isLoading: loading } = useQuery({
-    queryKey: ['sample-information', searchQuery.trim() || '__ALL__'],
-    queryFn: () => searchQuery.trim() 
-      ? sampleInformationService.search(searchQuery, 1)
-      : sampleInformationService.getAll(1),
-    enabled: open,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    select: (data) => data.results,
-  })
+  // Debounce search query to avoid API calls on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300) // 300ms debounce delay
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Use the optimized useSampleInformation hook - only load when popover is open
+  const { data: jobsData, isLoading: loading } = useSampleInformation(1, debouncedSearchQuery.trim() || undefined)
+  
+  const jobs: any[] = jobsData?.results ?? []
 
   // Find selected job
   const selectedJobData = useMemo(() => {
     if (selectedJob) {
       return selectedJob
     }
-    return jobs.find(job => job.job_id === value)
+    return jobs.find(job => job.id === value)
   }, [jobs, value, selectedJob])
 
-  const handleSelect = (jobId: string) => {
-    onValueChange(jobId === value ? "" : jobId)
+  const handleSelect = (jobDocumentId: string) => {
+    onValueChange(jobDocumentId === value ? "" : jobDocumentId)
+    if (onJobSelect && jobDocumentId !== value) {
+      const selectedJob = jobs.find(job => job.id === jobDocumentId)
+      if (selectedJob) {
+        onJobSelect(selectedJob)
+      }
+    }
     setOpen(false)
   }
 
@@ -92,9 +103,9 @@ export function JobSelector({
             onValueChange={setSearchQuery}
           />
           <CommandList>
-            {loading ? (
+            {loading || (searchQuery !== debouncedSearchQuery) ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
-                Loading jobs...
+                {searchQuery !== debouncedSearchQuery ? "Searching..." : "Loading jobs..."}
               </div>
             ) : jobs.length === 0 ? (
               <CommandEmpty>
@@ -104,14 +115,14 @@ export function JobSelector({
               <CommandGroup>
                 {jobs.map((job) => (
                   <CommandItem
-                    key={job.job_id}
-                    value={job.job_id}
-                    onSelect={() => handleSelect(job.job_id)}
+                    key={job.id}
+                    value={job.id}
+                    onSelect={() => handleSelect(job.id)}
                   >
                     <Check
                       className={cn(
                         "mr-2 h-4 w-4",
-                        value === job.job_id ? "opacity-100" : "opacity-0"
+                        value === job.id ? "opacity-100" : "opacity-0"
                       )}
                     />
                     <div className="flex flex-col">

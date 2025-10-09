@@ -12,7 +12,7 @@ export const TEST_METHODS_QUERY_KEYS = {
 }
 
 // Hook for getting test methods list with pagination
-export function useTestMethods(page: number = 1, searchQuery?: string) {
+export function useTestMethods(page: number = 1, searchQuery?: string, enabled: boolean = true) {
   return useQuery({
     queryKey: searchQuery ? TEST_METHODS_QUERY_KEYS.search(searchQuery, page) : TEST_METHODS_QUERY_KEYS.list(page, searchQuery),
     queryFn: () => {
@@ -21,6 +21,7 @@ export function useTestMethods(page: number = 1, searchQuery?: string) {
       }
       return testMethodService.getAll(page)
     },
+    enabled,
     staleTime: 3 * 60 * 1000, // 3 minutes (test methods change less frequently)
     gcTime: 15 * 60 * 1000, // 15 minutes
     placeholderData: (previousData) => previousData,

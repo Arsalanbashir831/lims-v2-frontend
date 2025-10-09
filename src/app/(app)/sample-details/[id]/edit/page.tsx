@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { SampleDetailForm } from "@/components/sample-details/form"
-import { sampleInformationService } from "@/services/sample-information.service"
+import { sampleLotService } from "@/services/sample-lots.service"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function EditSampleDetailPage() {
@@ -11,8 +11,8 @@ export default function EditSampleDetailPage() {
   const id = params.id as string
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['complete-sample-information', id],
-    queryFn: () => sampleInformationService.getCompleteSampleInformation(id),
+    queryKey: ['sample-lots-by-job', id],
+    queryFn: () => sampleLotService.getByJobDocumentId(id),
     enabled: !!id,
   })
 
@@ -38,7 +38,7 @@ export default function EditSampleDetailPage() {
     )
   }
 
-  if (!data?.job?.job_id) {
+  if (!data?.job_info?.job_id) {
     return (
       <div className="container mx-auto py-6">
         <div className="text-center">
@@ -52,8 +52,22 @@ export default function EditSampleDetailPage() {
   }
 
   const initial = {
-    job: data?.job || { job_id: "", project_name: "", client_name: "", end_user: "", receive_date: "", received_by: "", remarks: "" },
-    lots: data?.lots || [],
+    job: {
+      id: id, // Use the document ID
+      job_id: data?.job_info?.job_id || "",
+      client_id: data?.job_info?.client_id || "",
+      project_name: data?.job_info?.project_name || "",
+      client_name: data?.job_info?.client_name || "",
+      end_user: data?.job_info?.end_user || "",
+      receive_date: data?.job_info?.receive_date || "",
+      received_by: data?.job_info?.received_by || "",
+      remarks: data?.job_info?.remarks || "",
+      is_active: true,
+      created_at: data?.job_info?.created_at || "",
+      updated_at: data?.job_info?.updated_at || "",
+      sample_lots_count: data?.total || 0,
+    },
+    lots: data?.data || [],
   }
 
   return (

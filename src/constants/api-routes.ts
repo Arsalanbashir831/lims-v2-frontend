@@ -48,13 +48,13 @@ export const API_ROUTES = {
     SEARCH_TEST_METHODS: "test-methods/search/",
 
     // Sample Information
-    ADD_SAMPLE_INFORMATION: "sample-information/",
-    UPDATE_SAMPLE_INFORMATION: (id: string) => `sample-information/${id}/`,
-    DELETE_SAMPLE_INFORMATION: (id: string) => `sample-information/${id}/`,
-    ALL_SAMPLE_INFORMATION: "sample-information/",
-    SAMPLE_INFORMATION_BY_ID: (id: string) => `sample-information/${id}/`,
-    SAMPLE_INFORMATION_COMPLETE_INFO: (id: string) => `sample-information/${id}/complete-info`,
-    SEARCH_SAMPLE_INFORMATION: "sample-information/search/",
+    ADD_SAMPLE_INFORMATION: "jobs/",
+    UPDATE_SAMPLE_INFORMATION: (id: string) => `jobs/${id}/`,
+    DELETE_SAMPLE_INFORMATION: (id: string) => `jobs/${id}/`,
+    ALL_SAMPLE_INFORMATION: "jobs/",
+    SAMPLE_INFORMATION_BY_ID: (id: string) => `jobs/${id}/`,
+    SAMPLE_INFORMATION_COMPLETE_INFO: (id: string) => `jobs/${id}/complete-info`,
+    SEARCH_SAMPLE_INFORMATION: "jobs/search/",
 
     // Sample Details
     ADD_SAMPLE_DETAIL: "sample-details/",
@@ -93,5 +93,6 @@ export const API_ROUTES = {
     ALL_SAMPLE_LOTS: "sample-lots/",
     SAMPLE_LOT_BY_ID: (id: string) => `sample-lots/${id}/`,
     SEARCH_SAMPLE_LOTS: "sample-lots/search/",
+    GET_SAMPLE_LOTS_BY_JOB_ID: (id: string) => `sample-lots/job/${id}/`,
   }
 }

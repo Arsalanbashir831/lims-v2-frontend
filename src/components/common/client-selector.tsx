@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { Check, ChevronsUpDown, Search } from "lucide-react"
+import { useState, useMemo, useEffect } from "react"
+import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { clientService, Client } from "@/services/clients.service"
-import { useQuery } from "@tanstack/react-query"
+import { Client } from "@/services/clients.service"
+import { useClients } from "@/hooks/use-clients"
 
 interface ClientSelectorProps {
   value?: string // client ID
@@ -28,18 +28,21 @@ export function ClientSelector({
 }: ClientSelectorProps) {
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
 
-  // Use React Query for clients - only load when popover is open
-  const { data: clients = [], isLoading: loading } = useQuery({
-    queryKey: ['clients', searchQuery.trim() || '__ALL__'],
-    queryFn: () => searchQuery.trim() 
-      ? clientService.search(searchQuery, 1)
-      : clientService.getAll(1),
-    enabled: open,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    select: (data) => data.results,
-  })
+  // Debounce search query to avoid API calls on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300) // 300ms debounce delay
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Use the optimized useClients hook - only load when popover is open
+  const { data: clientsData, isLoading: loading } = useClients(1, debouncedSearchQuery.trim() || undefined, open)
+  
+  const clients = clientsData?.results ?? []
 
   // No need for client-side filtering since we're using server-side search
   const filteredClients = clients
@@ -99,9 +102,9 @@ export function ClientSelector({
             />
           </div>
           <CommandList>
-            {loading ? (
+            {loading || (searchQuery !== debouncedSearchQuery) ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
-                Loading clients...
+                {searchQuery !== debouncedSearchQuery ? "Searching..." : "Loading clients..."}
               </div>
             ) : filteredClients.length === 0 ? (
               <CommandEmpty>

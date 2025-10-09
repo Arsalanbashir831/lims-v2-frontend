@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useCallback, useMemo, useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useSampleInformation, useDeleteSampleInformation } from "@/hooks/use-sample-information"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/button"
 import { sampleInformationService } from "@/services/sample-information.service"
@@ -24,16 +25,8 @@ export default function SampleInformationPage() {
     const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
-    // Fetch data
-    const { data, error, isFetching } = useQuery({
-        queryKey: ['sample-information', currentPage, searchQuery],
-        queryFn: () => searchQuery
-            ? sampleInformationService.search(searchQuery, currentPage)
-            : sampleInformationService.getAll(currentPage),
-        staleTime: 0, // Always refetch when page changes
-        gcTime: 10 * 60 * 1000, // 10 minutes
-        // Remove placeholderData to ensure queries refetch when page changes
-    })
+    // Fetch data using caching hooks
+    const { data, error, isFetching } = useSampleInformation(currentPage, searchQuery)
 
     // Handle errors with useEffect
     useEffect(() => {
@@ -49,20 +42,19 @@ export default function SampleInformationPage() {
     const hasNext = data?.next !== undefined ? Boolean(data?.next) : totalCount > currentPage * pageSize
     const hasPrevious = data?.previous !== undefined ? Boolean(data?.previous) : currentPage > 1
 
-    // Delete mutation
-    const deleteMutation = useMutation({
-        mutationFn: sampleInformationService.delete,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['sample-information'] })
-            toast.success("Sample information deleted successfully")
-        },
-        onError: () => {
-            toast.error("Failed to delete sample information")
-        },
-    })
+    // Delete mutation using caching hooks
+    const deleteMutation = useDeleteSampleInformation()
 
     const doDelete = useCallback((id: string) => {
-        deleteMutation.mutate(id)
+        deleteMutation.mutate(id, {
+            onSuccess: () => {
+                toast.success("Sample information deleted successfully")
+            },
+            onError: (error) => {
+                toast.error("Failed to delete sample information")
+                console.error("Delete error:", error)
+            }
+        })
     }, [deleteMutation])
 
     const handleSearchChange = useCallback((value: string) => {
@@ -106,9 +98,9 @@ export default function SampleInformationPage() {
             },
         },
         {
-            accessorKey: "sample_count",
+            accessorKey: "sample_lots_count",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Sample Count" />,
-            cell: ({ row }) => <span className="text-center">{row.original.sample_count}</span>,
+            cell: ({ row }) => <span className="text-center">{row.original.sample_lots_count}</span>,
         },
         {
             id: "actions",
@@ -116,14 +108,14 @@ export default function SampleInformationPage() {
             cell: ({ row }) => (
                 <div className="text-right space-x-2 inline-flex">
                     <Button variant="secondary" size="sm" asChild>
-                        <Link href={ROUTES.APP.SAMPLE_INFORMATION.EDIT(row.original.job_id)}>
+                        <Link href={ROUTES.APP.SAMPLE_INFORMATION.EDIT(row.original.id)}>
                             <PencilIcon className="w-4 h-4" />
                         </Link>
                     </Button>
                     <ConfirmPopover
                         title="Delete this sample information?"
                         confirmText="Delete"
-                        onConfirm={() => doDelete(row.original.job_id)}
+                        onConfirm={() => doDelete(row.original.id)}
                         trigger={
                             <Button variant="destructive" size="sm">
                                 <TrashIcon className="w-4 h-4" />
@@ -176,7 +168,7 @@ export default function SampleInformationPage() {
                 empty={<span className="text-muted-foreground">No sample information yet</span>}
                 pageSize={20}
                 tableKey="sample-information"
-                onRowClick={(row) => { setSelectedJobId(String(row.original.job_id)); setIsSidebarOpen(true) }}
+                onRowClick={(row) => { setSelectedJobId(String(row.original.id)); setIsSidebarOpen(true) }}
                 toolbar={toolbar}
                 footer={footer}
             />

@@ -69,7 +69,7 @@ interface CompleteJob {
   created_at: string
   updated_at: string
   samples: SampleSummary[]
-  sample_count: number
+  sample_lots_count: number
 }
 
 function createPreparationItem(data: Partial<PreparationItem>): PreparationItem {
@@ -204,7 +204,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           samples: localSamples as any,
-          sample_count: localSamples.length,
+          sample_lots_count: localSamples.length,
         }
 
         // Map local numeric sample id -> real lot id (ObjectId string)

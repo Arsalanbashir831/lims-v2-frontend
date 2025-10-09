@@ -13,6 +13,7 @@ import { SampleInformationResponse, sampleInformationService, CreateSampleInform
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
 import { useQueryClient } from "@tanstack/react-query"
+import { useCreateSampleInformation, useUpdateSampleInformation } from "@/hooks/use-sample-information"
 
 interface Props {
   initial?: SampleInformationResponse
@@ -33,6 +34,10 @@ export function SampleInformationForm({ initial, readOnly = false }: Props) {
   const [remarks, setRemarks] = useState(initial?.remarks ?? "")
 
   const isEditing = Boolean(initial)
+
+  // Use caching hooks for mutations
+  const createMutation = useCreateSampleInformation()
+  const updateMutation = useUpdateSampleInformation()
 
   // Load selected client when initial data is available (for edit mode)
   useEffect(() => {
@@ -84,39 +89,40 @@ export function SampleInformationForm({ initial, readOnly = false }: Props) {
       remarks: remarks.trim() || undefined,
     }
 
-    // Handle create or update
+    // Handle create or update using caching hooks
     if (isEditing && initial) {
-      sampleInformationService.update(initial.job_id, payload as UpdateSampleInformationData)
-        .then((response) => { 
-          queryClient.invalidateQueries({ queryKey: ['sample-information'] })
-          toast.success("Sample information updated"); 
-          router.push(ROUTES.APP.SAMPLE_INFORMATION.ROOT) 
-        })
-        .catch((error) => {
-          console.error('Update failed:', error)
-          // Show user-friendly error message
-          if (error.message && error.message.includes('Invalid input')) {
-            toast.error("Failed to update: Invalid data format")
-          } else {
-            toast.error("Failed to update: Please try again")
+      updateMutation.mutate(
+        { id: initial.id, data: payload as UpdateSampleInformationData },
+        {
+          onSuccess: () => {
+            toast.success("Sample information updated")
+            router.push(ROUTES.APP.SAMPLE_INFORMATION.ROOT)
+          },
+          onError: (error) => {
+            console.error('Update failed:', error)
+            if (error.message && error.message.includes('Invalid input')) {
+              toast.error("Failed to update: Invalid data format")
+            } else {
+              toast.error("Failed to update: Please try again")
+            }
           }
-        })
+        }
+      )
     } else {
-      sampleInformationService.create(payload)
-        .then((response) => { 
-          queryClient.invalidateQueries({ queryKey: ['sample-information'] })
-          toast.success("Sample information created"); 
-          router.push(ROUTES.APP.SAMPLE_INFORMATION.ROOT) 
-        })
-        .catch((error) => {
+      createMutation.mutate(payload, {
+        onSuccess: () => {
+          toast.success("Sample information created")
+          router.push(ROUTES.APP.SAMPLE_INFORMATION.ROOT)
+        },
+        onError: (error) => {
           console.error('Create failed:', error)
-          // Show user-friendly error message
           if (error.message && error.message.includes('Invalid input')) {
             toast.error("Failed to create: Invalid data format")
           } else {
             toast.error("Failed to create: Please try again")
           }
-        })
+        }
+      })
     }
   }
 

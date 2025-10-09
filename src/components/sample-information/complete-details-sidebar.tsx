@@ -30,15 +30,15 @@ export default function CompleteDetailsSidebar({
     const queryClient = useQueryClient()
 
     const { data: sidebarData, isFetching } = useQuery({
-        queryKey: ['sample-lots', selectedJobId],
-        queryFn: () => selectedJobId ? sampleInformationService.getCompleteSampleInformation(selectedJobId) : Promise.resolve(null),
+        queryKey: ['sample-lots-by-job', selectedJobId],
+        queryFn: () => selectedJobId ? sampleLotService.getByJobDocumentId(selectedJobId) : Promise.resolve(null),
         enabled: !!selectedJobId,
     })
 
     const deleteMutation = useMutation({
         mutationFn: sampleLotService.delete,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['sample-lots', selectedJobId] })
+            queryClient.invalidateQueries({ queryKey: ['sample-lots-by-job', selectedJobId] })
             toast.success("Sample lot deleted successfully")
         },
         onError: () => {
@@ -84,7 +84,7 @@ export default function CompleteDetailsSidebar({
                                     <Skeleton className="h-4 w-48" />
                                 </CardContent>
                             </Card>
-                        ) : sidebarData?.job ? (
+                        ) : sidebarData?.job_info ? (
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg">Job Information</CardTitle>
@@ -94,7 +94,7 @@ export default function CompleteDetailsSidebar({
                                         <div className="space-y-1">
                                             <div className="text-sm font-medium text-muted-foreground">Job ID</div>
                                             <Badge variant="secondary" className="font-mono">
-                                                {sidebarData.job.job_id}
+                                                {sidebarData.job_info.job_id}
                                             </Badge>
                                         </div>
                                         <div className="space-y-1">
@@ -103,32 +103,32 @@ export default function CompleteDetailsSidebar({
                                                 Received Date
                                             </div>
                                             <div className="text-sm">
-                                                {new Date(sidebarData.job.receive_date).toLocaleDateString() ?? "N/A"}
+                                                {new Date(sidebarData.job_info.receive_date).toLocaleDateString() ?? "N/A"}
                                             </div>
                                         </div>
                                    
                                     <div className="space-y-1">
                                         <div className="text-sm font-medium text-muted-foreground">Project Name</div>
-                                        <div className="text-sm font-medium">{sidebarData.job.project_name ?? "N/A"}</div>
+                                        <div className="text-sm font-medium">{sidebarData.job_info.project_name ?? "N/A"}</div>
                                     </div>
                                     <div className="space-y-1">
                                         <div className="text-sm font-medium text-muted-foreground flex items-center gap-1">
                                             <BuildingIcon className="w-3 h-3" />
                                             Client
                                         </div>
-                                        <div className="text-sm font-medium">{sidebarData.job.client_name ?? "N/A"}</div>
+                                        <div className="text-sm font-medium">{sidebarData.job_info.client_name ?? "N/A"}</div>
                                     </div>
                                     <div className="space-y-1">
                                         <div className="text-sm font-medium text-muted-foreground">End User</div>
-                                        <div className="text-sm">{sidebarData.job.end_user ?? "N/A"}</div>
+                                        <div className="text-sm">{sidebarData.job_info.end_user ?? "N/A"}</div>
                                     </div>
                                     <div className="space-y-1">
                                         <div className="text-sm font-medium text-muted-foreground">Received By</div>
-                                        <div className="text-sm">{sidebarData.job.received_by ?? "N/A"}</div>
+                                        <div className="text-sm">{sidebarData.job_info.received_by ?? "N/A"}</div>
                                     </div>
                                     <div className="space-y-1">
                                         <div className="text-sm font-medium text-muted-foreground">Remarks</div>
-                                        <div className="text-sm">{sidebarData.job.remarks ?? "N/A"}</div>
+                                        <div className="text-sm">{sidebarData.job_info.remarks ?? "N/A"}</div>
                                     </div>
                                     </div>
                                 </CardContent>
@@ -171,14 +171,14 @@ export default function CompleteDetailsSidebar({
                                     </div>
                                 ) : (
                                     <div className="space-y-4">
-                                        {(sidebarData?.lots ?? []).length === 0 ? (
+                                        {(sidebarData?.data ?? []).length === 0 ? (
                                             <div className="text-center py-8">
                                                 <PackageIcon className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
                                                 <p className="text-muted-foreground">No sample lots found for this job.</p>
                                             </div>
                                         ) : (
                                             <div className="space-y-3">
-                                                {(sidebarData?.lots ?? []).map((lot: any) => (
+                                                {(sidebarData?.data ?? []).map((lot: any) => (
                                                     <Card key={lot.id} className="border-l-4 border-l-primary">
                                                         <CardContent className="p-4">
                                                             <div className="flex items-start justify-between">
@@ -206,41 +206,26 @@ export default function CompleteDetailsSidebar({
                                                                         </div>
 
                                                                         <div>
-                                                                            <span className="text-muted-foreground">Heat No: </span>
-                                                                            <span className="font-medium">{lot.heat_no ?? "N/A"}</span>
+                                                                            <span className="text-muted-foreground">Sample Type: </span>
+                                                                            <span className="font-medium">{lot.sample_type ?? "N/A"}</span>
                                                                         </div>
 
                                                                         <div>
-                                                                            <span className="text-muted-foreground">Condition: </span>
+                                                                            <span className="text-muted-foreground">Material Type: </span>
+                                                                            <span className="font-medium">{lot.material_type ?? "N/A"}</span>
+                                                                        </div>
+
+                                                                        <div>
+                                                                            <span className="text-muted-foreground">Test Methods Count: </span>
                                                                             <Badge variant="outline" className="text-xs">
-                                                                                {lot.condition ?? "N/A"}
+                                                                                {lot.test_methods_count ?? 0}
                                                                             </Badge>
                                                                         </div>
-
                                                                         <div>
-                                                                            <span className="text-muted-foreground">MTC No: </span>
-                                                                            <span className="font-medium">{lot.mtc_no ?? "N/A"}</span>
+                                                                            <span className="text-muted-foreground">Created: </span>
+                                                                            <span className="font-medium">{new Date(lot.created_at).toLocaleDateString()}</span>
                                                                         </div>
-                                                                        <div>
-                                                                            <span className="text-muted-foreground">Storage: </span>
-                                                                            <span className="font-medium">{lot.storage_location ?? "N/A"}</span>
-                                                                        </div>
-
-
                                                                     </div>
-
-                                                                    {(lot.test_method_names || []).length > 0 && (
-                                                                        <div>
-                                                                            <div className="text-sm text-muted-foreground mb-1">Test Methods:</div>
-                                                                            <div className="flex flex-wrap gap-1">
-                                                                                {lot.test_method_names.map((method: string, index: number) => (
-                                                                                    <Badge key={index} variant="outline" className="text-xs">
-                                                                                        {method ?? "N/A"}
-                                                                                    </Badge>
-                                                                                ))}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
                                                                 </div>
 
                                                                 <div className="ml-4">

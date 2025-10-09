@@ -12,7 +12,7 @@ export const CLIENTS_QUERY_KEYS = {
 }
 
 // Hook for getting clients list with pagination
-export function useClients(page: number = 1, searchQuery?: string) {
+export function useClients(page: number = 1, searchQuery?: string, enabled: boolean = true) {
     return useQuery({
         queryKey: searchQuery ? CLIENTS_QUERY_KEYS.search(searchQuery, page) : CLIENTS_QUERY_KEYS.list(page, searchQuery),
         queryFn: () => {
@@ -21,6 +21,7 @@ export function useClients(page: number = 1, searchQuery?: string) {
             }
             return clientService.getAll(page)
         },
+        enabled,
         staleTime: 2 * 60 * 1000, // 2 minutes
         gcTime: 10 * 60 * 1000, // 10 minutes
         placeholderData: (previousData) => previousData, // Keep previous data while fetching new page

@@ -21,7 +21,7 @@ export const SampleInformationResponseSchema = SampleInformationSchema.extend({
   // Server augments with client_name via aggregation
   client_name: z.string().optional(),
   // Server augments with sample_count via aggregation
-  sample_count: z.number().optional(),
+  sample_lots_count: z.number().optional(),
 })
 export type SampleInformationResponse = z.infer<typeof SampleInformationResponseSchema>
 

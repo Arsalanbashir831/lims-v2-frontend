@@ -11,7 +11,7 @@ import { useSidebar } from "../ui/sidebar"
 import { cn } from "@/lib/utils"
 import { sampleLotService, CreateSampleLotData } from "@/services/sample-lots.service"
 import { SampleLot } from "@/lib/schemas/sample-lot"
-import { SampleInformation } from "@/services/sample-information.service"
+import { sampleInformationService, SampleInformationResponse } from "@/services/sample-information.service"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
 import { useQueryClient } from "@tanstack/react-query"
@@ -23,7 +23,7 @@ import { TrashIcon, Plus as PlusIcon } from "lucide-react"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
 
 type CompleteSampleInformation = {
-  job: SampleInformation
+  job: SampleInformationResponse
   lots: SampleLot[]
 }
 
@@ -38,19 +38,26 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { state } = useSidebar()
-  const [job, setJob] = useState(initial?.job?.job_id ?? "")
+  const [jobDocumentId, setJobDocumentId] = useState(initial?.job?.id ?? "")
+  const [selectedJobData, setSelectedJobData] = useState<SampleInformationResponse | null>(initial?.job || null)
+  
   const selectedJob = useMemo(() => {
-    return {
-      job_id: job,
+    return selectedJobData ? {
+      job_id: selectedJobData.job_id,
+      project_name: selectedJobData.project_name || "",
+      client_name: selectedJobData.client_name || "",
+    } : {
+      job_id: "",
       project_name: "",
       client_name: "",
     }
-  }, [job])
+  }, [selectedJobData])
 
   // Tabular items state
   type TableItem = {
     id: string
     indexNo: number
+    itemNo: string
     description: string
     mtcNo: string
     sampleType: string
@@ -61,28 +68,77 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
     testMethods: string[]
   }
   const [items, setItems] = useState<TableItem[]>([])
+  const [duplicateItemNumbers, setDuplicateItemNumbers] = useState<Set<string>>(new Set())
+
+  // Function to validate all item numbers for uniqueness
+  const validateItemNumbers = (items: TableItem[]) => {
+    const duplicates = new Set<string>();
+    const seen = new Set<string>();
+
+    items.forEach(item => {
+      if (seen.has(item.itemNo)) {
+        duplicates.add(item.id);
+      } else {
+        seen.add(item.itemNo);
+      }
+    });
+
+    setDuplicateItemNumbers(duplicates);
+  }
+
   const updateItemField = (id: string, key: keyof TableItem, value: any) => {
-    setItems(prev => prev.map(it => it.id === id ? { ...it, [key]: value } : it))
+    setItems(prev => {
+      const updatedItems = prev.map(it => it.id === id ? { ...it, [key]: value } : it);
+
+      // Validate all item numbers after update
+      if (key === 'itemNo') {
+        validateItemNumbers(updatedItems);
+      }
+
+      return updatedItems;
+    });
   }
   const setRowMethods = (itemId: string, methodIds: string[]) => {
     setItems(prev => prev.map(it => it.id === itemId ? { ...it, testMethods: methodIds } : it))
   }
   const addItem = () => {
-    setItems(prev => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        indexNo: prev.length + 1,
-        description: "",
-        mtcNo: "",
-        sampleType: "",
-        materialType: "",
-        heatNo: "",
-        storageLocation: "",
-        condition: "",
-        testMethods: [],
-      },
-    ])
+    setItems(prev => {
+      // Find the highest existing item number to continue sequence
+      const existingNumbers = prev
+        .map(item => {
+          const match = item.itemNo.match(/-(\d{3})$/);
+          return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter(num => num > 0);
+
+      // Find the next available number, ensuring uniqueness
+      let nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+      const baseItemNo = selectedJobData?.job_id ? `${selectedJobData.job_id}-` : `ITEM-`;
+
+      // Ensure the generated item number is unique
+      while (prev.some(item => item.itemNo === `${baseItemNo}${String(nextNumber).padStart(3, '0')}`)) {
+        nextNumber++;
+      }
+
+      const nextItemNo = String(nextNumber).padStart(3, '0')
+
+      return [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          indexNo: prev.length + 1,
+          itemNo: `${baseItemNo}${nextItemNo}`,
+          description: "",
+          mtcNo: "",
+          sampleType: "",
+          materialType: "",
+          heatNo: "",
+          storageLocation: "",
+          condition: "",
+          testMethods: [],
+        },
+      ]
+    })
   }
   const [deletedIds, setDeletedIds] = useState<string[]>([])
   const isMongoObjectId = (value: string) => /^[a-fA-F0-9]{24}$/.test(value)
@@ -100,43 +156,53 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
   // Update form when initial data changes (for edit mode)
   useEffect(() => {
     if (initial) {
-      setJob(initial.job.job_id ?? "")
+      setJobDocumentId(initial.job.id ?? "")
+      setSelectedJobData(initial.job)
     }
   }, [initial])
 
   // When editing lots for a job, load existing lots into table rows
   useEffect(() => {
     if (initial?.lots) {
-      const rows = initial.lots.map((lot: any, idx: number) => ({
-        id: lot.id,
-        indexNo: idx + 1,
-        description: lot.description ?? "",
-        mtcNo: lot.mtc_no ?? "",
-        sampleType: lot.sample_type ?? "",
-        materialType: lot.material_type ?? "",
-        heatNo: lot.heat_no ?? "",
-        storageLocation: lot.storage_location ?? "",
-        condition: lot.condition ?? "",
-        testMethods: lot.test_method_oids ?? [],
-      }))
+      const rows = initial.lots.map((lot: any, idx: number) => {
+        const itemNo = String(idx + 1).padStart(3, '0')
+        return {
+          id: lot.id,
+          indexNo: idx + 1,
+          itemNo: lot.item_no ?? (selectedJobData?.job_id ? `${selectedJobData.job_id}-${itemNo}` : `ITEM-${itemNo}`),
+          description: lot.description ?? "",
+          mtcNo: lot.mtc_no ?? "",
+          sampleType: lot.sample_type ?? "",
+          materialType: lot.material_type ?? "",
+          heatNo: lot.heat_no ?? "",
+          storageLocation: lot.storage_location ?? "",
+          condition: lot.condition ?? "",
+          testMethods: lot.test_methods?.map((tm: any) => tm.id) ?? lot.test_method_oids ?? [],
+        }
+      })
       setItems(rows)
     }
-  }, [initial?.lots])
+  }, [initial?.lots, selectedJobData])
 
+  // Validate item numbers whenever items change
+  useEffect(() => {
+    validateItemNumbers(items);
+  }, [items]);
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    
-    if (!job.trim()) {
+
+    if (!jobDocumentId.trim()) {
       toast.error("Job ID is required")
       return
     }
-    
-    // Only require top-level description when no table rows are used
-    // if (items.length === 0 && !description.trim()) {
-    //   toast.error("Description is required")
-    //   return
-    // }
+
+    // Check for duplicate item numbers
+    if (duplicateItemNumbers.size > 0) {
+      toast.error("Please fix duplicate item numbers before submitting")
+      return
+    }
+
     if (items.length === 0) {
       toast.error("At least one sample detail is required")
       return
@@ -147,30 +213,31 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
       const toCreate: CreateSampleLotData[] = items
         .filter((row) => !isMongoObjectId(row.id))
         .map((row) => ({
-        job_id: job.trim(),
-        // item_no will be generated by API per job_id
-        description: row.description.trim() || null,
-        mtc_no: row.mtcNo.trim() || null,
-        sample_type: row.sampleType.trim() || null,
-        material_type: row.materialType.trim() || null,
-        heat_no: row.heatNo.trim() || null,
-        storage_location: row.storageLocation.trim() || null,
-        condition: row.condition.trim() || null,
-        test_method_oids: row.testMethods,
-      }))
+          job_id: jobDocumentId,
+          item_no: row.itemNo.trim() || undefined,
+          description: row.description.trim() || undefined,
+          mtc_no: row.mtcNo.trim() || undefined,
+          sample_type: row.sampleType.trim() || undefined,
+          material_type: row.materialType.trim() || undefined,
+          heat_no: row.heatNo.trim() || undefined,
+          storage_location: row.storageLocation.trim() || undefined,
+          condition: row.condition.trim() || undefined,
+          test_method_oids: row.testMethods,
+        }))
 
       // If editing lots for a job, update existing rows; otherwise create
       if (isEditingLotsForJob) {
         const updates = items
           .filter((row) => isMongoObjectId(row.id))
           .map((row) => sampleLotService.update(row.id, {
-            description: row.description || null,
-            mtc_no: row.mtcNo || null,
-            sample_type: row.sampleType || null,
-            material_type: row.materialType || null,
-            heat_no: row.heatNo || null,
-            storage_location: row.storageLocation || null,
-            condition: row.condition || null,
+            item_no: row.itemNo || undefined,
+            description: row.description || undefined,
+            mtc_no: row.mtcNo || undefined,
+            sample_type: row.sampleType || undefined,
+            material_type: row.materialType || undefined,
+            heat_no: row.heatNo || undefined,
+            storage_location: row.storageLocation || undefined,
+            condition: row.condition || undefined,
             test_method_oids: row.testMethods,
           }))
         const creates = toCreate.map((payload) => sampleLotService.create(payload))
@@ -178,7 +245,7 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
 
         Promise.all([...updates, ...creates, ...deletions])
           .then(() => {
-            queryClient.invalidateQueries({ queryKey: ['sample-lots', job] })
+             queryClient.invalidateQueries({ queryKey: ['sample-lots', jobDocumentId] })
             toast.success("Sample lots updated")
             router.push(ROUTES.APP.SAMPLE_INFORMATION.ROOT)
           })
@@ -202,18 +269,6 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
       }
     }
 
-    // Fallback: legacy single create path (no table rows)
-    // const payload: CreateSampleDetailData = {
-    //   job: job.trim(),
-    //   description: description.trim(),
-    //   mtc_no: mtcNo.trim() || undefined,
-    //   sample_type: sampleType.trim() || undefined,
-    //   material_type: materialType.trim() || undefined,
-    //   heat_no: heatNo.trim() || undefined,
-    //   material_storage_location: storageLocation.trim() || undefined,
-    //   condition: condition.trim() || undefined,
-    //   test_methods: testMethods,
-    // }
 
     if (isEditing && initial) {
       // This is now handled by the sample lots API, not the legacy sample detail service
@@ -222,16 +277,6 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
       return
     }
 
-    // sampleDetailService.create(payload)
-    //   .then(() => { 
-    //     queryClient.invalidateQueries({ queryKey: ['sample-details'] })
-    //     toast.success("Sample detail created"); 
-    //     router.push(ROUTES.APP.SAMPLE_INFORMATION.ROOT) 
-    //   })
-    //   .catch((error) => {
-    //     console.error("Failed to create sample detail:", error)
-    //     toast.error("Failed to create sample detail")
-    //   })
   }
 
   return (
@@ -249,8 +294,13 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
           <div className="grid gap-2">
             <Label>Job ID</Label>
             <JobSelector
-              value={job}
-              onValueChange={setJob}
+              value={jobDocumentId}
+              onValueChange={(documentId) => {
+                setJobDocumentId(documentId)
+              }}
+              onJobSelect={(job) => {
+                setSelectedJobData(job)
+              }}
               placeholder="Select job..."
               disabled={readOnly || isEditingLotsForJob}
               selectedJob={selectedJob}
@@ -259,7 +309,7 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
         </CardContent>
       </Card>
 
-      {job ? (
+      {jobDocumentId ? (
         <Card className="border-muted/40">
           <CardHeader className="flex-row items-center justify-between">
             <div>
@@ -269,10 +319,11 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
           </CardHeader>
           <CardContent className="px-2">
             <ScrollArea className={cn("w-full max-w-screen", maxWidth)}>
-              <Table className="min-w-[1200px]">
+              <Table className="min-w-[1320px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[32px]">#</TableHead>
+                    <TableHead className="w-[120px]">Item No</TableHead>
                     <TableHead className="w-[200px]">Description</TableHead>
                     <TableHead>MTC No</TableHead>
                     <TableHead>Sample Type</TableHead>
@@ -291,6 +342,18 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
                     return (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.indexNo}</TableCell>
+                        <TableCell>
+                          <Input
+                            className={`w-[120px] ${duplicateItemNumbers.has(item.id) ? 'border-red-500 focus:border-red-500' : ''}`}
+                            placeholder="Item No"
+                            value={item.itemNo}
+                            onChange={(e) => updateItemField(item.id, "itemNo", e.target.value)}
+                            disabled={readOnly}
+                          />
+                          {duplicateItemNumbers.has(item.id) && (
+                            <p className="text-xs text-red-500 mt-1">Item number must be unique</p>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Textarea className="min-h-[40px] w-[200px]" placeholder="Item description" value={item.description} onChange={(e) => updateItemField(item.id, "description", e.target.value)} disabled={readOnly} />
                         </TableCell>
@@ -318,15 +381,6 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
                             onValueChange={(ids) => setRowMethods(item.id, ids)}
                             placeholder="Select test methods..."
                             disabled={readOnly}
-                            selectedMethods={item.testMethods.map((id: string) => {
-                              // Find the test method name from the lots data
-                              const lot = initial?.lots?.find((l: any) => l.id === item.id)
-                              if (!lot) return { id, test_name: `Method ${id}` }
-                              
-                              const methodIndex = lot.test_method_oids?.indexOf(id) ?? -1
-                              const methodName = (lot as any).test_method_names?.[methodIndex] ?? `Method ${id}`
-                              return { id, test_name: methodName }
-                            })}
                           />
                         </TableCell>
                         <TableCell>{item.testMethods.length}</TableCell>
