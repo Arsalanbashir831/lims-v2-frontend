@@ -13,29 +13,16 @@ import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { Plus, Trash2, PencilIcon } from "lucide-react"
 import Link from "next/link"
 import { ROUTES } from "@/constants/routes"
-import { clientService, Client } from "@/services/clients.service"
+import { Client } from "@/services/clients.service"
 import { toast } from "sonner"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useClients, useDeleteClient } from "@/hooks/use-clients"
 
 export default function ClientsPage() {
     const router = useRouter()
-    const queryClient = useQueryClient()
     const [currentPage, setCurrentPage] = useState(1)
     const [searchQuery, setSearchQuery] = useState("")
 
-    const { data: clientsData, isLoading: loading, isFetching } = useQuery({
-        queryKey: ['clients', currentPage, searchQuery],
-        queryFn: () => {
-            if (searchQuery.trim()) {
-                return clientService.search(searchQuery.trim(), currentPage)
-            } else {
-                return clientService.getAll(currentPage)
-            }
-        },
-        staleTime: 0, // Always refetch when page changes
-        gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache for 10 minutes (renamed from cacheTime)
-        // Remove placeholderData to ensure queries refetch when page changes
-    })
+    const { data: clientsData, isLoading: loading, isFetching } = useClients(currentPage, searchQuery)
 
     const clients = clientsData?.results || []
     const totalCount = clientsData?.count || 0
@@ -44,20 +31,18 @@ export default function ClientsPage() {
     const hasNext = clientsData?.next !== undefined ? !!clientsData?.next : totalCount > currentPage * pageSize
     const hasPrevious = clientsData?.previous !== undefined ? !!clientsData?.previous : currentPage > 1
 
-    const deleteMutation = useMutation({
-        mutationFn: (id: string) => clientService.delete(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['clients'] })
-            toast.success("Client deleted successfully")
-        },
-        onError: (error) => {
-            toast.error("Failed to delete client")
-            console.error("Delete error:", error)
-        }
-    })
+    const deleteMutation = useDeleteClient()
 
     const handleDelete = useCallback((id: string) => {
-        deleteMutation.mutate(id)
+        deleteMutation.mutate(id, {
+            onSuccess: () => {
+                toast.success("Client deleted successfully")
+            },
+            onError: (error) => {
+                toast.error("Failed to delete client")
+                console.error("Delete error:", error)
+            }
+        })
     }, [deleteMutation])
 
     const handlePageChange = (page: number) => {

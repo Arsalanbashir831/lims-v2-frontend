@@ -1,6 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AuthService } from '@/services/auth.service'
 import { TokenStorage, User } from '@/lib/auth/token-storage'
 import { UserRole } from '@/lib/schemas/user'
@@ -21,157 +22,147 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
+// Query keys for consistent caching
+export const AUTH_QUERY_KEYS = {
+  user: ['auth', 'user'] as const,
+  verify: ['auth', 'verify'] as const,
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [refreshTimer, setRefreshTimer] = useState<NodeJS.Timeout | null>(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const queryClient = useQueryClient()
 
-  const isAuthenticated = !!user && AuthService.isAuthenticated()
+  // Query for user profile with caching
+  const { data: user, isLoading: userLoading, error: userError } = useQuery({
+    queryKey: AUTH_QUERY_KEYS.user,
+    queryFn: async () => {
+      const accessToken = TokenStorage.getAccessToken()
+      if (!accessToken) return null
+      
+      const userProfile = await AuthService.verifyToken()
+      return userProfile
+    },
+    enabled: !!TokenStorage.getAccessToken(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on 401 errors
+      if (error && typeof error === 'object' && 'status' in error && error.status === 401) {
+        return false
+      }
+      return failureCount < 2
+    },
+  })
 
-  // Initialize auth state on mount
+  // Update authentication state when user data changes
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const storedUser = TokenStorage.getUser()
-        const hasValidTokens = TokenStorage.hasValidTokens()
+    if (user && !userError) {
+      setIsAuthenticated(true)
+    } else if (userError || !user) {
+      setIsAuthenticated(false)
+    }
+  }, [user, userError])
 
-        if (storedUser && hasValidTokens) {
-          // Verify token with backend and get user profile
-          const verifiedUser = await AuthService.verifyToken()
-          if (verifiedUser) {
-            setUser(verifiedUser)
-            setupTokenRefresh()
-          } else {
-            // Token invalid, try to refresh
-            const refreshed = await AuthService.refreshToken()
-            if (refreshed) {
-              // After refresh, verify the new token to get user info
-              const newVerifiedUser = await AuthService.verifyToken()
-              if (newVerifiedUser) {
-                setUser(newVerifiedUser)
-                setupTokenRefresh()
-              } else {
-                TokenStorage.clearTokens()
-              }
-            } else {
-              // Refresh failed, clear tokens
-              TokenStorage.clearTokens()
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Auth initialization error:', error)
-        TokenStorage.clearTokens()
-      } finally {
-        setIsLoading(false)
+  // Login mutation with cache invalidation
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: { email: string; password: string }) => {
+      const result = await AuthService.login(credentials)
+      return result
+    },
+    onSuccess: (result) => {
+      // Invalidate and refetch user data
+      queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.user })
+      queryClient.setQueryData(AUTH_QUERY_KEYS.user, result.user)
+    },
+    onError: (error) => {
+      console.error('Login failed:', error)
+    }
+  })
+
+  // Logout mutation with cache clearing
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await AuthService.logout()
+    },
+    onSuccess: () => {
+      // Clear all auth-related cache
+      queryClient.removeQueries({ queryKey: AUTH_QUERY_KEYS.user })
+      queryClient.removeQueries({ queryKey: AUTH_QUERY_KEYS.verify })
+      // Clear all other cached data
+      queryClient.clear()
+    }
+  })
+
+  // Register mutation
+  const registerMutation = useMutation({
+    mutationFn: async (data: { username: string; email: string; password: string; role: UserRole }) => {
+      return await AuthService.register(data)
+    },
+    onError: (error) => {
+      console.error('Registration failed:', error)
+    }
+  })
+
+  // Refresh token mutation
+  const refreshTokenMutation = useMutation({
+    mutationFn: async () => {
+      return await AuthService.refreshToken()
+    },
+    onSuccess: (success) => {
+      if (success) {
+        // Invalidate user query to refetch with new token
+        queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.user })
       }
     }
+  })
 
-    initializeAuth()
-  }, [])
-
-  // Setup automatic token refresh
-  const setupTokenRefresh = () => {
-    // Clear existing timer
-    if (refreshTimer) {
-      clearInterval(refreshTimer)
-    }
-
-    // Check if token needs refresh every 30 seconds
-    const timer = setInterval(async () => {
-      if (TokenStorage.shouldRefreshToken()) {
-        try {
-          const refreshed = await AuthService.refreshToken()
-          if (!refreshed) {
-            // Refresh failed, logout
-            await logout()
-          }
-        } catch (error) {
-          console.error('Auto refresh failed:', error)
-          await logout()
-        }
-      }
-    }, 30000)
-
-    setRefreshTimer(timer)
-  }
-
-  // Cleanup timer on unmount
+  // Auto-refresh token before expiry
   useEffect(() => {
-    return () => {
-      if (refreshTimer) {
-        clearInterval(refreshTimer)
-      }
+    const setupTokenRefresh = () => {
+      const refreshInterval = setInterval(async () => {
+        if (TokenStorage.shouldRefreshToken()) {
+          await refreshTokenMutation.mutateAsync()
+        }
+      }, 60000) // Check every minute
+
+      return () => clearInterval(refreshInterval)
     }
-  }, [refreshTimer])
+
+    const cleanup = setupTokenRefresh()
+    return cleanup
+  }, [refreshTokenMutation])
 
   const login = async (credentials: { email: string; password: string }) => {
-    try {
-      setIsLoading(true)
-      const { user: loggedInUser } = await AuthService.login(credentials)
-      setUser(loggedInUser)
-      setupTokenRefresh()
-    } catch (error) {
-      throw error
-    } finally {
-      setIsLoading(false)
-    }
+    await loginMutation.mutateAsync(credentials)
   }
 
   const logout = async () => {
-    try {
-      await AuthService.logout()
-    } catch (error) {
-      console.error('Logout error:', error)
-    } finally {
-      setUser(null)
-      if (refreshTimer) {
-        clearInterval(refreshTimer)
-        setRefreshTimer(null)
-      }
-    }
+    await logoutMutation.mutateAsync()
   }
 
   const register = async (data: { username: string; email: string; password: string; role: UserRole }) => {
-    try {
-      setIsLoading(true)
-      await AuthService.register(data)
-    } catch (error) {
-      throw error
-    } finally {
-      setIsLoading(false)
-    }
+    await registerMutation.mutateAsync(data)
   }
 
   const refreshToken = async (): Promise<boolean> => {
     try {
-      const refreshed = await AuthService.refreshToken()
-      if (refreshed) {
-        // After refresh, verify the new token to get user info
-        const newVerifiedUser = await AuthService.verifyToken()
-        if (newVerifiedUser) {
-          setUser(newVerifiedUser)
-          return true
-        } else {
-          TokenStorage.clearTokens()
-          return false
-        }
-      }
-      return false
-    } catch (error) {
-      console.error('Manual refresh failed:', error)
+      await refreshTokenMutation.mutateAsync()
+      return true
+    } catch {
       return false
     }
   }
 
+  const isLoading = userLoading || loginMutation.isPending || logoutMutation.isPending || registerMutation.isPending
+
   const value: AuthContextType = {
-    user,
+    user: user || null,
     isAuthenticated,
     isLoading,
     login,
     logout,
     register,
-    refreshToken
+    refreshToken,
   }
 
   return (

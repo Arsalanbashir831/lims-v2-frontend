@@ -10,7 +10,7 @@ export default function AppLayout({
   children: React.ReactNode
 }) {
   return (
-    <QueryProvider>
+    // <QueryProvider>
       <RequireAuth>
         <SidebarProvider>
           <AppSidebar />
@@ -22,7 +22,7 @@ export default function AppLayout({
           </main>
         </SidebarProvider>
       </RequireAuth>
-    </QueryProvider>
+    // </QueryProvider>
   )
 }
 

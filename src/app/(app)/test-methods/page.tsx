@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useCallback, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { testMethodService, TestMethod } from "@/services/test-methods.service"
+import { TestMethodResponse } from "@/services/test-methods.service"
 import { toast } from "sonner"
 import { DataTable } from "@/components/ui/data-table"
 import { truncateText, formatColumnsPreview } from "@/lib/format"
@@ -17,21 +17,14 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { ServerPagination } from "@/components/ui/server-pagination"
 import { useRouter } from "next/navigation"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useTestMethods, useDeleteTestMethod } from "@/hooks/use-test-methods"
 
 export default function TestMethodsPage() {
     const router = useRouter()
-    const queryClient = useQueryClient()
     const [currentPage, setCurrentPage] = useState(1)
     const [searchQuery, setSearchQuery] = useState("")
 
-    const { data: tmData, isFetching } = useQuery({
-        queryKey: ['test-methods', currentPage, searchQuery],
-        queryFn: () => (searchQuery.trim() ? testMethodService.search(searchQuery.trim(), currentPage) : testMethodService.getAll(currentPage)),
-        staleTime: 0, // Always refetch when page changes
-        gcTime: 10 * 60 * 1000,
-        // Remove placeholderData to ensure queries refetch when page changes
-    })
+    const { data: tmData, isFetching } = useTestMethods(currentPage, searchQuery)
 
     const items = tmData?.results ?? []
     const totalCount = tmData?.count ?? 0
@@ -39,21 +32,25 @@ export default function TestMethodsPage() {
     const hasNext = tmData?.next !== undefined ? Boolean(tmData?.next) : totalCount > currentPage * pageSize
     const hasPrevious = tmData?.previous !== undefined ? Boolean(tmData?.previous) : currentPage > 1
 
-    const deleteMutation = useMutation({
-        mutationFn: (id: string) => testMethodService.delete(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['test-methods'] })
-            toast.success("Deleted")
-        }
-    })
-    const doDelete = useCallback((id: string) => { deleteMutation.mutate(id) }, [deleteMutation])
+    const deleteMutation = useDeleteTestMethod()
+    const doDelete = useCallback((id: string) => { 
+        deleteMutation.mutate(id, {
+            onSuccess: () => {
+                toast.success("Deleted")
+            },
+            onError: (error) => {
+                toast.error("Failed to delete test method")
+                console.error("Delete error:", error)
+            }
+        })
+    }, [deleteMutation])
 
     const handleSearchChange = useCallback((value: string) => {
         setSearchQuery(value)
         setCurrentPage(1)
     }, [])
 
-    const columns: ColumnDef<TestMethod>[] = useMemo(() => [
+    const columns: ColumnDef<TestMethodResponse>[] = useMemo(() => [
         {
             id: "serial",
             header: "S.No",
@@ -122,7 +119,7 @@ export default function TestMethodsPage() {
             pageSize={20}
             tableKey="test-methods"
             onRowClick={(row) => router.push(ROUTES.APP.TEST_METHODS.EDIT(String(row.original.id)))}
-            toolbar={useCallback((table: TanstackTable<TestMethod>) => {
+            toolbar={useCallback((table: TanstackTable<TestMethodResponse>) => {
                 return (
                     <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
                         <FilterSearch
@@ -141,7 +138,7 @@ export default function TestMethodsPage() {
                     </div>
                 )
             }, [searchQuery])}
-            footer={useCallback((_table: TanstackTable<TestMethod>) => (
+            footer={useCallback((_table: TanstackTable<TestMethodResponse>) => (
                 <ServerPagination
                     currentPage={currentPage}
                     totalCount={totalCount}
