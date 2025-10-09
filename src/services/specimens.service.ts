@@ -77,7 +77,7 @@ export const specimensService = {
   },
 
   async update(id: string, data: Partial<CreateSpecimenData>): Promise<SpecimenResponse> {
-    const response = await api.patch(API_ROUTES.Lab_MANAGERS.UPDATE_SPECIMEN(id), { json: data }).json<{
+    const response = await api.put(API_ROUTES.Lab_MANAGERS.UPDATE_SPECIMEN(id), { json: data }).json<{
       status: string
       data: SpecimenResponse
     }>()
@@ -92,10 +92,4 @@ export const specimensService = {
   async delete(id: string): Promise<void> {
     await api.delete(API_ROUTES.Lab_MANAGERS.DELETE_SPECIMEN(id))
   },
-}
-
-export type {
-  CreateSpecimenData,
-  SpecimenResponse,
-  ParallelCreateSpecimensResponse,
 }

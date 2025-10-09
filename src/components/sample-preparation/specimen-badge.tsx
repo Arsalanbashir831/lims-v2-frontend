@@ -109,7 +109,7 @@ export function SpecimenBadge({ specimen, onDelete, onUpdate, disabled = false }
           title="Delete specimen ID?"
           description={`Are you sure you want to delete specimen ID "${specimen.specimen_id}"?`}
           confirmText="Delete"
-          onConfirm={() => specimen.id && onDelete(specimen.id, specimen.isFromInitialData)}
+          onConfirm={() => onDelete(specimen.id || specimen.specimen_id, specimen.isFromInitialData)}
           trigger={
             <Button
               size="sm"

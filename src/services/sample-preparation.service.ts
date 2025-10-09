@@ -103,7 +103,7 @@ export const samplePreparationService = {
   },
 
   async updateSpecimen(id: string, data: UpdateSpecimenData): Promise<SpecimenResponse> {
-    const response = await api.patch(API_ROUTES.Lab_MANAGERS.UPDATE_SPECIMEN(id), { json: data }).json()
+    const response = await api.put(API_ROUTES.Lab_MANAGERS.UPDATE_SPECIMEN(id), { json: data }).json()
     return response as SpecimenResponse
   },
 
