@@ -24,35 +24,38 @@ export const equipmentService = {
     }).json()
     const validated = EquipmentListResponseSchema.parse(response)
     return {
-      results: validated.results,
-      count: validated.count,
-      next: validated.next as string | null,
-      previous: validated.previous as string | null
+      results: validated.data,
+      count: validated.pagination.total_records,
+      next: validated.pagination.has_next ? 'next' : null,
+      previous: validated.pagination.current_page > 1 ? 'prev' : null
     }
   },
 
   async getById(id: string | number): Promise<Equipment> {
     const endpoint = API_ROUTES.Lab_MANAGERS.EQUIPMENT_BY_ID(id.toString()).replace(/^\//, "")
-    const response = await api.get(endpoint).json()
-    return EquipmentResponseSchema.parse(response)
+    const response = await api.get(endpoint).json<{ data: unknown } | unknown>()
+    const responseData = response && typeof response === 'object' && 'data' in response ? response.data : response
+    return EquipmentResponseSchema.parse(responseData)
   },
 
   async create(data: CreateEquipmentData): Promise<Equipment> {
     const endpoint = API_ROUTES.Lab_MANAGERS.ADD_EQUIPMENT.replace(/^\//, "")
     const response = await api.post(endpoint, {
       json: data
-    }).json()
+    }).json<{ data: unknown } | unknown>()
 
-    return EquipmentResponseSchema.parse(response)
+    const responseData = response && typeof response === 'object' && 'data' in response ? response.data : response
+    return EquipmentResponseSchema.parse(responseData)
   },
 
   async update(id: string | number, data: UpdateEquipmentData): Promise<Equipment> {
     const endpoint = API_ROUTES.Lab_MANAGERS.UPDATE_EQUIPMENT(id.toString()).replace(/^\//, "")
-    const response = await api.patch(endpoint, {
+    const response = await api.put(endpoint, {
       json: data
-    }).json()
+    }).json<{ data: unknown } | unknown>()
 
-    return EquipmentResponseSchema.parse(response)
+    const responseData = response && typeof response === 'object' && 'data' in response ? response.data : response
+    return EquipmentResponseSchema.parse(responseData)
   },
 
   async delete(id: string | number): Promise<void> {
@@ -68,10 +71,10 @@ export const equipmentService = {
 
     const validated = EquipmentListResponseSchema.parse(response)
     return {
-      results: validated.results,
-      count: validated.count,
-      next: validated.next as string | null,
-      previous: validated.previous as string | null
+      results: validated.data,
+      count: validated.pagination.total_records,
+      next: validated.pagination.has_next ? 'next' : null,
+      previous: validated.pagination.current_page > 1 ? 'prev' : null
     }
   }
 }
