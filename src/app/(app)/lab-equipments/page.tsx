@@ -16,6 +16,7 @@ import { ROUTES } from "@/constants/routes"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useEquipments, useDeleteEquipment } from "@/hooks/use-equipments"
 
 export default function LabEquipmentsPage() {
   const router = useRouter()
@@ -23,28 +24,24 @@ export default function LabEquipmentsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
 
-  const { data: equipmentsData, isLoading, isFetching } = useQuery({
-    queryKey: ['equipments', currentPage, searchQuery],
-    queryFn: () => (searchQuery.trim() ? equipmentService.search(searchQuery.trim(), currentPage) : equipmentService.getAll(currentPage)),
-    staleTime: 0, // Always refetch when page changes
-    gcTime: 10 * 60 * 1000,
-    // Remove placeholderData to ensure queries refetch when page changes
-  })
+  const { data: equipmentsData, isLoading, isFetching } = useEquipments(currentPage, searchQuery)
   const items = equipmentsData?.results ?? []
   const totalCount = equipmentsData?.count ?? 0
   const pageSize = 20
   const hasNext = equipmentsData?.next !== undefined ? Boolean(equipmentsData?.next) : totalCount > currentPage * pageSize
   const hasPrevious = equipmentsData?.previous !== undefined ? Boolean(equipmentsData?.previous) : currentPage > 1
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => equipmentService.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipments'] })
-      toast.success("Deleted")
-    }
-  })
+  const deleteMutation = useDeleteEquipment()
   const doDelete = useCallback((id: string) => {
-    deleteMutation.mutate(id)
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success("Deleted")
+      },
+      onError: (error) => {
+        toast.error("Failed to delete equipment")
+        console.error("Delete error:", error)
+      }
+    })
   }, [deleteMutation])
 
   const columns: ColumnDef<Equipment>[] = useMemo(() => [

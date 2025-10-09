@@ -66,7 +66,7 @@ export const equipmentService = {
   async search(query: string, page: number = 1): Promise<{ results: Equipment[]; count: number; next: string | null; previous: string | null }> {
     const endpoint = API_ROUTES.Lab_MANAGERS.SEARCH_EQUIPMENTS.replace(/^\//, "")
     const response = await api.get(endpoint, {
-      searchParams: { q: query, page: page.toString() }
+      searchParams: { equipment_name: query, page: page.toString() }
     }).json()
 
     const validated = EquipmentListResponseSchema.parse(response)

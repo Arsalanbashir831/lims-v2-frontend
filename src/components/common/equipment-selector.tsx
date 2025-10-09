@@ -6,17 +6,16 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { calibrationTestingService } from "@/services/calibration-testing.service"
+import { useEquipments } from "@/hooks/use-equipments"
 
 interface Equipment {
   id: string
   equipment_name: string
-  equipment_serial?: string
-  calibrationVendor?: string
-  calibrationDate?: string
-  calibrationDueDate?: string
-  calibrationCertification?: string
-  remarks?: string
+  equipment_serial?: string | null
+  status?: string | null
+  last_verification?: string | Date | null
+  verification_due?: string | Date | null
+  remarks?: string | null
   is_active?: boolean
 }
 
@@ -38,55 +37,11 @@ export function EquipmentSelector({
   selectedEquipment: propSelectedEquipment
 }: EquipmentSelectorProps) {
   const [open, setOpen] = useState(false)
-  const [equipments, setEquipments] = useState<Equipment[]>([])
-  const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Load equipments based on search query
-  useEffect(() => {
-    const loadEquipments = async () => {
-      try {
-        setLoading(true)
-        // If no search query, load all equipments; otherwise search
-        const response = searchQuery.trim() 
-          ? await calibrationTestingService.search(searchQuery, 1)
-          : await calibrationTestingService.getAll(1)
-        
-        console.log("Search query:", searchQuery)
-        console.log("API response:", response)
-        console.log("Equipments set:", response.results)
-        
-        // Convert API response to Equipment interface
-        const convertedEquipments: Equipment[] = response.results.map((item: any) => ({
-          id: item.id,
-          equipment_name: item.equipment_name,
-          equipment_serial: item.equipment_serial,
-          calibrationVendor: item.calibrationVendor,
-          calibrationDate: item.calibrationDate,
-          calibrationDueDate: item.calibrationDueDate,
-          calibrationCertification: item.calibrationCertification,
-          remarks: item.remarks,
-          is_active: item.is_active,
-        }))
-        
-        setEquipments(convertedEquipments)
-      } catch (error) {
-        console.error("Failed to load equipments:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    // Debounce the search to avoid too many API calls
-    const timeoutId = setTimeout(() => {
-      loadEquipments()
-    }, searchQuery.trim() ? 300 : 0) // No delay for initial load
-
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery])
-
-  // No need for client-side filtering since we're using server-side search
-  const filteredEquipments = equipments
+  // Use React Query hook for equipment data with caching
+  const { data: equipmentsData, isLoading: loading, isFetching } = useEquipments(1, searchQuery)
+  const equipments = equipmentsData?.results || []
 
   // Find selected equipment - use prop if available, otherwise find from equipments array
   const selectedEquipment = useMemo(() => {
@@ -97,6 +52,9 @@ export function EquipmentSelector({
     // Otherwise, try to find from the equipments array
     return equipments.find(equipment => equipment.id === value)
   }, [equipments, value, propSelectedEquipment])
+
+  // No need for client-side filtering since we're using server-side search
+  const filteredEquipments = equipments
 
   const handleSelect = (equipmentId: string) => {
     const equipment = equipments.find(e => e.id === equipmentId)
@@ -171,14 +129,14 @@ export function EquipmentSelector({
                             Serial: {equipment.equipment_serial}
                           </p>
                         )}
-                        {equipment.calibrationVendor && (
+                        {equipment.status && (
                           <p className="text-xs text-muted-foreground">
-                            Vendor: {equipment.calibrationVendor}
+                            Status: {equipment.status}
                           </p>
                         )}
-                        {equipment.calibrationDate && (
+                        {equipment.last_verification && (
                           <p className="text-xs text-muted-foreground">
-                            Calibrated: {new Date(equipment.calibrationDate).toLocaleDateString()}
+                            Last Verified: {new Date(equipment.last_verification).toLocaleDateString()}
                           </p>
                         )}
                       </div>
