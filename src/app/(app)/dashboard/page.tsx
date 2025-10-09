@@ -13,16 +13,7 @@ import {
   Clock, 
   AlertTriangle, 
   CheckCircle, 
-  FileText, 
   TestTube, 
-  Users, 
-  Calendar,
-  BarChart3,
-  PieChart,
-  LineChart,
-  ArrowUpRight,
-  ArrowDownRight,
-  Download,
   RefreshCw,
   Database,
   ClipboardList,
@@ -32,7 +23,7 @@ import {
   Award,
   Trash2
 } from "lucide-react"
-import { computeTrackingRows } from "@/services/tracking.service"
+import { computeTrackingRows, TrackingRow } from "@/services/tracking.service"
 
 // Enhanced mock data for charts and metrics
 const mockData = {
@@ -86,7 +77,7 @@ const mockData = {
 export default function DashboardPage() {
   const [selectedPeriod, setSelectedPeriod] = useState("month")
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [trackingRows, setTrackingRows] = useState([])
+  const [trackingRows, setTrackingRows] = useState<TrackingRow[]>([])
 
   useEffect(() => {
     const loadTrackingRows = async () => {

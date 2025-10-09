@@ -64,9 +64,9 @@ export default function ProficiencyTestingPage() {
         },
         { accessorKey: "provider1", header: ({ column }) => <DataTableColumnHeader column={column} title="PT Provider 1" /> },
         { accessorKey: "provider2", header: ({ column }) => <DataTableColumnHeader column={column} title="PT Provider 2" /> },
-        { accessorKey: "lastTestDate", header: ({ column }) => <DataTableColumnHeader column={column} title="Last Test Date" /> },
-        { accessorKey: "dueDate", header: ({ column }) => <DataTableColumnHeader column={column} title="Due Date" /> },
-        { accessorKey: "nextScheduledDate", header: ({ column }) => <DataTableColumnHeader column={column} title="Next Scheduled Date" /> },
+        { accessorKey: "last_test_date", header: ({ column }) => <DataTableColumnHeader column={column} title="Last Test Date" /> },
+        { accessorKey: "due_date", header: ({ column }) => <DataTableColumnHeader column={column} title="Due Date" /> },
+        { accessorKey: "next_scheduled_date", header: ({ column }) => <DataTableColumnHeader column={column} title="Next Scheduled Date" /> },
         { accessorKey: "status", header: ({ column }) => <DataTableColumnHeader column={column} title="Status" /> },
         { accessorKey: "remarks", header: ({ column }) => <DataTableColumnHeader column={column} title="Remarks" /> },
         {

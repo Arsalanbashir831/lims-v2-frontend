@@ -1,3 +1,4 @@
+import { API_ROUTES } from "@/constants/api-routes"
 import { api } from "@/lib/api/api"
 import {
   ProficiencyTestingResponse,
@@ -9,33 +10,55 @@ import {
 export type ProficiencyTesting = ProficiencyTestingResponse
 
 export const proficiencyTestingService = {
-  async getAll(page: number = 1): Promise<ProficiencyTestingListResponse> {
-    const response = await api.get(`proficiency-testing?page=${page}`).json()
-    return response as ProficiencyTestingListResponse
+  async getAll(page: number = 1): Promise<{ results: ProficiencyTesting[]; count: number; next: string | null; previous: string | null }> {
+    const endpoint = `${API_ROUTES.Lab_MANAGERS.ALL_PROF_TESTS}?page=${page}`
+    const response = await api.get(endpoint).json<ProficiencyTestingListResponse>()
+    
+    // Transform to expected format
+    return {
+      results: response.data ?? response.results ?? [],
+      count: response.pagination?.total_records ?? response.count ?? 0,
+      next: response.pagination?.has_next ? 'next' : null,
+      previous: (response.pagination?.current_page ?? 1) > 1 ? 'prev' : null
+    }
   },
 
   async getById(id: string): Promise<ProficiencyTestingResponse> {
-    const response = await api.get(`proficiency-testing/${id}`).json()
-    return response as ProficiencyTestingResponse
+    const endpoint = API_ROUTES.Lab_MANAGERS.PROF_TEST_BY_ID(id)
+    const response = await api.get(endpoint).json<{ data: unknown } | unknown>()
+    const responseData = response && typeof response === 'object' && 'data' in response ? response.data : response
+    return responseData as ProficiencyTestingResponse
   },
 
   async create(data: CreateProficiencyTestingData): Promise<ProficiencyTestingResponse> {
-    const response = await api.post("proficiency-testing", { json: data }).json()
-    return response as ProficiencyTestingResponse
+    const endpoint = API_ROUTES.Lab_MANAGERS.ADD_PROF_TEST
+    const response = await api.post(endpoint, { json: data }).json<{ data: unknown } | unknown>()
+    const responseData = response && typeof response === 'object' && 'data' in response ? response.data : response
+    return responseData as ProficiencyTestingResponse
   },
 
   async update(id: string, data: UpdateProficiencyTestingData): Promise<ProficiencyTestingResponse> {
-    const response = await api.patch(`proficiency-testing/${id}`, { json: data }).json()
-    return response as ProficiencyTestingResponse
+    const endpoint = API_ROUTES.Lab_MANAGERS.UPDATE_PROF_TEST(id)
+    const response = await api.put(endpoint, { json: data }).json<{ data: unknown } | unknown>()
+    const responseData = response && typeof response === 'object' && 'data' in response ? response.data : response
+    return responseData as ProficiencyTestingResponse
   },
 
   async delete(id: string): Promise<void> {
-    await api.delete(`proficiency-testing/${id}`)
+    await api.delete(API_ROUTES.Lab_MANAGERS.DELETE_PROF_TEST(id))
   },
 
-  async search(query: string, page: number = 1): Promise<ProficiencyTestingListResponse> {
-    const response = await api.get(`proficiency-testing/search?q=${query}&page=${page}`).json()
-    return response as ProficiencyTestingListResponse
+  async search(query: string, page: number = 1): Promise<{ results: ProficiencyTesting[]; count: number; next: string | null; previous: string | null }> {
+    const endpoint = `${API_ROUTES.Lab_MANAGERS.SEARCH_PROF_TESTS}?description=${query}&page=${page}`
+    const response = await api.get(endpoint).json<ProficiencyTestingListResponse>()
+    
+    // Transform to expected format
+    return {
+      results: response.data ?? response.results ?? [],
+      count: response.pagination?.total_records ?? response.count ?? 0,
+      next: response.pagination?.has_next ? 'next' : null,
+      previous: (response.pagination?.current_page ?? 1) > 1 ? 'prev' : null
+    }
   },
 }
 

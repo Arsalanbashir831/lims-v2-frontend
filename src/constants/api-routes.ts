@@ -24,12 +24,12 @@ export const API_ROUTES = {
     SEARCH_EQUIPMENTS: "equipment/search/",
 
     // Proficiency Tests
-    ADD_PROF_TEST: "proficiency-testing/",
-    UPDATE_PROF_TEST: (id: string) => `proficiency-testing/${id}/`,
-    DELETE_PROF_TEST: (id: string) => `proficiency-testing/${id}/`,
-    ALL_PROF_TESTS: "proficiency-testing/",
-    PROF_TEST_BY_ID: (id: string) => `proficiency-testing/${id}/`,
-    SEARCH_PROF_TESTS: "proficiency-testing/search/",
+    ADD_PROF_TEST: "proficiency-tests/",
+    UPDATE_PROF_TEST: (id: string) => `proficiency-tests/${id}/`,
+    DELETE_PROF_TEST: (id: string) => `proficiency-tests/${id}/`,
+    ALL_PROF_TESTS: "proficiency-tests/",
+    PROF_TEST_BY_ID: (id: string) => `proficiency-tests/${id}/`,
+    SEARCH_PROF_TESTS: "proficiency-tests/search/",
     
     // Calibration Tests
     ADD_CALIBRATION_TEST: "calibration-tests/",
