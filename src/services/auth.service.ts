@@ -153,20 +153,23 @@ export class AuthService {
 
       const response = await api.post(API_ROUTES.AUTH.REFRESH_TOKEN, {
         json: { refresh_token: refreshToken }
-      }).json<LoginResponse>()
+      }).json<{
+        status: string
+        message: string
+        data: {
+          access_token: string
+          refresh_token: string
+          token_type: string
+          expires_in: number
+          refresh_expires_in: number
+        }
+      }>()
       
       if (response.status === "success" && response.data) {
-        const { access_token, refresh_token, token_type, expires_in, refresh_expires_in, user } = response.data
+        const { access_token, refresh_token, token_type, expires_in, refresh_expires_in } = response.data
         
-        const tokens = {
-          accessToken: access_token,
-          refreshToken: refresh_token,
-          tokenType: token_type,
-          expiresIn: expires_in,
-          refreshExpiresIn: refresh_expires_in
-        }
-        
-        TokenStorage.setTokens(tokens, user)
+        // Store the new tokens
+        TokenStorage.setTokensOnly(access_token, refresh_token)
         return true
       }
       return false

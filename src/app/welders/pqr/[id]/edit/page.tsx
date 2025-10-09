@@ -2,13 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PQRForm, PQRFormData } from "@/components/pqr/form/pqr-form"
 import { toast } from "sonner"
 import { getPqr, updatePqr } from "@/services/pqr.service"
 import { ROUTES } from "@/constants/routes"
-import { BackButton } from "@/components/ui/back-button"
 import { FormHeader } from "@/components/common/form-header"
 
 export default function EditPQRPage() {

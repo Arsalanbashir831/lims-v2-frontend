@@ -9,7 +9,7 @@ import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { ServerPagination } from "@/components/ui/server-pagination"
 import { FilterSearch } from "@/components/ui/filter-search"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
-import { proficiencyTestService, ProficiencyTest } from "@/services/proficiency-testing.service"
+import { proficiencyTestingService, ProficiencyTesting } from "@/services/proficiency-testing.service"
 import { toast } from "sonner"
 import { PencilIcon, TrashIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
@@ -25,7 +25,7 @@ export default function ProficiencyTestingPage() {
 
     const { data: ptData, isLoading, isFetching } = useQuery({
         queryKey: ['proficiency-tests', currentPage, searchQuery],
-        queryFn: () => (searchQuery.trim() ? proficiencyTestService.search(searchQuery.trim(), currentPage) : proficiencyTestService.getAll(currentPage)),
+        queryFn: () => (searchQuery.trim() ? proficiencyTestingService.search(searchQuery.trim(), currentPage) : proficiencyTestingService.getAll(currentPage)),
         staleTime: 0, // Always refetch when page changes
         gcTime: 10 * 60 * 1000,
         // Remove placeholderData to ensure queries refetch when page changes
@@ -38,7 +38,7 @@ export default function ProficiencyTestingPage() {
     const hasPrevious = ptData?.previous !== undefined ? Boolean(ptData?.previous) : currentPage > 1
 
     const deleteMutation = useMutation({
-        mutationFn: (id: string) => proficiencyTestService.delete(id),
+        mutationFn: (id: string) => proficiencyTestingService.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['proficiency-tests'] })
             toast.success("Deleted")
@@ -46,7 +46,7 @@ export default function ProficiencyTestingPage() {
     })
     const doDelete = useCallback((id: string) => { deleteMutation.mutate(id) }, [deleteMutation])
 
-    const columns: ColumnDef<ProficiencyTest>[] = useMemo(() => [
+    const columns: ColumnDef<ProficiencyTesting>[] = useMemo(() => [
         {
             id: "serial",
             header: "S.No",
@@ -97,7 +97,7 @@ export default function ProficiencyTestingPage() {
             pageSize={20}
             tableKey="proficiency-testing"
             onRowClick={(row) => router.push(ROUTES.APP.PROFICIENCY_TESTING.EDIT(String(row.original.id)))}
-            toolbar={useCallback((table: TanstackTable<ProficiencyTest>) => {
+            toolbar={useCallback((table: TanstackTable<ProficiencyTesting>) => {
                 const handleSearchChange = useCallback((value: string) => {
                     setSearchQuery(value)
                     setCurrentPage(1)
@@ -122,7 +122,7 @@ export default function ProficiencyTestingPage() {
                     </div>
                 )
             }, [searchQuery])}
-            footer={useCallback((table: TanstackTable<ProficiencyTest>) => (
+            footer={useCallback((table: TanstackTable<ProficiencyTesting>) => (
                 <ServerPagination
                     currentPage={currentPage}
                     totalCount={totalCount}

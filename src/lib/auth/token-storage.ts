@@ -51,6 +51,17 @@ export class TokenStorage {
     }
   }
 
+  static setTokensOnly(accessToken: string, refreshToken: string): void {
+    // Store tokens in cookies
+    setAuthCookies(accessToken, refreshToken)
+    
+    // Update expiry time in localStorage for auto-refresh logic
+    if (typeof window !== 'undefined') {
+      const expiryTime = Date.now() + (15 * 60 * 1000) // 15 minutes default
+      localStorage.setItem(this.TOKEN_EXPIRY_KEY, expiryTime.toString())
+    }
+  }
+
   static getAccessToken(): string | null {
     return getCookie(this.ACCESS_TOKEN_KEY)
   }

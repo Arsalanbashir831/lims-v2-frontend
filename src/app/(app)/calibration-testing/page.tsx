@@ -9,7 +9,7 @@ import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { ServerPagination } from "@/components/ui/server-pagination"
 import { FilterSearch } from "@/components/ui/filter-search"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
-import { calibrationTestService, CalibrationTest } from "@/services/calibration-testing.service"
+import { calibrationTestingService, CalibrationTesting } from "@/services/calibration-testing.service"
 import { toast } from "sonner"
 import { PencilIcon, TrashIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
@@ -17,7 +17,7 @@ import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 
-export default function CalibrationTestingPage() {
+export default function CalibrationTestingingPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [currentPage, setCurrentPage] = useState(1)
@@ -25,7 +25,7 @@ export default function CalibrationTestingPage() {
 
   const { data: ctData, isLoading, isFetching } = useQuery({
     queryKey: ['calibration-tests', currentPage, searchQuery],
-    queryFn: () => (searchQuery.trim() ? calibrationTestService.search(searchQuery.trim(), currentPage) : calibrationTestService.getAll(currentPage)),
+    queryFn: () => (searchQuery.trim() ? calibrationTestingService.search(searchQuery.trim(), currentPage) : calibrationTestingService.getAll(currentPage)),
     staleTime: 0, // Always refetch when page changes
     gcTime: 10 * 60 * 1000,
     // Remove placeholderData to ensure queries refetch when page changes
@@ -38,7 +38,7 @@ export default function CalibrationTestingPage() {
   const hasPrevious = ctData?.previous !== undefined ? Boolean(ctData?.previous) : currentPage > 1
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => calibrationTestService.delete(id),
+    mutationFn: (id: string) => calibrationTestingService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calibration-tests'] })
       toast.success("Deleted")
@@ -46,7 +46,7 @@ export default function CalibrationTestingPage() {
   })
   const doDelete = useCallback((id: string) => { deleteMutation.mutate(id) }, [deleteMutation])
 
-  const columns: ColumnDef<CalibrationTest>[] = useMemo(() => [
+  const columns: ColumnDef<CalibrationTesting>[] = useMemo(() => [
     { id: "serial", header: "S.No", cell: ({ row }) => row.index + 1, meta: { className: "w-fit min-w-fit px-4" }, enableSorting: false, enableHiding: false },
     { accessorKey: "equipmentName", header: ({ column }) => <DataTableColumnHeader column={column} title="Equipment/Instrument Name" /> },
     { accessorKey: "equipmentSerial", header: ({ column }) => <DataTableColumnHeader column={column} title="Equipment Serial #" /> },
@@ -80,7 +80,7 @@ export default function CalibrationTestingPage() {
       pageSize={20}
       tableKey="calibration-testing"
       onRowClick={(row) => router.push(ROUTES.APP.CALIBRATION_TESTING.EDIT(String(row.original.id)))}
-      toolbar={useCallback((table: TanstackTable<CalibrationTest>) => {
+      toolbar={useCallback((table: TanstackTable<CalibrationTesting>) => {
         const handleSearchChange = useCallback((value: string) => {
           setSearchQuery(value)
           setCurrentPage(1)
@@ -104,7 +104,7 @@ export default function CalibrationTestingPage() {
           </div>
         )
       }, [searchQuery])}
-      footer={useCallback((table: TanstackTable<CalibrationTest>) => (
+      footer={useCallback((table: TanstackTable<CalibrationTesting>) => (
         <ServerPagination
           currentPage={currentPage}
           totalCount={totalCount}
