@@ -3,27 +3,21 @@
 import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { samplePreparationService } from "@/services/sample-preparation.service"
-import { testMethodService } from "@/services/test-methods.service"
-import { SamplePreparationResponse } from "@/lib/schemas/sample-preparation"
-import { formatDateSafe } from "@/utils/hydration-fix"
 import {
   Sheet,
   SheetContent,
   SheetDescription,
-  SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Button } from "@/components/ui/button"
-import { 
-  Calendar, 
-  User, 
-  Building, 
-  FileText, 
-  Package, 
+import {
+  Calendar,
+  User,
+  Building,
+  FileText,
+  Package,
   Hash,
   Clock,
   AlertCircle,
@@ -39,8 +33,6 @@ interface SamplePrepDrawerProps {
 
 export function SamplePrepDrawer({ isOpen, onClose, samplePrepId }: SamplePrepDrawerProps) {
   const [mounted, setMounted] = useState(false)
-  const [testMethodNames, setTestMethodNames] = useState<Record<string, string>>({})
-  const [loadingTestMethodNames, setLoadingTestMethodNames] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -54,43 +46,6 @@ export function SamplePrepDrawer({ isOpen, onClose, samplePrepId }: SamplePrepDr
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
-  // Fetch test method names when sample preparation data is loaded
-  useEffect(() => {
-    if (samplePrep?.request_items) {
-      const fetchTestMethodNames = async () => {
-        const testMethodIds = new Set<string>()
-        
-        // Collect all unique test method IDs from request items
-        samplePrep.request_items.forEach((item: any) => {
-          if (item.test_method_oid) {
-            testMethodIds.add(item.test_method_oid)
-          }
-        })
-        
-        if (testMethodIds.size > 0) {
-          setLoadingTestMethodNames(true)
-          const names: Record<string, string> = {}
-          
-          try {
-            for (const id of testMethodIds) {
-              try {
-                const testMethod = await testMethodService.getById(id)
-                names[id] = testMethod.test_name || id
-              } catch (error) {
-                console.warn(`Failed to fetch test method ${id}:`, error)
-                names[id] = id // Fallback to ID if fetch fails
-              }
-            }
-            setTestMethodNames(names)
-          } finally {
-            setLoadingTestMethodNames(false)
-          }
-        }
-      }
-      
-      fetchTestMethodNames()
-    }
-  }, [samplePrep])
 
   if (!mounted) return null
 
@@ -131,7 +86,7 @@ export function SamplePrepDrawer({ isOpen, onClose, samplePrepId }: SamplePrepDr
         <SheetDescription className="sr-only">
           Complete information about the selected sample preparation request
         </SheetDescription>
-        
+
         {/* Header Section */}
         <div className="sticky top-0 z-10 bg-background border-b px-6 py-4">
           <div className="flex items-center justify-between">
@@ -141,8 +96,8 @@ export function SamplePrepDrawer({ isOpen, onClose, samplePrepId }: SamplePrepDr
             </div>
             <div className="flex items-center gap-2">
               {samplePrep && (
-                <Badge variant={samplePrep.is_active ? "default" : "secondary"} className="text-xs">
-                  {samplePrep.is_active ? "Active" : "Inactive"}
+                <Badge variant="default" className="text-xs">
+                  Active
                 </Badge>
               )}
             </div>
@@ -182,11 +137,11 @@ export function SamplePrepDrawer({ isOpen, onClose, samplePrepId }: SamplePrepDr
                     <div className="space-y-2">
                       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</label>
                       <div>
-                        {getStatusBadge(samplePrep.is_active ? 'active' : 'inactive')}
+                        {getStatusBadge('active')}
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Created Date</label>
@@ -206,31 +161,26 @@ export function SamplePrepDrawer({ isOpen, onClose, samplePrepId }: SamplePrepDr
                 </div>
               </div>
 
-              {/* Job & Client Information */}
+              {/* Job Information */}
               <div className="border border-border rounded-lg bg-card">
                 <div className="px-6 py-4 border-b border-border bg-muted/30">
                   <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
                     <Building className="w-4 h-4 text-muted-foreground" />
-                    Job & Client Information
+                    Job Information
                   </h3>
                 </div>
                 <div className="p-6 space-y-6">
                   <div className="grid grid-cols-1 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Job ID</label>
-                      <p className="text-sm font-mono bg-muted/50 px-3 py-2 rounded-md border">{samplePrep.job_id || "N/A"}</p>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Client Name</label>
-                      <p className="text-sm flex items-center gap-2 bg-muted/50 px-3 py-2 rounded-md border">
-                        <User className="w-3 h-3 text-muted-foreground" />
-                        {samplePrep.client_name || "N/A"}
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Project Name</label>
-                      <p className="text-sm bg-muted/50 px-3 py-2 rounded-md border">{samplePrep.project_name || "N/A"}</p>
-                    </div>
+                    {samplePrep.sample_lots && samplePrep.sample_lots.length > 0 && (
+                      <>
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Job ID</label>
+                          <p className="text-sm font-mono bg-muted/50 px-3 py-2 rounded-md border">
+                            {samplePrep.sample_lots[0]?.job_id || "N/A"}
+                          </p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -245,110 +195,122 @@ export function SamplePrepDrawer({ isOpen, onClose, samplePrepId }: SamplePrepDr
                 </div>
                 <div className="p-6 space-y-6">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Number of Specimens</label>
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Specimens</label>
                     <p className="text-sm bg-muted/50 px-3 py-2 rounded-md border">
-                      {samplePrep.specimen_ids?.length || 0} specimens
+                      {samplePrep.sample_lots?.reduce((total, lot) => total + (lot.specimens_count || 0), 0) || 0} specimens
                     </p>
                   </div>
-                  
-                  {samplePrep.specimen_ids && samplePrep.specimen_ids.length > 0 && (
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Specimen IDs</label>
-                      <div className="flex flex-wrap gap-2">
-                        {samplePrep.specimen_ids.map((specimenId, index) => (
-                          <Badge key={index} variant="outline" className="font-mono text-xs">
-                            {specimenId}
-                          </Badge>
-                        ))}
-                      </div>
+
+                  {samplePrep.sample_lots && samplePrep.sample_lots.length > 0 && (
+                    <div className="space-y-4">
+                      {samplePrep.sample_lots.map((lot: any, lotIndex: number) => (
+                        <div key={lotIndex} className="border border-border rounded-lg p-4 bg-muted/20">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-medium text-sm">Sample Lot {lotIndex + 1}</h4>
+                            <Badge variant="outline" className="text-xs">
+                              {lot.specimens_count || 0} specimens
+                            </Badge>
+                          </div>
+
+                          {lot.specimens && lot.specimens.length > 0 && (
+                            <div className="space-y-2">
+                              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Specimen IDs</label>
+                              <div className="flex flex-wrap gap-2">
+                                {lot.specimens.map((specimen: any, specIndex: number) => (
+                                  <Badge key={specIndex} variant="outline" className="font-mono text-xs">
+                                    {specimen.specimen_id}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Request Items */}
-              {samplePrep.request_items && samplePrep.request_items.length > 0 && (
+              {/* Sample Lots */}
+              {samplePrep.sample_lots && samplePrep.sample_lots.length > 0 && (
                 <div className="border border-border rounded-lg bg-card">
                   <div className="px-6 py-4 border-b border-border bg-muted/30">
                     <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
                       <Package className="w-4 h-4 text-muted-foreground" />
-                      Request Items ({samplePrep.request_items.length})
+                      Sample Lots ({samplePrep.sample_lots.length})
                     </h3>
                   </div>
                   <div className="p-6 space-y-6">
-                    {samplePrep.request_items.map((item, index) => {
+                    {samplePrep.sample_lots.map((lot: any, index: number) => {
                       const itemNumber = String(index + 1).padStart(3, '0')
-                      const itemId = samplePrep.job_id ? `${samplePrep.job_id}-${itemNumber}` : `ITEM-${itemNumber}`
-                      
+                      const itemId = lot.job_id ? `${lot.job_id}-${itemNumber}` : `ITEM-${itemNumber}`
+
                       return (
                         <div key={index} className="border border-border rounded-lg p-4 space-y-4 bg-muted/20">
                           <div className="flex items-center justify-between">
-                            <h4 className="font-medium font-mono">{itemId}</h4>
-                            {item.planned_test_date && (
+                            <h4 className="font-medium font-mono">{lot.item_no || itemId}</h4>
+                            {lot.planned_test_date && (
                               <Badge variant="outline" className="text-xs">
                                 <Calendar className="w-3 h-3 mr-1" />
-                                {formatDate(item.planned_test_date)}
+                                {formatDate(lot.planned_test_date)}
                               </Badge>
                             )}
                           </div>
-                        
-                        {item.item_description && (
-                          <div>
-                            <label className="text-sm font-medium text-muted-foreground">Description</label>
-                            <p className="text-sm mt-1">{item.item_description}</p>
-                          </div>
-                        )}
-                        
-                        {item.test_method_oid && (
-                          <div>
-                            <label className="text-sm font-medium text-muted-foreground">Test Method</label>
-                            <p className="text-sm mt-1 font-medium">
-                              {loadingTestMethodNames 
-                                ? "Loading..." 
-                                : (testMethodNames[item.test_method_oid] || item.test_method_oid)
-                              }
-                            </p>
-                          </div>
-                        )}
-                        
-                        {item.dimension_spec && (
-                          <div>
-                            <label className="text-sm font-medium text-muted-foreground">Dimension Specification</label>
-                            <p className="text-sm mt-1">{item.dimension_spec}</p>
-                          </div>
-                        )}
-                        
-                        {item.request_by && (
-                          <div>
-                            <label className="text-sm font-medium text-muted-foreground">Requested By</label>
-                            <p className="text-sm mt-1 flex items-center gap-1">
-                              <User className="w-3 h-3" />
-                              {item.request_by}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {item.remarks && (
-                          <div>
-                            <label className="text-sm font-medium text-muted-foreground">Remarks</label>
-                            <p className="text-sm mt-1">{item.remarks}</p>
-                          </div>
-                        )}
-                        
-                        {item.specimen_ids && item.specimen_ids.length > 0 && (
-                          <div>
-                            <label className="text-sm font-medium text-muted-foreground">Specimen IDs</label>
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {item.specimen_ids.map((specimenId, idIndex) => (
-                                <Badge key={idIndex} variant="secondary" className="text-xs font-mono">
-                                  {specimenId}
-                                </Badge>
-                              ))}
+
+                          {lot.item_description && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Description</label>
+                              <p className="text-sm mt-1">{lot.item_description}</p>
                             </div>
-                          </div>
-                        )}
-                        
-                        {index < samplePrep.request_items.length - 1 && <Separator />}
+                          )}
+
+                           {lot.test_method?.test_method_oid && (
+                             <div>
+                               <label className="text-sm font-medium text-muted-foreground">Test Method</label>
+                               <p className="text-sm mt-1 font-medium">
+                                 {lot.test_method.test_name || lot.test_method.test_method_oid}
+                               </p>
+                             </div>
+                           )}
+
+                          {lot.dimension_spec && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Dimension Specification</label>
+                              <p className="text-sm mt-1">{lot.dimension_spec}</p>
+                            </div>
+                          )}
+
+                          {lot.request_by && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Requested By</label>
+                              <p className="text-sm mt-1 flex items-center gap-1">
+                                <User className="w-3 h-3" />
+                                {lot.request_by}
+                              </p>
+                            </div>
+                          )}
+
+                          {lot.remarks && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Remarks</label>
+                              <p className="text-sm mt-1">{lot.remarks}</p>
+                            </div>
+                          )}
+
+                          {lot.specimens && lot.specimens.length > 0 && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Specimen IDs</label>
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                {lot.specimens.map((specimen: any, specIndex: number) => (
+                                  <Badge key={specIndex} variant="secondary" className="text-xs font-mono">
+                                    {specimen.specimen_id}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {index < samplePrep.sample_lots.length - 1 && <Separator />}
                         </div>
                       )
                     })}

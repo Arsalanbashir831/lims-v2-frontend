@@ -195,18 +195,13 @@ export const sampleInformationService = {
     await api.delete(endpoint)
   },
 
-  async search(query: string, page: number = 1): Promise<{ results: SampleInformation[]; count: number; next: string | null; previous: string | null }> {
+  async search(query: string, page: number = 1): Promise<{ results: any[]; count: number; next: string | null; previous: string | null }> {
     const endpoint = API_ROUTES.Lab_MANAGERS.SEARCH_SAMPLE_INFORMATION
     const response = await api.get(endpoint, { searchParams: { q: query, page: page.toString() } }).json<{
       status: string
       data: any[]
-      pagination: {
-        current_page: number
-        limit: number
-        total_records: number
-        total_pages: number
-        has_next: boolean
-      }
+      total: number
+      filters_applied?: any
     }>()
     
     // Extract the data field from Django response
@@ -216,9 +211,9 @@ export const sampleInformationService = {
           ...mapToUi(item),
           id: item.id || item._id, // Ensure id field is included
         })),
-        count: response.pagination.total_records,
-        next: response.pagination.has_next ? 'next' : null,
-        previous: response.pagination.current_page > 1 ? 'prev' : null,
+        count: response.total,
+        next: null, // Simplified for now
+        previous: null, // Simplified for now
       }
     }
     

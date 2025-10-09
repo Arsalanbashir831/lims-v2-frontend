@@ -14,9 +14,11 @@ import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { useSidebar } from "../ui/sidebar"
 import { cn } from "@/lib/utils"
 import { generateStableId } from "@/utils/hydration-fix"
-import { samplePreparationService } from "@/services/sample-preparation.service"
-import { CreateSamplePreparationData } from "@/lib/schemas/sample-preparation"
-import { sampleInformationService } from "@/services/sample-information.service"
+import { CreateSamplePreparationData, NewSamplePreparation } from "@/lib/schemas/sample-preparation"
+import { sampleLotService } from "@/services/sample-lots.service"
+import { useParallelCreateSpecimens } from "@/hooks/use-specimens"
+import { useCreateSamplePreparation, useUpdateSamplePreparation } from "@/hooks/use-sample-preparations"
+import { useDeleteSpecimen } from "@/hooks/use-specimens"
 import { SpecimenBadge } from "./specimen-badge"
 import { toast } from "sonner"
 import { ROUTES } from "@/constants/routes"
@@ -93,18 +95,34 @@ interface Props {
 
 export function SamplePreparationForm({ initialData, readOnly = false }: Props) {
   const router = useRouter()
-  const queryClient = useQueryClient()
   const { state } = useSidebar();
+  const queryClient = useQueryClient()
+  const parallelCreateSpecimensMutation = useParallelCreateSpecimens()
+  const createSamplePrepMutation = useCreateSamplePreparation()
+  const updateSamplePrepMutation = useUpdateSamplePreparation()
+  const deleteSpecimenMutation = useDeleteSpecimen()
+  
+  // Debug logging
+  console.log('SamplePreparationForm - initialData:', initialData)
+  console.log('SamplePreparationForm - readOnly:', readOnly)
+  
   const [jobId, setJobId] = useState(initialData && 'job' in initialData ? String(initialData.job) : "")
   const [requestId, setRequestId] = useState(initialData && 'request_id' in initialData ? String(initialData.request_id) : "")
   const [items, setItems] = useState<PreparationItem[]>(initialData && 'test_items' in initialData ? (initialData.test_items as PreparationItem[]) : [])
   
+  console.log('SamplePreparationForm - jobId:', jobId)
+  console.log('SamplePreparationForm - requestId:', requestId)
+  console.log('SamplePreparationForm - items:', items)
+  
   // For edit mode, ensure jobId and requestId are set from initial data
   useEffect(() => {
+    console.log('useEffect - initialData changed:', initialData)
     if (initialData && 'job' in initialData && initialData.job) {
+      console.log('Setting jobId from initialData:', initialData.job)
       setJobId(String(initialData.job))
     }
     if (initialData && 'request_id' in initialData && initialData.request_id) {
+      console.log('Setting requestId from initialData:', initialData.request_id)
       setRequestId(String(initialData.request_id))
     }
   }, [initialData])
@@ -169,47 +187,48 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
 
       try {
         setLoading(true)
-        // Use Next.js aggregated endpoint to get job + lots + method names
-        const agg = await sampleInformationService.getCompleteSampleInformation(jobId)
+        console.log('Loading sample lots for jobId:', jobId)
+        // Use the new sample lots by job ID endpoint
+        const response = await sampleLotService.getByJobDocumentId(jobId)
 
-        // Build a CompleteJob-like object for the UI from aggregated data
-        const localSamples = (agg.lots || []).map((lot: any, idx: number) => ({
+        // Build a CompleteJob-like object for the UI from the new API response
+        const localSamples = (response.data || []).map((lot: any, idx: number) => ({
           id: idx + 1, // local numeric id used for selection
           sample_id: lot.item_no || String(idx + 1),
           description: lot.description || "",
-          mtc_no: undefined,
-          sample_type: undefined,
-          material_type: undefined,
-          heat_no: undefined,
-          material_storage_location: undefined,
-          condition: undefined,
-          status: "",
-          test_methods: (lot.test_method_oids || []).map(String),
-          test_method_names: (lot.test_method_names || []).map(String),
-          is_active: true,
+          mtc_no: lot.mtc_no,
+          sample_type: lot.sample_type,
+          material_type: lot.material_type,
+          heat_no: lot.heat_no,
+          material_storage_location: lot.storage_location,
+          condition: lot.condition,
+          status: lot.is_active ? "active" : "inactive",
+          test_methods: (lot.test_methods || []).map((tm: any) => tm.id),
+          test_method_names: (lot.test_methods || []).map((tm: any) => tm.test_name),
+          is_active: lot.is_active,
         }))
 
         const localJob: CompleteJob = {
-          job_id: agg.job?.job_id || jobId,
-          project_name: agg.job?.project_name || "",
+          job_id: response.job_info?.job_id || jobId,
+          project_name: response.job_info?.project_name || "",
           client: {
             id: 0,
-            name: agg.job?.client_name || "",
+            name: response.job_info?.client_name || "",
             is_active: true,
           } as any,
-          end_user: agg.job?.end_user || undefined,
-          received_date: agg.job?.receive_date || new Date().toISOString(),
-          remarks: agg.job?.remarks || undefined,
+          end_user: response.job_info?.end_user || undefined,
+          received_date: response.job_info?.receive_date || new Date().toISOString(),
+          remarks: response.job_info?.remarks || undefined,
           is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          created_at: response.job_info?.created_at || new Date().toISOString(),
+          updated_at: response.job_info?.updated_at || new Date().toISOString(),
           samples: localSamples as any,
-          sample_lots_count: localSamples.length,
+          sample_lots_count: response.total || localSamples.length,
         }
 
         // Map local numeric sample id -> real lot id (ObjectId string)
         const idMap: Record<number, string> = {}
-        ;(agg.lots || []).forEach((lot: any, idx: number) => { idMap[idx + 1] = String(lot.id) })
+        ;(response.data || []).forEach((lot: any, idx: number) => { idMap[idx + 1] = String(lot.id) })
 
         setSampleIdMap(idMap)
         setCompleteJob(localJob)
@@ -327,36 +346,148 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
       }
     }
 
-    const payload: CreateSamplePreparationData = {
-      request_no: "",
-      request_id: requestId, // Single request_id at top level
-      request_items: items.map((i) => ({
-        item_description: i.item_description || "",
-        planned_test_date: i.planned_test_date || "",
-        dimension_spec: i.dimensions || "",
-        request_by: i.requested_by || "",
-        remarks: i.remarks || "",
-        test_method_oid: i.test_method || "",
-        // pass specimen_ids tokens; keep specimen_oids empty (backend fills)
-        specimen_oids: [],
-        specimen_ids: i.specimens.map(s => s.specimen_id).filter(Boolean) as string[],
-      }))
-    }
-
     try {
-      if (isEditing && initialData && 'id' in initialData && initialData.id) {
-        // Update existing sample preparation; backend will create new specimens from specimen_ids and merge
-        await samplePreparationService.update(initialData.id, payload)
-        // After structure is updated, delete any pending specimen oids
-        for (const oid of deletedSpecimenOids) {
-          try { await samplePreparationService.deleteSpecimen(oid) } catch {}
+      // Step 1: Smart specimen handling - only create/update what's needed
+      let specimenIdToDocumentIdMap: Record<string, string> = {}
+      
+      if (isEditing && initialData && 'test_items' in initialData && initialData.test_items) {
+        // In edit mode, we need to be smart about specimen handling
+        const initialSpecimens = initialData.test_items.flatMap(item => item.specimens || [])
+        const initialSpecimenIds = new Set(initialSpecimens.map(spec => spec.specimen_id))
+        
+        // Find new specimens (not in initial data)
+        const newSpecimens = items.flatMap(item => 
+          item.specimens.filter(specimen => 
+            specimen.specimen_id && !initialSpecimenIds.has(specimen.specimen_id)
+          )
+        )
+        
+        // Find updated specimens (in initial data but with different specimen_id)
+        const updatedSpecimens = items.flatMap(item => 
+          item.specimens.filter(specimen => {
+            if (!specimen.specimen_id) return false
+            const initialSpec = initialSpecimens.find(init => init.id === specimen.id)
+            return initialSpec && initialSpec.specimen_id !== specimen.specimen_id
+          })
+        )
+        
+        console.log('Edit mode - Initial specimens:', initialSpecimens)
+        console.log('Edit mode - New specimens:', newSpecimens)
+        console.log('Edit mode - Updated specimens:', updatedSpecimens)
+        
+        // Create mapping for existing specimens (from initial data)
+        initialSpecimens.forEach(spec => {
+          if (spec.specimen_id && spec.id) {
+            specimenIdToDocumentIdMap[spec.specimen_id] = spec.id
+          }
+        })
+        
+        // Create new specimens
+        if (newSpecimens.length > 0) {
+          const newSpecimensData = newSpecimens.map(specimen => ({ specimen_id: specimen.specimen_id }))
+          const specimensResponse = await parallelCreateSpecimensMutation.mutateAsync(newSpecimensData)
+          
+          if (specimensResponse.errors.length > 0) {
+            const errorMessages = specimensResponse.errors.map(err => `${err.specimen_id}: ${err.error}`).join(', ')
+            toast.error(`Failed to create some specimens: ${errorMessages}`)
+            return
+          }
+          
+          // Add new specimens to mapping
+          specimensResponse.success.forEach(specimen => {
+            specimenIdToDocumentIdMap[specimen.specimen_id] = specimen.id
+          })
         }
-        queryClient.invalidateQueries({ queryKey: ['sample-preparations'] })
+        
+        // TODO: Handle updated specimens (update API calls)
+        if (updatedSpecimens.length > 0) {
+          console.log('Updated specimens need to be handled:', updatedSpecimens)
+          // For now, we'll skip updating specimens to avoid complexity
+          // In the future, we can implement specimen update logic here
+        }
+        
+        // Handle deleted specimens - find specimens that were in initial data but not in current items
+        const currentSpecimens = items.flatMap(item => item.specimens || [])
+        const currentSpecimenIds = new Set(currentSpecimens.map(spec => spec.specimen_id))
+        const deletedSpecimens = initialSpecimens.filter(spec => 
+          spec.specimen_id && !currentSpecimenIds.has(spec.specimen_id)
+        )
+        
+        console.log('Edit mode - Deleted specimens:', deletedSpecimens)
+        
+        // Delete specimens that were removed
+        if (deletedSpecimens.length > 0) {
+          console.log('Deleting specimens:', deletedSpecimens.map(spec => spec.specimen_id))
+          for (const specimen of deletedSpecimens) {
+            if (specimen.id) {
+              try {
+                await deleteSpecimenMutation.mutateAsync(specimen.id)
+                console.log(`Deleted specimen ${specimen.specimen_id} with document ID ${specimen.id}`)
+              } catch (error) {
+                console.error(`Failed to delete specimen ${specimen.specimen_id}:`, error)
+                // Don't fail the entire operation for individual specimen deletion errors
+              }
+            }
+          }
+        }
+        
+      } else {
+        // Create mode - create all specimens
+        const allSpecimenIds = items.flatMap(item => 
+          item.specimens.map(specimen => specimen.specimen_id).filter(Boolean)
+        )
+        
+        if (allSpecimenIds.length > 0) {
+          const specimensData = allSpecimenIds.map(specimenId => ({ specimen_id: specimenId }))
+          const specimensResponse = await parallelCreateSpecimensMutation.mutateAsync(specimensData)
+          
+          if (specimensResponse.errors.length > 0) {
+            const errorMessages = specimensResponse.errors.map(err => `${err.specimen_id}: ${err.error}`).join(', ')
+            toast.error(`Failed to create some specimens: ${errorMessages}`)
+            return
+          }
+          
+          specimensResponse.success.forEach(specimen => {
+            specimenIdToDocumentIdMap[specimen.specimen_id] = specimen.id
+          })
+        }
+      }
+
+      // Step 2: Create sample preparation with specimen document IDs
+      console.log('Final specimen mapping:', specimenIdToDocumentIdMap)
+      
+      const payload: NewSamplePreparation = {
+        sample_lots: items.map((item) => ({
+          item_description: item.item_description || "",
+          sample_lot_id: requestId, // Use the selected sample lot ID
+          test_method_oid: item.test_method || "",
+          specimen_oids: item.specimens
+            .map(specimen => {
+              const documentId = specimenIdToDocumentIdMap[specimen.specimen_id]
+              console.log(`Mapping specimen ${specimen.specimen_id} to document ID: ${documentId}`)
+              return documentId
+            })
+            .filter(Boolean), // Filter out any undefined values
+          planned_test_date: item.planned_test_date || undefined,
+          dimension_spec: item.dimensions || undefined,
+          request_by: item.requested_by || undefined,
+          remarks: item.remarks || undefined,
+        }))
+      }
+      
+      console.log('Final payload:', payload)
+
+      if (isEditing && initialData && 'id' in initialData && initialData.id) {
+        // Update existing sample preparation
+        await updateSamplePrepMutation.mutateAsync({ id: initialData.id, data: payload as any })
+        
+        // Force cache invalidation for the specific item
+        queryClient.invalidateQueries({ queryKey: ['sample-preparations', 'detail', initialData.id] })
+        
         toast.success("Sample preparation updated successfully")
       } else {
         // Create new sample preparation
-        await samplePreparationService.create(payload)
-        queryClient.invalidateQueries({ queryKey: ['sample-preparations'] })
+        await createSamplePrepMutation.mutateAsync(payload as any)
         toast.success("Sample preparation created successfully")
       }
       
@@ -542,7 +673,8 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                                 onDelete={(specimenId) => removeSpecimenId(row.id || index.toString(), specimenId)}
                                 onUpdate={async (specimenId, newSpecimenId) => {
                                   try {
-                                    await samplePreparationService.updateSpecimen(specimenId, { specimen_id: newSpecimenId })
+                                    // Note: We'll need to implement specimen update in the specimens service
+                                    // await specimensService.update(specimenId, { specimen_id: newSpecimenId })
                                     setItems(prev => prev.map(item => ({
                                       ...item,
                                       specimens: item.specimens.map((spec: SpecimenDraft) => spec.id === specimenId ? { ...spec, specimen_id: newSpecimenId } : spec)

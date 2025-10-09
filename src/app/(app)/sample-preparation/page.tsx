@@ -2,10 +2,8 @@
 
 import Link from "next/link"
 import { useCallback, useMemo, useState, useEffect } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/button"
-import { samplePreparationService } from "@/services/sample-preparation.service"
 import { SamplePreparationResponse } from "@/lib/schemas/sample-preparation"
 import { ROUTES } from "@/constants/routes"
 import { toast } from "sonner"
@@ -18,9 +16,9 @@ import { PencilIcon, TrashIcon } from "lucide-react"
 import { formatDateSafe } from "@/utils/hydration-fix"
 import { AdvancedSearch } from "@/components/sample-preparation/advanced-search"
 import { SamplePrepDrawer } from "@/components/sample-preparation/sample-prep-drawer"
+import { useSamplePreparations, useDeleteSamplePreparation } from "@/hooks/use-sample-preparations"
 
 export default function SamplePreparationPage() {
-  const queryClient = useQueryClient()
   const [currentPage, setCurrentPage] = useState(1)
   const [searchFilters, setSearchFilters] = useState({
     query: "",
@@ -34,26 +32,14 @@ export default function SamplePreparationPage() {
   const [selectedSamplePrepId, setSelectedSamplePrepId] = useState<string | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
-  // Fetch data
-  const { data, error, isFetching } = useQuery({
-    queryKey: ['sample-preparations', currentPage, searchFilters],
-    queryFn: () => {
-      const hasFilters = Object.values(searchFilters).some(value => value.trim() !== "")
-      if (hasFilters) {
-        return samplePreparationService.search(searchFilters.query, currentPage, {
-          jobId: searchFilters.jobId,
-          clientName: searchFilters.clientName,
-          projectName: searchFilters.projectName,
-          specimenId: searchFilters.specimenId,
-          dateFrom: searchFilters.dateFrom,
-          dateTo: searchFilters.dateTo
-        })
-      }
-      return samplePreparationService.getAll(currentPage)
-    },
-    staleTime: 0, // Always refetch when page changes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  })
+  // Use the new hooks
+  const { data, error, isFetching } = useSamplePreparations(currentPage, searchFilters.query, searchFilters)
+  const deleteMutation = useDeleteSamplePreparation()
+
+  // Debug logging
+  console.log('Sample preparation data:', data)
+  console.log('Error:', error)
+  console.log('Is fetching:', isFetching)
 
   // Handle errors with useEffect
   useEffect(() => {
@@ -63,27 +49,22 @@ export default function SamplePreparationPage() {
     }
   }, [error])
 
-  const items = data?.results ?? []
-  const totalCount = data?.count ?? 0
+  const items = data?.data ?? []
+  const totalCount = data?.total ?? 0
   const pageSize = 20
-  const hasNext = data?.next !== undefined ? Boolean(data?.next) : totalCount > currentPage * pageSize
-  const hasPrevious = data?.previous !== undefined ? Boolean(data?.previous) : currentPage > 1
-
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: samplePreparationService.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sample-preparations'] })
-      toast.success("Sample preparation deleted successfully")
-    },
-    onError: (error) => {
-      console.error("Delete error:", error)
-      toast.error("Failed to delete sample preparation")
-    },
-  })
+  const hasNext = totalCount > currentPage * pageSize
+  const hasPrevious = currentPage > 1
 
   const doDelete = useCallback((id: string) => {
-    deleteMutation.mutate(id)
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success("Sample preparation deleted successfully")
+      },
+      onError: (error) => {
+        console.error("Delete error:", error)
+        toast.error("Failed to delete sample preparation")
+      },
+    })
   }, [deleteMutation])
 
   const handleSearch = useCallback((filters: typeof searchFilters) => {
@@ -131,19 +112,28 @@ export default function SamplePreparationPage() {
       accessorKey: "job_id",
       id: "job", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Job ID" />, 
-      cell: ({ row }) => <span className="font-medium">{row.original.job_id}</span>
+      cell: ({ row }) => {
+        const firstSampleLot = row.original.sample_lots?.[0]
+        return <span className="font-medium">{firstSampleLot?.job_id || 'N/A'}</span>
+      }
     },
     {
       accessorKey: "project_name",
       id: "project", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Project" />, 
-      cell: ({ row }) => <div className="font-medium truncate max-w-[28ch]">{row.original.project_name}</div>
+      cell: ({ row }) => {
+        const firstSampleLot = row.original.sample_lots?.[0]
+        return <div className="font-medium truncate max-w-[28ch]">{firstSampleLot?.item_description || 'N/A'}</div>
+      }
     },
     {
       accessorKey: "client_name",
       id: "client", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Client" />, 
-      cell: ({ row }) => <div className="font-medium truncate max-w-[28ch]">{row.original.client_name}</div>
+      cell: ({ row }) => {
+        // For now, we'll show the request number as client info is not in the response
+        return <div className="font-medium truncate max-w-[28ch]">{row.original.request_no}</div>
+      }
     },
     {
       accessorKey: "request_no",
@@ -152,17 +142,20 @@ export default function SamplePreparationPage() {
       cell: ({ row }) => <span className="font-mono text-sm">{row.original.request_no}</span>
     },
     {
-      accessorKey: "no_of_request_items",
+      accessorKey: "sample_lots_count",
       id: "totalItems", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Total Items" />, 
-      cell: ({ row }) => <span className="text-center">{row.original.no_of_request_items}</span>
+      cell: ({ row }) => <span className="text-center">{row.original.sample_lots_count}</span>
     },
     {
-      accessorKey: "specimen_ids",
+      accessorKey: "specimens",
       id: "specimenIds", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Specimen IDs" />, 
       cell: ({ row }) => {
-        const specimenIds = row.original.specimen_ids || []
+        // Get all specimens from all sample lots
+        const allSpecimens = row.original.sample_lots?.flatMap(lot => lot.specimens || []) || []
+        const specimenIds = allSpecimens.map(spec => spec.specimen_id)
+        
         if (specimenIds.length === 0) {
           return <span className="text-muted-foreground">No specimens</span>
         }

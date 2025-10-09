@@ -22,6 +22,20 @@ export const RequestItemSchema = z.object({
 
 export type RequestItem = z.infer<typeof RequestItemSchema>
 
+// Sample lot item schema for the new payload structure
+export const SampleLotItemSchema = z.object({
+  item_description: z.string(),
+  sample_lot_id: z.string(),
+  test_method_oid: z.string(),
+  specimen_oids: z.array(z.string()),
+  planned_test_date: z.string().optional(),
+  dimension_spec: z.string().optional(),
+  request_by: z.string().optional(),
+  remarks: z.string().optional(),
+})
+
+export type SampleLotItem = z.infer<typeof SampleLotItemSchema>
+
 // Base sample preparation schema
 export const SamplePreparationSchema = z.object({
   id: z.string().optional(),
@@ -33,28 +47,54 @@ export const SamplePreparationSchema = z.object({
   is_active: z.boolean().default(true),
 })
 
-export type SamplePreparation = z.infer<typeof SamplePreparationSchema>
+// New sample preparation schema for the updated API
+export const NewSamplePreparationSchema = z.object({
+  sample_lots: z.array(SampleLotItemSchema),
+})
 
-// Response schema (simplified for listing)
+export type SamplePreparation = z.infer<typeof SamplePreparationSchema>
+export type NewSamplePreparation = z.infer<typeof NewSamplePreparationSchema>
+
+// Sample lot item in response
+export const SampleLotResponseSchema = z.object({
+  item_description: z.string(),
+  planned_test_date: z.string().nullable(),
+  dimension_spec: z.string().nullable(),
+  request_by: z.string().nullable(),
+  remarks: z.string().nullable(),
+  sample_lot_id: z.string(),
+  test_method: z.object({
+    test_method_oid: z.string(),
+    test_name: z.string(),
+  }),
+  job_id: z.string(),
+  item_no: z.string(),
+  specimens: z.array(z.object({
+    specimen_oid: z.string(),
+    specimen_id: z.string(),
+  })),
+  specimens_count: z.number(),
+})
+
+export type SampleLotResponse = z.infer<typeof SampleLotResponseSchema>
+
+// Response schema (updated for new API structure)
 export const SamplePreparationResponseSchema = z.object({
   id: z.string(),
-  job_id: z.string(),
-  project_name: z.string(),
-  client_name: z.string(),
   request_no: z.string(),
+  sample_lots: z.array(SampleLotResponseSchema),
+  sample_lots_count: z.number(),
   created_at: z.string(),
-  no_of_request_items: z.number(),
-  specimen_ids: z.array(z.string()),
+  updated_at: z.string(),
 })
 
 export type SamplePreparationResponse = z.infer<typeof SamplePreparationResponseSchema>
 
-// List response schema
+// List response schema (updated for Django response structure)
 export const SamplePreparationListResponseSchema = z.object({
-  count: z.number(),
-  next: z.union([z.number(), z.string()]).nullable(),
-  previous: z.union([z.number(), z.string()]).nullable(),
-  results: z.array(SamplePreparationResponseSchema),
+  status: z.string(),
+  data: z.array(SamplePreparationResponseSchema),
+  total: z.number(),
 })
 
 export type SamplePreparationListResponse = z.infer<typeof SamplePreparationListResponseSchema>
