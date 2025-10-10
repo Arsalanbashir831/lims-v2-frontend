@@ -75,7 +75,7 @@ interface CompleteJob {
 
 function createPreparationItem(data: Partial<PreparationItem>): PreparationItem {
   return {
-    id: generateStableId('item'),
+    id: data.id || generateStableId('item'),
     test_method: data.test_method ?? "",
     dimensions: data.dimensions ?? "",
     item_description: data.item_description ?? "",
@@ -138,6 +138,12 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
   const [testMethodNames, setTestMethodNames] = useState<Record<string, string>>({})
   const [loadingTestMethodNames, setLoadingTestMethodNames] = useState(false)
   const [itemsInitialized, setItemsInitialized] = useState(false)
+
+  // Helper function to get consistent row ID - always use the row's ID
+  const getRowId = useCallback((row: PreparationItem, index: number): string => {
+    // Always use the row's ID, which should be stable
+    return row.id || `row-${index}`
+  }, [])
 
   const isEditing = Boolean(initialData)
 
@@ -238,9 +244,21 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
       if (initialData.test_items) {
         const mapped = (initialData.test_items as PreparationItem[]).map((it, idx) => ({
           ...it,
-          id: it.id || `${idx}`,
+          id: it.id || generateStableId('item'), // Always generate a stable ID
         }))
-        setItems(mapped)
+        
+        // Ensure all IDs are unique by checking for duplicates
+        const seenIds = new Set<string>()
+        const uniqueMapped = mapped.map((item, idx) => {
+          let uniqueId = item.id
+          if (seenIds.has(uniqueId)) {
+            uniqueId = generateStableId('item')
+          }
+          seenIds.add(uniqueId)
+          return { ...item, id: uniqueId }
+        })
+        
+        setItems(uniqueMapped)
         setItemsInitialized(true)
       }
     }
@@ -251,19 +269,22 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
     const selectedSampleLot = completeJob.samples.find((s: SampleSummary) =>
       String(sampleIdMap[s.id] || s.id) === requestId
     )
-    setItems(prev => [...prev, createPreparationItem({
+    const newItem = createPreparationItem({
       test_method: selectedSampleLot?.test_methods[0] || "",
       no_of_specimens: 1,
       specimens: [],
-    })])
+    })
+    setItems(prev => [...prev, newItem])
   }, [completeJob, requestId, sampleIdMap])
 
-  const removeItem = useCallback((id: string) => {
-    setItems(prev => prev.filter(i => i.id !== id).map((i, idx) => ({ ...i, indexNo: idx + 1 })))
+  const removeItem = useCallback((rowId: string) => {
+    setItems(prev => prev.filter(item => item.id !== rowId).map((i, idx) => ({ ...i, indexNo: idx + 1 })))
   }, [])
 
-  const updateItemField = useCallback((id: string, key: keyof PreparationItem, value: any) => {
-    setItems(prev => prev.map(i => (i.id === id ? { ...i, [key]: value } : i)))
+  const updateItemField = useCallback((rowId: string, key: keyof PreparationItem, value: any) => {
+    setItems(prev => prev.map(item => 
+      item.id === rowId ? { ...item, [key]: value } : item
+    ))
   }, [])
 
   const commitSpecimenToken = useCallback(async (rowId: string, rawToken?: string) => {
@@ -286,7 +307,8 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
         console.log('Adding token to row:', { itemId: item.id, token })
         return { ...item, specimens: [...item.specimens, { 
           specimen_id: token,
-          _uniqueId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` // Add unique identifier
+          _uniqueId: `${rowId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Add unique identifier
+          id: undefined // Ensure new specimens don't have an id initially
         }] }
       })
       console.log('Updated items after update:', updated.map(i => ({ id: i.id, specimens: i.specimens.length })))
@@ -520,19 +542,21 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                   </TableHeader>
                   <TableBody>
                     {isEditing && !itemsInitialized ? (
-                      <TableRow>
+                      <TableRow key="loading-test-items">
                         <TableCell colSpan={10} className="text-center py-8">
                           <div className="text-sm text-muted-foreground">Loading test items...</div>
                         </TableCell>
                       </TableRow>
                     ) : items.length === 0 ? (
-                      <TableRow>
+                      <TableRow key="no-test-items">
                         <TableCell colSpan={10} className="text-center py-8">
                           <div className="text-sm text-muted-foreground">No test items added yet</div>
                         </TableCell>
                       </TableRow>
                     ) : (
                       items.map((row, index) => {
+                        // Ensure unique row ID - use row.id if available, otherwise use index-based fallback
+                        const rowId = row.id || `row-${index}`
                         // Get the selected sample lot from requestId
                         const selectedSampleLot = completeJob?.samples.find((s: SampleSummary) =>
                           String(sampleIdMap[s.id] || s.id) === requestId
@@ -544,13 +568,13 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                           })) : []
 
                         return (
-                          <TableRow key={row.id || index}>
+                          <TableRow key={rowId}>
                             <TableCell className="font-medium">{index + 1}</TableCell>
                             <TableCell>
                               <Select
                                 value={row.test_method}
                                 onValueChange={(val) => {
-                                  updateItemField(row.id || index.toString(), "test_method" as any, val)
+                                  updateItemField(rowId, "test_method" as any, val)
                                 }}
                                 disabled={readOnly}
                               >
@@ -583,7 +607,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                               <Input
                                 placeholder="Dimensions"
                                 value={row.dimensions || ""}
-                                onChange={(e) => updateItemField(row.id || index.toString(), "dimensions" as any, e.target.value)}
+                                onChange={(e) => updateItemField(rowId, "dimensions" as any, e.target.value)}
                                 disabled={readOnly}
                                 className="w-[180px]"
                               />
@@ -592,31 +616,32 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                               <Input
                                 placeholder="Item description"
                                 value={row.item_description || ""}
-                                onChange={(e) => updateItemField(row.id || index.toString(), "item_description" as any, e.target.value)}
+                                onChange={(e) => updateItemField(rowId, "item_description" as any, e.target.value)}
                                 disabled={readOnly}
                                 className="w-[280px]"
                               />
                             </TableCell>
 
                             <TableCell>
-                              <Input type="number" min={0} value={row.no_of_specimens} onChange={(e) => updateItemField(row.id || index.toString(), "no_of_specimens" as any, Number(e.target.value))} disabled={readOnly} />
+                              <Input type="number" min={0} value={row.no_of_specimens} onChange={(e) => updateItemField(rowId, "no_of_specimens" as any, Number(e.target.value))} disabled={readOnly} />
                             </TableCell>
                             <TableCell>
-                              <Input type="date" value={row.planned_test_date || ""} onChange={(e) => updateItemField(row.id || index.toString(), "planned_test_date" as any, e.target.value)} disabled={readOnly} />
+                              <Input type="date" value={row.planned_test_date || ""} onChange={(e) => updateItemField(rowId, "planned_test_date" as any, e.target.value)} disabled={readOnly} />
                             </TableCell>
                             <TableCell>
-                              <Input className="w-[120px]" placeholder="Requested by" value={row.requested_by || ""} onChange={(e) => updateItemField(row.id || index.toString(), "requested_by" as any, e.target.value)} disabled={readOnly} />
+                              <Input className="w-[120px]" placeholder="Requested by" value={row.requested_by || ""} onChange={(e) => updateItemField(rowId, "requested_by" as any, e.target.value)} disabled={readOnly} />
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-wrap gap-1">
                                 {row.specimens.map((specimen: SpecimenDraft, specIndex: number) => {
-                                  const uniqueKey = (specimen as any)._uniqueId || `${row.id || index.toString()}-${specIndex}-${specimen.specimen_id}`
-                                  console.log('SpecimenBadge key:', { uniqueKey, rowId: row.id, index, specIndex, specimenId: specimen.specimen_id, uniqueId: (specimen as any)._uniqueId })
+                                  // Create a truly unique key that combines row ID, specimen index, and specimen ID
+                                  const uniqueKey = `${rowId}-specimen-${specIndex}-${specimen.specimen_id}-${specimen.id || 'new'}`
+                                  console.log('SpecimenBadge key:', { uniqueKey, rowId, index, specIndex, specimenId: specimen.specimen_id, uniqueId: (specimen as any)._uniqueId })
                                   return (
                                     <SpecimenBadge
                                       key={uniqueKey}
                                       specimen={specimen}
-                                    onDelete={(identifier) => removeSpecimenId(row.id || index.toString(), identifier)}
+                                    onDelete={(identifier) => removeSpecimenId(rowId, identifier)}
                                     onUpdate={async (specimenId, newSpecimenId) => {
                                       try {
                                         // Real-time specimen update
@@ -629,8 +654,8 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                                           toast.success("Specimen updated successfully")
                                         } else {
                                           // This is a new specimen - just update the UI
-                                          setItems(prev => prev.map(item => 
-                                            item.id === (row.id || index.toString()) 
+                                          setItems(prev => prev.map((item) => {
+                                            return item.id === rowId 
                                               ? {
                                                   ...item,
                                                   specimens: item.specimens.map((spec: SpecimenDraft) => 
@@ -638,7 +663,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                                                   )
                                                 }
                                               : item
-                                          ))
+                                          }))
                                           toast.success("Specimen updated successfully")
                                         }
                                       } catch (e) {
@@ -653,31 +678,28 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                                 <Input
                                   className="h-8 w-56"
                                   placeholder="Type ID, press comma/space/Enter"
-                                  value={specimenInputByRow[row.id || index.toString()] ?? ""}
-                                  onChange={(e) => setSpecimenInputByRow(prev => ({ ...prev, [row.id || index.toString()]: e.target.value }))}
+                                  value={specimenInputByRow[rowId] ?? ""}
+                                  onChange={(e) => setSpecimenInputByRow(prev => ({ ...prev, [rowId]: e.target.value }))}
                                   onKeyDown={(e) => {
-                                    const currentRowId = row.id || index.toString()
-                                    console.log('Input onKeyDown for row:', { rowId: currentRowId, key: e.key, rowIndex: index })
+                                    console.log('Input onKeyDown for row:', { rowId, key: e.key, rowIndex: index })
                                     if (e.key === "," || e.key === " " || e.key === "Enter") {
                                       e.preventDefault()
-                                      commitSpecimenToken(currentRowId)
-                                    } else if (e.key === "Backspace" && (specimenInputByRow[currentRowId] ?? "") === "" && row.specimens.length > 0) {
-                                      removeSpecimenId(currentRowId, row.specimens[row.specimens.length - 1]?.id || "")
+                                      commitSpecimenToken(rowId)
+                                    } else if (e.key === "Backspace" && (specimenInputByRow[rowId] ?? "") === "" && row.specimens.length > 0) {
+                                      removeSpecimenId(rowId, row.specimens[row.specimens.length - 1]?.id || "")
                                     }
                                   }}
                                   onBlur={() => {
-                                    const currentRowId = row.id || index.toString()
-                                    console.log('Input onBlur for row:', { rowId: currentRowId, rowIndex: index })
-                                    commitSpecimenToken(currentRowId)
+                                    console.log('Input onBlur for row:', { rowId, rowIndex: index })
+                                    commitSpecimenToken(rowId)
                                   }}
                                   onPaste={(e) => {
                                     const txt = e.clipboardData.getData("text")
                                     if (!txt) return
                                     e.preventDefault()
                                     const tokens = txt.split(/[\,\s]+/).map(s => s.trim()).filter(Boolean)
-                                    const currentRowId = row.id || index.toString()
-                                    console.log('Input onPaste for row:', { rowId: currentRowId, tokens, rowIndex: index })
-                                    for (const t of tokens) commitSpecimenToken(currentRowId, t)
+                                    console.log('Input onPaste for row:', { rowId, tokens, rowIndex: index })
+                                    for (const t of tokens) commitSpecimenToken(rowId, t)
                                   }}
                                   disabled={readOnly}
                                 />
@@ -685,14 +707,14 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                               <div className="text-xs text-muted-foreground mt-1">Max {row.no_of_specimens} unique IDs</div>
                             </TableCell>
                             <TableCell>
-                              <Input className="w-[120px]" placeholder="Remarks" value={row.remarks || ""} onChange={(e) => updateItemField(row.id || index.toString(), "remarks" as any, e.target.value)} disabled={readOnly} />
+                              <Input className="w-[120px]" placeholder="Remarks" value={row.remarks || ""} onChange={(e) => updateItemField(rowId, "remarks" as any, e.target.value)} disabled={readOnly} />
                             </TableCell>
                             <TableCell className="text-right">
                               {!readOnly && (
                                 <ConfirmPopover
                                   title="Delete this testing item?"
                                   confirmText="Delete"
-                                  onConfirm={() => removeItem(row.id || index.toString())}
+                                  onConfirm={() => removeItem(rowId)}
                                   trigger={<Button type="button" variant="ghost" size="sm"><TrashIcon className="w-4 h-4" /></Button>}
                                 />
                               )}

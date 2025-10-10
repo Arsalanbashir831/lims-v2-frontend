@@ -55,7 +55,7 @@ export default function EditSamplePreparationPage() {
           request_id: firstSampleLot?.sample_lot_id || '',
           test_items: (apiResponse.sample_lots || []).map((lot: any, index: number) => {            
             return {
-              id: lot.sample_lot_id || `item-${index}`,
+              id: lot.id || `item-${Date.now()}-${index}`, // Ensure unique ID with timestamp
               item_description: lot.item_description || '',
               test_method: lot.test_method?.test_method_oid || lot.test_method_info?.test_method_oid || '',
               dimensions: lot.dimension_spec || '',
@@ -65,7 +65,7 @@ export default function EditSamplePreparationPage() {
               planned_test_date: lot.planned_test_date || '',
               specimens: Array.isArray(lot.specimens) && lot.specimens.length > 0
                 ? lot.specimens.map((specimen: any, idx: number) => ({
-                    id: specimen.specimen_oid || `specimen-${idx}`,
+                    id: specimen.specimen_oid || `specimen-${index}-${idx}`,
                     specimen_id: specimen.specimen_id || '',
                     isFromInitialData: true,
                   }))
