@@ -1,5 +1,5 @@
 import { ROUTES } from "@/constants/routes"
-import ky, { HTTPError } from "ky"
+import ky from "ky"
 import { TokenStorage } from "@/lib/auth/token-storage"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://192.168.1.2:8000/api"
@@ -40,13 +40,13 @@ export async function authenticatedApiCall<T>(
   endpoint: string,
   options: {
     method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
-    json?: any
+    json?: Record<string, unknown>
     searchParams?: Record<string, string | number>
   } = {}
 ) {
   const { method = "GET", json, searchParams } = options
   
-  const requestOptions: any = {
+  const requestOptions: Record<string, unknown> = {
     method,
   }
   

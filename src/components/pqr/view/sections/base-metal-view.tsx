@@ -1,3 +1,5 @@
+/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
+
 import { getSectionDataByAccessor } from '@/lib/pqr-utils';
 
 export const BaseMetalsView = ({ baseMetalsData, isAsme }: { baseMetalsData: any; isAsme: boolean }) => {

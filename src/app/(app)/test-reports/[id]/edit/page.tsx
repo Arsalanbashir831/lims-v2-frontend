@@ -21,7 +21,38 @@ interface TestReportFormData {
   customer_po: string
   tested_by: string
   reviewed_by: string
-  selectedRequest?: any
+  selectedRequest: {
+    id: string;
+    request_no: string;
+    sample_lots: Array<{
+      item_description: string;
+      planned_test_date: string | null;
+      dimension_spec: string | null;
+      request_by: string | null;
+      remarks: string | null;
+      sample_lot_id: string;
+      test_method: {
+        test_method_oid: string;
+        test_name: string;
+      };
+      job_id: string;
+      item_no: string;
+      client_name: string | null;
+      project_name: string | null;
+      specimens: Array<{
+        specimen_oid: string;
+        specimen_id: string;
+      }>;
+      specimens_count: number;
+    }>;
+    sample_lots_count: number;
+    specimens: Array<{
+      specimen_oid: string;
+      specimen_id: string;
+    }>;
+    created_at: string;
+    updated_at: string;
+  }
   items: Array<{
     id: string
     specimenId: string
@@ -68,7 +99,7 @@ export default function EditTestReportPage() {
     // Map items
     const mappedItems = items.map((item) => {
       // Parse test results
-      let testResults: { columns: string[], data: any[][] } = { columns: [], data: [] }
+      let testResults: { columns: string[], data: (string | number)[][] } = { columns: [], data: [] }
       try {
         if (item.specimen_sections?.[0]?.test_results) {
           const parsed = JSON.parse(item.specimen_sections[0].test_results)
@@ -93,7 +124,7 @@ export default function EditTestReportPage() {
       ]
 
       // Create dynamic data rows
-      const dynamicData: DynamicRow[] = testResults.data?.map((rowData: any[], rowIdx: number) => {
+      const dynamicData: DynamicRow[] = testResults.data?.map((rowData: (string | number)[], rowIdx: number) => {
         const row: DynamicRow = {
           id: `row-${rowIdx + 1}`,
           label: rowData[0] || `Row ${rowIdx + 1}`,
@@ -109,12 +140,12 @@ export default function EditTestReportPage() {
       const specimenOid = item.specimen_sections?.[0]?.specimen_id || ""
       
       // Look for specimen in both global specimens and sample lot specimens
-      let specimenInfo = report.request_info?.specimens?.find((spec: any) => spec.specimen_oid === specimenOid)
+      let specimenInfo = report.request_info?.specimens?.find((spec: { specimen_oid: string; specimen_id: string }) => spec.specimen_oid === specimenOid)
       
       if (!specimenInfo) {
         // Also check in sample lots specimens
         for (const lot of report.request_info?.sample_lots || []) {
-          specimenInfo = lot.specimens?.find((spec: any) => spec.specimen_oid === specimenOid)
+          specimenInfo = lot.specimens?.find((spec: { specimen_oid: string; specimen_id: string }) => spec.specimen_oid === specimenOid)
           if (specimenInfo) break
         }
       }
@@ -138,7 +169,7 @@ export default function EditTestReportPage() {
         columns: dynamicColumns,
         data: dynamicData,
         hasImage: report.request_info?.sample_lots?.[0]?.test_method?.hasImage || false,
-        images: item.specimen_sections?.[0]?.images_list?.map((img: any) => ({
+        images: item.specimen_sections?.[0]?.images_list?.map((img: { image_url: string; caption: string }) => ({
           image_url: img.image_url,
           caption: img.caption || ""
         })) || []
@@ -149,7 +180,30 @@ export default function EditTestReportPage() {
     const selectedRequest = report.request_info ? {
       id: report.request_info.request_id,
       request_no: report.request_info.request_no,
-      sample_lots: report.request_info.sample_lots?.map((lot: any) => ({
+      sample_lots: report.request_info.sample_lots?.map((lot: {
+        item_description: string;
+        planned_test_date: string | null;
+        dimension_spec: string | null;
+        request_by: string | null;
+        remarks: string | null;
+        sample_lot_info?: {
+          sample_lot_id: string;
+          job_id: string;
+          item_no: string;
+          job_details?: {
+            project_name: string;
+          };
+        };
+        test_method: {
+          test_method_oid: string;
+          test_name: string;
+        };
+        specimens: Array<{
+          specimen_oid: string;
+          specimen_id: string;
+        }>;
+        specimens_count: number;
+      }) => ({
         item_description: lot.item_description || "",
         planned_test_date: lot.planned_test_date || null,
         dimension_spec: lot.dimension_spec || null,
@@ -164,16 +218,25 @@ export default function EditTestReportPage() {
         item_no: lot.sample_lot_info?.item_no || "",
         client_name: null,
         project_name: lot.sample_lot_info?.job_details?.project_name || null,
-        specimens: lot.specimens?.map((spec: any) => ({
+        specimens: lot.specimens?.map((spec: { specimen_oid: string; specimen_id: string }) => ({
           specimen_oid: spec.specimen_oid,
           specimen_id: spec.specimen_id
         })) || [],
         specimens_count: lot.specimens_count || 0
       })) || [],
       sample_lots_count: report.request_info.sample_lots_count || 0,
+      specimens: report.request_info.specimens || [],
       created_at: report.request_info.created_at || "",
       updated_at: report.request_info.updated_at || ""
-    } : undefined
+    } : {
+      id: "",
+      request_no: "",
+      sample_lots: [],
+      sample_lots_count: 0,
+      specimens: [],
+      created_at: "",
+      updated_at: ""
+    }
 
     // Set form data
     const mappedFormData: TestReportFormData = {
@@ -194,7 +257,7 @@ export default function EditTestReportPage() {
   }, [testReportResponse, testReportItemsResponse])
 
   // Handle form submission
-  const handleSubmit = async (data: TestReportFormData) => {
+  const handleSubmit = (data: TestReportFormData) => {
     // Form handles the submission internally, just handle navigation
     setIsEditing(false)
     router.push(ROUTES.APP.TEST_REPORTS.ROOT)
@@ -236,7 +299,7 @@ export default function EditTestReportPage() {
         label={null} 
         href={ROUTES.APP.TEST_REPORTS.ROOT}
       >
-        {!isEditing ? (
+      {!isEditing ? (
           <Button size="sm" onClick={() => setIsEditing(true)}>
             <PencilIcon className="w-4 h-4 mr-1" /> Edit
           </Button>
@@ -251,7 +314,7 @@ export default function EditTestReportPage() {
         <TestReportForm 
           key={`edit-${id}-${isEditing}`}
           initialData={formData} 
-          onSubmit={handleSubmit} 
+          onSubmit={handleSubmit as any} 
           readOnly={!isEditing}
           isEditing={isEditing}
           certificateId={id}

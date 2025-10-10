@@ -24,7 +24,7 @@ export interface DynamicColumn {
 
 export interface DynamicRow {
   id: string
-  [key: string]: any
+  [key: string]: string | number | boolean | undefined
 }
 
 interface DynamicTableProps {
@@ -125,7 +125,7 @@ export function DynamicTable({
     onDataChange(newData)
   }, [columns, data, onColumnsChange, onDataChange])
 
-  const handleColumnUpdate = useCallback((columnId: string, field: keyof DynamicColumn, value: any) => {
+  const handleColumnUpdate = useCallback((columnId: string, field: keyof DynamicColumn, value: string | number | boolean) => {
     const newColumns = columns.map(col => col.id === columnId ? { ...col, [field]: value } : col)
     setColumns(newColumns)
     onColumnsChange(newColumns)
@@ -157,7 +157,7 @@ export function DynamicTable({
     onDataChange(newData)
   }, [data, onDataChange])
 
-  const handleCellChange = useCallback((rowId: string, accessorKey: string, value: any) => {
+  const handleCellChange = useCallback((rowId: string, accessorKey: string, value: string | number | boolean) => {
     const newData = data.map(row => row.id === rowId ? { ...row, [accessorKey]: value } : row)
     setData(newData)
     onDataChange(newData)
@@ -253,7 +253,7 @@ export function DynamicTable({
                         editingCell && editingCell.rowId === row.id && editingCell.accessorKey === column.accessorKey ? (
                           <Input
                             autoFocus
-                            defaultValue={row[column.accessorKey] ?? ""}
+                            defaultValue={String(row[column.accessorKey] ?? "")}
                             onBlur={(e) => saveLabelCell(row.id, column.accessorKey, e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === "Enter") saveLabelCell(row.id, column.accessorKey, (e.target as HTMLInputElement).value)
@@ -274,7 +274,7 @@ export function DynamicTable({
                       ) : column.type === "date" ? (
                         <Input
                           type="date"
-                          value={row[column.accessorKey] || ""}
+                          value={String(row[column.accessorKey] || "")}
                           onChange={(e) => handleCellChange(row.id, column.accessorKey, e.target.value)}
                           className="border-0 px-2 py-0.5 rounded-none h-auto text-sm"
                           placeholder={column.placeholder}
@@ -283,7 +283,7 @@ export function DynamicTable({
                       ) : column.type === "numeric" ? (
                         <Input
                           type="number"
-                          value={row[column.accessorKey] || ""}
+                          value={String(row[column.accessorKey] || "")}
                           onChange={(e) => handleCellChange(row.id, column.accessorKey, e.target.value)}
                           className="border-0 px-2 py-0.5 rounded-none h-auto text-sm"
                           placeholder={column.placeholder}
@@ -292,7 +292,7 @@ export function DynamicTable({
                       ) : (
                         <Input
                           type="text"
-                          value={row[column.accessorKey] || ""}
+                          value={String(row[column.accessorKey] || "")}
                           onChange={(e) => handleCellChange(row.id, column.accessorKey, e.target.value)}
                           className="border-0 px-2 py-0.5 rounded-none h-auto text-sm"
                           placeholder={column.placeholder}

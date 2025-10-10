@@ -215,7 +215,27 @@ export function SamplePrepDrawer({ isOpen, onClose, samplePrepId }: SamplePrepDr
 
                   {samplePrep.sample_lots && samplePrep.sample_lots.length > 0 && (
                     <div className="space-y-4">
-                      {samplePrep.sample_lots.map((lot: any, lotIndex: number) => (
+                      {samplePrep.sample_lots.map((lot: {
+                        item_description: string;
+                        planned_test_date: string | null;
+                        dimension_spec: string | null;
+                        request_by: string | null;
+                        remarks: string | null;
+                        sample_lot_id: string;
+                        test_method: {
+                          test_method_oid: string;
+                          test_name: string;
+                        };
+                        job_id: string;
+                        item_no: string;
+                        client_name: string | null;
+                        project_name: string | null;
+                        specimens: Array<{
+                          specimen_oid: string;
+                          specimen_id: string;
+                        }>;
+                        specimens_count: number;
+                      }, lotIndex: number) => (
                         <div key={lotIndex} className="border border-border rounded-lg p-4 bg-muted/20">
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="font-medium text-sm">Sample Lot {lotIndex + 1}</h4>
@@ -228,7 +248,7 @@ export function SamplePrepDrawer({ isOpen, onClose, samplePrepId }: SamplePrepDr
                             <div className="space-y-2">
                               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Specimen IDs</label>
                               <div className="flex flex-wrap gap-2">
-                                {lot.specimens.map((specimen: any, specIndex: number) => (
+                                {lot.specimens.map((specimen: { specimen_oid: string; specimen_id: string }, specIndex: number) => (
                                   <Badge key={specIndex} variant="outline" className="font-mono text-xs">
                                     {specimen.specimen_id}
                                   </Badge>
@@ -253,7 +273,27 @@ export function SamplePrepDrawer({ isOpen, onClose, samplePrepId }: SamplePrepDr
                     </h3>
                   </div>
                   <div className="p-6 space-y-6">
-                    {samplePrep.sample_lots.map((lot: any, index: number) => {
+                    {samplePrep.sample_lots.map((lot: {
+                      item_description: string;
+                      planned_test_date: string | null;
+                      dimension_spec: string | null;
+                      request_by: string | null;
+                      remarks: string | null;
+                      sample_lot_id: string;
+                      test_method: {
+                        test_method_oid: string;
+                        test_name: string;
+                      };
+                      job_id: string;
+                      item_no: string;
+                      client_name: string | null;
+                      project_name: string | null;
+                      specimens: Array<{
+                        specimen_oid: string;
+                        specimen_id: string;
+                      }>;
+                      specimens_count: number;
+                    }, index: number) => {
                       const itemNumber = String(index + 1).padStart(3, '0')
                       const itemId = lot.job_id ? `${lot.job_id}-${itemNumber}` : `ITEM-${itemNumber}`
 
@@ -313,7 +353,7 @@ export function SamplePrepDrawer({ isOpen, onClose, samplePrepId }: SamplePrepDr
                             <div>
                               <label className="text-sm font-medium text-muted-foreground">Specimen IDs</label>
                               <div className="mt-1 flex flex-wrap gap-1">
-                                {lot.specimens.map((specimen: any, specIndex: number) => (
+                                {lot.specimens.map((specimen: { specimen_oid: string; specimen_id: string }, specIndex: number) => (
                                   <Badge key={specIndex} variant="secondary" className="text-xs font-mono">
                                     {specimen.specimen_id}
                                   </Badge>

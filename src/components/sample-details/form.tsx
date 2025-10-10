@@ -86,7 +86,7 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
     setDuplicateItemNumbers(duplicates);
   }
 
-  const updateItemField = (id: string, key: keyof TableItem, value: any) => {
+  const updateItemField = (id: string, key: keyof TableItem, value: string | number | string[]) => {
     setItems(prev => {
       const updatedItems = prev.map(it => it.id === id ? { ...it, [key]: value } : it);
 
@@ -164,10 +164,10 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
   // When editing lots for a job, load existing lots into table rows
   useEffect(() => {
     if (initial?.lots) {
-      const rows = initial.lots.map((lot: any, idx: number) => {
-        const itemNo = String(idx + 1).padStart(3, '0')
+      const rows = initial.lots.map((lot, idx: number) => {
+        const itemNo = String(idx + 1).padStart(3, '0');
         return {
-          id: lot.id,
+          id: (lot as any).id ?? (lot as any)._id ?? crypto.randomUUID(),
           indexNo: idx + 1,
           itemNo: lot.item_no ?? (selectedJobData?.job_id ? `${selectedJobData.job_id}-${itemNo}` : `ITEM-${itemNo}`),
           description: lot.description ?? "",
@@ -177,7 +177,7 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
           heatNo: lot.heat_no ?? "",
           storageLocation: lot.storage_location ?? "",
           condition: lot.condition ?? "",
-          testMethods: lot.test_methods?.map((tm: any) => tm.id) ?? lot.test_method_oids ?? [],
+          testMethods: (lot.test_method_oids || []).map((tm: string) => tm),
         }
       })
       setItems(rows)
@@ -299,7 +299,7 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
                 setJobDocumentId(documentId)
               }}
               onJobSelect={(job) => {
-                setSelectedJobData(job)
+                setSelectedJobData(job as SampleInformationResponse)
               }}
               placeholder="Select job..."
               disabled={readOnly || isEditingLotsForJob}

@@ -40,7 +40,7 @@ export default function EditSamplePreparationPage() {
           try {
             // Search for the job by business ID to get the document ID
             const jobSearchResponse = await sampleInformationService.search(businessJobId, 1)
-            const matchingJob = jobSearchResponse.results.find((job: any) => job.job_id === businessJobId)
+            const matchingJob = jobSearchResponse.results.find((job: { job_id: string; id: string }) => job.job_id === businessJobId)
             if (matchingJob) {
               jobDocumentId = matchingJob.id
             }
@@ -53,7 +53,18 @@ export default function EditSamplePreparationPage() {
           id: apiResponse.id || '',
           job: jobDocumentId, // Use the job's document ID
           request_id: firstSampleLot?.sample_lot_id || '',
-          test_items: (apiResponse.sample_lots || []).map((lot: any, index: number) => {            
+          test_items: (apiResponse.sample_lots || []).map((lot: {
+            id: string;
+            item_description: string;
+            test_method?: { test_method_oid: string };
+            test_method_info?: { test_method_oid: string };
+            dimension_spec: string;
+            specimens_count: number;
+            specimens: Array<{ specimen_oid: string; specimen_id: string }>;
+            request_by: string;
+            remarks: string;
+            planned_test_date: string;
+          }, index: number) => {            
             return {
               id: lot.id || `item-${Date.now()}-${index}`, // Ensure unique ID with timestamp
               item_description: lot.item_description || '',
@@ -64,7 +75,7 @@ export default function EditSamplePreparationPage() {
               remarks: lot.remarks || '',
               planned_test_date: lot.planned_test_date || '',
               specimens: Array.isArray(lot.specimens) && lot.specimens.length > 0
-                ? lot.specimens.map((specimen: any, idx: number) => ({
+                ? lot.specimens.map((specimen: { specimen_oid: string; specimen_id: string }, idx: number) => ({
                     id: specimen.specimen_oid || `specimen-${index}-${idx}`,
                     specimen_id: specimen.specimen_id || '',
                     isFromInitialData: true,

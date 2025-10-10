@@ -17,7 +17,7 @@ export interface RegisterData {
 
 export class AuthService {
   // Login using Django backend
-  static async login(credentials: LoginCredentials): Promise<{ user: User; tokens: any }> {
+  static async login(credentials: LoginCredentials): Promise<{ user: User; tokens: unknown }> {
     try {
       const response = await api.post(API_ROUTES.AUTH.LOGIN, {
         json: credentials,
@@ -41,11 +41,11 @@ export class AuthService {
       } else {
         throw new Error(response.message || "Login failed")
       }
-    } catch (error: any) {
-      if (error.response) {
-        const errorData = await error.response.json()
+    } catch (error: unknown) {
+      if (error instanceof Error && 'response' in error) {
+        const errorData = await (error as Error & { response: Response }).response.json()
         throw new Error(errorData.message || errorData.error || "Login failed")
-      } else if (error.message) {
+      } else if (error instanceof Error && 'message' in error) {
         throw new Error(error.message)
       } else {
         throw new Error("Login failed. Please try again.")
@@ -82,12 +82,12 @@ export class AuthService {
       } else {
         throw new Error(response.message || "Registration failed")
       }
-    } catch (error: any) {
-      if (error.response) {
-        const errorData = await error.response.json()
+    } catch (error: unknown) {
+      if (error instanceof Error && 'response' in error) {
+        const errorData = await (error as Error & { response: Response }).response.json()
         throw new Error(errorData.message || errorData.error || "Registration failed")
-      } else if (error.message) {
-        throw new Error(error.message)
+      } else if (error instanceof Error && 'message' in error) {
+        throw new Error(error.message)  
       } else {
         throw new Error("Registration failed. Please try again.")
       }

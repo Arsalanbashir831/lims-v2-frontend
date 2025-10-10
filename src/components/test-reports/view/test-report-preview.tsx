@@ -118,7 +118,7 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
             // Map certificate items to sections
             const sections: TestMethodSection[] = items.map((item, index) => {
                 // Parse test results JSON
-                let testResults: { columns: string[]; data: any[][] } = { columns: [], data: [] };
+                let testResults: { columns: string[]; data: (string | number)[][] } = { columns: [], data: [] };
                 try {
                     if (item.specimen_sections?.[0]?.test_results) {
                         testResults = JSON.parse(item.specimen_sections[0].test_results);

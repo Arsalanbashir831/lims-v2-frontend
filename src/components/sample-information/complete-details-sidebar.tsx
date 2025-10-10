@@ -103,7 +103,7 @@ export default function CompleteDetailsSidebar({
                                                 Received Date
                                             </div>
                                             <div className="text-sm">
-                                                {new Date(sidebarData.job_info.receive_date).toLocaleDateString() ?? "N/A"}
+                                                {(sidebarData.job_info as any).receive_date ? new Date((sidebarData.job_info as any).receive_date).toLocaleDateString() : "N/A"}
                                             </div>
                                         </div>
                                    
@@ -120,15 +120,15 @@ export default function CompleteDetailsSidebar({
                                     </div>
                                     <div className="space-y-1">
                                         <div className="text-sm font-medium text-muted-foreground">End User</div>
-                                        <div className="text-sm">{sidebarData.job_info.end_user ?? "N/A"}</div>
+                                        <div className="text-sm">{(sidebarData.job_info as any).end_user ?? "N/A"}</div>
                                     </div>
                                     <div className="space-y-1">
                                         <div className="text-sm font-medium text-muted-foreground">Received By</div>
-                                        <div className="text-sm">{sidebarData.job_info.received_by ?? "N/A"}</div>
+                                        <div className="text-sm">{(sidebarData.job_info as any).received_by ?? "N/A"}</div>
                                     </div>
                                     <div className="space-y-1">
                                         <div className="text-sm font-medium text-muted-foreground">Remarks</div>
-                                        <div className="text-sm">{sidebarData.job_info.remarks ?? "N/A"}</div>
+                                        <div className="text-sm">{(sidebarData.job_info as any).remarks ?? "N/A"}</div>
                                     </div>
                                     </div>
                                 </CardContent>
@@ -178,7 +178,22 @@ export default function CompleteDetailsSidebar({
                                             </div>
                                         ) : (
                                             <div className="space-y-3">
-                                                {(sidebarData?.data ?? []).map((lot: any) => (
+                                                {(sidebarData?.data ?? []).map((lot: {
+                                                  id: string;
+                                                  item_no: string;
+                                                  description: string;
+                                                  sample_type: string;
+                                                  material_type: string;
+                                                  heat_no: string;
+                                                  mtc_no: string;
+                                                  storage_location: string;
+                                                  test_method_oids: string[];
+                                                  is_active: boolean;
+                                                  created_at: string;
+                                                  updated_at: string;
+                                                  created_by: string;
+                                                  updated_by: string;
+                                                }) => (
                                                     <Card key={lot.id} className="border-l-4 border-l-primary">
                                                         <CardContent className="p-4">
                                                             <div className="flex items-start justify-between">
@@ -218,7 +233,7 @@ export default function CompleteDetailsSidebar({
                                                                         <div>
                                                                             <span className="text-muted-foreground">Test Methods Count: </span>
                                                                             <Badge variant="outline" className="text-xs">
-                                                                                {lot.test_methods_count ?? 0}
+                                                                                {(lot as any).test_methods_count ?? 0}
                                                                             </Badge>
                                                                         </div>
                                                                         <div>

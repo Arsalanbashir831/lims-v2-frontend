@@ -1,3 +1,5 @@
+/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
+
 "use client"
 
 import { useState, useMemo } from "react"

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParams } from "next/navigation"
 import { TestMethodForm } from "@/components/test-methods/form"
-import { testMethodService, TestMethod } from "@/services/test-methods.service"
+import { testMethodService } from "@/services/test-methods.service"
 import { FormHeader } from "@/components/common/form-header"
 import { Button } from "@/components/ui/button"
 import { PencilIcon, XIcon } from "lucide-react"

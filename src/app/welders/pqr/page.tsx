@@ -10,7 +10,7 @@ import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { DataTablePagination } from "@/components/ui/data-table-pagination"
 import { FilterSearch } from "@/components/ui/filter-search"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
-import { pqrService } from "@/services/pqr.service"
+// import { pqrService } from "@/services/pqr.service"
 // Define PqrRecord locally for now
 interface PqrRecord {
   id: string
@@ -38,8 +38,8 @@ export default function PQRPage() {
   const [query, setQuery] = useState("")
   const reload = useCallback(async () => {
     try {
-      const data = await pqrService.getAll()
-      setItems(data)
+      // const data = await pqrService.getAll()
+      setItems([])
     } catch (error) {
       console.error("Failed to load PQRs:", error)
     }
@@ -60,7 +60,7 @@ export default function PQRPage() {
 
   const doDelete = useCallback(async (id: string) => {
     try {
-      await pqrService.delete(id)
+      // await pqrService.delete(id)
       toast.success("Deleted")
       reload()
     } catch (error) {

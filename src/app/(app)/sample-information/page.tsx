@@ -36,11 +36,11 @@ export default function SampleInformationPage() {
         }
     }, [error])
 
-    const items = data?.results ?? []
-    const totalCount = data?.count ?? 0
+    const items = (data as { results: any[]; count: number; next: string | null; previous: string | null } | undefined)?.results ?? []
+    const totalCount = (data as { results: any[]; count: number; next: string | null; previous: string | null } | undefined)?.count ?? 0
     const pageSize = 20
-    const hasNext = data?.next !== undefined ? Boolean(data?.next) : totalCount > currentPage * pageSize
-    const hasPrevious = data?.previous !== undefined ? Boolean(data?.previous) : currentPage > 1
+    const hasNext = (data as { results: any[]; count: number; next: string | null; previous: string | null } | undefined)?.next !== undefined ? Boolean((data as { results: any[]; count: number; next: string | null; previous: string | null } | undefined)?.next) : totalCount > currentPage * pageSize
+    const hasPrevious = (data as { results: any[]; count: number; next: string | null; previous: string | null } | undefined)?.previous !== undefined ? Boolean((data as { results: any[]; count: number; next: string | null; previous: string | null } | undefined)?.previous) : currentPage > 1
 
     // Delete mutation using caching hooks
     const deleteMutation = useDeleteSampleInformation()

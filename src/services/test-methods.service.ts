@@ -13,7 +13,7 @@ export const testMethodService = {
       searchParams: { page: page.toString() } 
     }).json<{
       status: string
-      data: any[]
+      data: TestMethodResponse[]
       pagination: {
         current_page: number
         limit: number
@@ -87,7 +87,7 @@ export const testMethodService = {
       searchParams: { test_name: query, page: page.toString() } 
     }).json<{
       status: string
-      data: any[]
+      data: TestMethodResponse[]
       total: number
       filters_applied: {
         test_name: string

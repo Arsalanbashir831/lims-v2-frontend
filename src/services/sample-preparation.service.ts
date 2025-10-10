@@ -17,7 +17,34 @@ export const samplePreparationService = {
       searchParams: { page: page.toString() } 
     }).json<{
       status: string
-      data: any[]
+      data: Array<{
+        id: string;
+        request_no: string;
+        sample_lots: Array<{
+          item_description: string;
+          planned_test_date: string | null;
+          dimension_spec: string | null;
+          request_by: string | null;
+          remarks: string | null;
+          sample_lot_id: string;
+          test_method: {
+            test_method_oid: string;
+            test_name: string;
+          };
+          job_id: string;
+          item_no: string;
+          client_name: string | null;
+          project_name: string | null;
+          specimens: Array<{
+            specimen_oid: string;
+            specimen_id: string;
+          }>;
+          specimens_count: number;
+        }>;
+        sample_lots_count: number;
+        created_at: string;
+        updated_at: string;
+      }>
       total: number
     }>()
     
@@ -35,7 +62,34 @@ export const samplePreparationService = {
   async getById(id: string): Promise<SamplePreparationResponse> {
     const response = await api.get(API_ROUTES.Lab_MANAGERS.SAMPLE_PREPARATION_BY_ID(id)).json<{
       status: string
-      data: any
+      data: {
+        id: string;
+        request_no: string;
+        sample_lots: Array<{
+          item_description: string;
+          planned_test_date: string | null;
+          dimension_spec: string | null;
+          request_by: string | null;
+          remarks: string | null;
+          sample_lot_id: string;
+          test_method: {
+            test_method_oid: string;
+            test_name: string;
+          };
+          job_id: string;
+          item_no: string;
+          client_name: string | null;
+          project_name: string | null;
+          specimens: Array<{
+            specimen_oid: string;
+            specimen_id: string;
+          }>;
+          specimens_count: number;
+        }>;
+        sample_lots_count: number;
+        created_at: string;
+        updated_at: string;
+      }
     }>()
     
     if (response.status === "success" && response.data) {
@@ -66,7 +120,34 @@ export const samplePreparationService = {
       searchParams 
     }).json<{
       status: string
-      data: any[]
+      data: Array<{
+        id: string;
+        request_no: string;
+        sample_lots: Array<{
+          item_description: string;
+          planned_test_date: string | null;
+          dimension_spec: string | null;
+          request_by: string | null;
+          remarks: string | null;
+          sample_lot_id: string;
+          test_method: {
+            test_method_oid: string;
+            test_name: string;
+          };
+          job_id: string;
+          item_no: string;
+          client_name: string | null;
+          project_name: string | null;
+          specimens: Array<{
+            specimen_oid: string;
+            specimen_id: string;
+          }>;
+          specimens_count: number;
+        }>;
+        sample_lots_count: number;
+        created_at: string;
+        updated_at: string;
+      }>
       total: number
     }>()
     
@@ -104,7 +185,34 @@ export const samplePreparationService = {
   // Get sample preparations by job ID
   async getByJobId(jobId: string): Promise<{
     status: string
-    data: any[]
+    data: Array<{
+      id: string;
+      request_no: string;
+      sample_lots: Array<{
+        item_description: string;
+        planned_test_date: string | null;
+        dimension_spec: string | null;
+        request_by: string | null;
+        remarks: string | null;
+        sample_lot_id: string;
+        test_method: {
+          test_method_oid: string;
+          test_name: string;
+        };
+        job_id: string;
+        item_no: string;
+        client_name: string | null;
+        project_name: string | null;
+        specimens: Array<{
+          specimen_oid: string;
+          specimen_id: string;
+        }>;
+        specimens_count: number;
+      }>;
+      sample_lots_count: number;
+      created_at: string;
+      updated_at: string;
+    }>
     total: number
     job_oid: string
     job_id: string
@@ -113,7 +221,34 @@ export const samplePreparationService = {
   }> {
     const response = await api.get(API_ROUTES.Lab_MANAGERS.GET_SAMPLE_PREPARATIONS_BY_JOB_ID(jobId)).json<{
       status: string
-      data: any[]
+      data: Array<{
+        id: string;
+        request_no: string;
+        sample_lots: Array<{
+          item_description: string;
+          planned_test_date: string | null;
+          dimension_spec: string | null;
+          request_by: string | null;
+          remarks: string | null;
+          sample_lot_id: string;
+          test_method: {
+            test_method_oid: string;
+            test_name: string;
+          };
+          job_id: string;
+          item_no: string;
+          client_name: string | null;
+          project_name: string | null;
+          specimens: Array<{
+            specimen_oid: string;
+            specimen_id: string;
+          }>;
+          specimens_count: number;
+        }>;
+        sample_lots_count: number;
+        created_at: string;
+        updated_at: string;
+      }>
       total: number
       job_oid: string
       job_id: string

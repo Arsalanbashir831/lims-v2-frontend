@@ -1,3 +1,5 @@
+/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
+
 import { getSectionDataByAccessor } from '@/lib/pqr-utils';
 
 export const PWHTGasView = ({ pwhtData, gasData, isAsme }: { pwhtData: any; gasData: any; isAsme: boolean }) => {

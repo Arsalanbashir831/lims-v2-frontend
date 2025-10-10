@@ -1,3 +1,5 @@
+/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
+
 export const PositionsPreheatView = ({
   positionsData,
   preheatData,

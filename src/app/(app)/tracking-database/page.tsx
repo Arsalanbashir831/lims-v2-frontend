@@ -1,11 +1,10 @@
 "use client"
 
 import { useMemo, useState, useCallback, useEffect } from "react"
-import { ColumnDef } from "@tanstack/react-table"
+import { ColumnDef, Table } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
-import { DataTablePagination } from "@/components/ui/data-table-pagination"
 import { FilterSearch } from "@/components/ui/filter-search"
 import { Button } from "@/components/ui/button"
 import { transformJobToTrackingRow, type TrackingRow } from "@/services/tracking.service"
@@ -79,7 +78,7 @@ export default function TrackingDatabasePage() {
   ]
 
   // Define toolbar and footer callbacks outside of JSX
-  const toolbar = useCallback((table: any) => {
+  const toolbar = useCallback((table: Table<TrackingRow>) => {
     return (
       <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
         <FilterSearch
@@ -96,7 +95,7 @@ export default function TrackingDatabasePage() {
     )
   }, [searchQuery, handleSearchChange])
 
-  const footer = useCallback((table: any) => (
+  const footer = useCallback((table: Table<TrackingRow>) => (
     <ServerPagination
       currentPage={currentPage}
       totalCount={totalCount}

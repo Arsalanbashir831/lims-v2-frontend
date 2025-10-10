@@ -37,12 +37,50 @@ export const sampleLotService = {
     return response as SampleLotListResponse
   },
 
-  async getByJobDocumentId(jobDocumentId: string): Promise<{ data: any[], total: number, job_info: any }> {
+  async getByJobDocumentId(jobDocumentId: string): Promise<{ data: Array<{
+    id: string;
+    item_no: string;
+    description: string;
+    sample_type: string;
+    material_type: string;
+    heat_no: string;
+    mtc_no: string;
+    storage_location: string;
+    test_method_oids: string[];
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    created_by: string;
+    updated_by: string;
+  }>, total: number, job_info: {
+    job_id: string;
+    project_name: string;
+    client_name: string;
+  } }> {
     const response = await api.get(API_ROUTES.Lab_MANAGERS.GET_SAMPLE_LOTS_BY_JOB_ID(jobDocumentId)).json<{
       status: string
-      data: any[]
+      data: Array<{
+        id: string;
+        item_no: string;
+        description: string;
+        sample_type: string;
+        material_type: string;
+        heat_no: string;
+        mtc_no: string;
+        storage_location: string;
+        test_method_oids: string[];
+        is_active: boolean;
+        created_at: string;
+        updated_at: string;
+        created_by: string;
+        updated_by: string;
+      }>
       total: number
-      job_info: any
+      job_info: {
+        job_id: string;
+        project_name: string;
+        client_name: string;
+      }
     }>()
     
     if (response.status === "success") {

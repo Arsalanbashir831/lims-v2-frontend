@@ -28,7 +28,38 @@ interface TestReportFormData {
   reviewed_by: string
   
   // Request Info
-  selectedRequest?: any
+  selectedRequest?: {
+    id: string;
+    request_no: string;
+    sample_lots: Array<{
+      item_description: string;
+      planned_test_date: string | null;
+      dimension_spec: string | null;
+      request_by: string | null;
+      remarks: string | null;
+      sample_lot_id: string;
+      test_method: {
+        test_method_oid: string;
+        test_name: string;
+      };
+      job_id: string;
+      item_no: string;
+      client_name: string | null;
+      project_name: string | null;
+      specimens: Array<{
+        specimen_oid: string;
+        specimen_id: string;
+      }>;
+      specimens_count: number;
+    }>;
+    sample_lots_count: number;
+    specimens: Array<{
+      specimen_oid: string;
+      specimen_id: string;
+    }>;
+    created_at: string;
+    updated_at: string;
+  } | null
   
   // Test Items
   items: TestReportItem[]
@@ -131,7 +162,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
           if (item.specimenOid && initialData.selectedRequest) {
             // Look for the specimen in the request data
             for (const sampleLot of initialData.selectedRequest.sample_lots || []) {
-              const specimen = sampleLot.specimens?.find((spec: any) => spec.specimen_oid === item.specimenOid)
+              const specimen = sampleLot.specimens?.find((spec: { specimen_oid: string; specimen_id: string }) => spec.specimen_oid === item.specimenOid)
               if (specimen && specimen.specimen_id) {
                 specimenName = specimen.specimen_id
                 break
@@ -140,7 +171,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
             
             // Also check in global specimens if available
             if (!specimenName || specimenName === item.specimenId) {
-              const globalSpecimen = initialData.selectedRequest.specimens?.find((spec: any) => spec.specimen_oid === item.specimenOid)
+              const globalSpecimen = initialData.selectedRequest.specimens?.find((spec: { specimen_oid: string; specimen_id: string }) => spec.specimen_oid === item.specimenOid)
               if (globalSpecimen && globalSpecimen.specimen_id) {
                 specimenName = globalSpecimen.specimen_id
               }
@@ -177,7 +208,34 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
   }, [])
 
   // Handle request selection
-  const handleRequestSelect = async (requestId: string | undefined, request: any) => {
+  const handleRequestSelect = async (requestId: string | undefined, request: {
+    id: string;
+    request_no: string;
+    sample_lots: Array<{
+      item_description: string;
+      planned_test_date: string | null;
+      dimension_spec: string | null;
+      request_by: string | null;
+      remarks: string | null;
+      sample_lot_id: string;
+      test_method: {
+        test_method_oid: string;
+        test_name: string;
+      };
+      job_id: string;
+      item_no: string;
+      client_name: string | null;
+      project_name: string | null;
+      specimens: Array<{
+        specimen_oid: string;
+        specimen_id: string;
+      }>;
+      specimens_count: number;
+    }>;
+    sample_lots_count: number;
+    created_at: string;
+    updated_at: string;
+  } | undefined) => {
     if (!request) {
       setFormData(prev => ({ ...prev, selectedRequest: null, items: [] }))
       return
@@ -216,7 +274,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
         }
 
         // Create data rows for each specimen
-        const dataRows: DynamicRow[] = sampleLot.specimens?.map((specimen: any, idx: number) => {
+        const dataRows: DynamicRow[] = sampleLot.specimens?.map((specimen: { specimen_oid: string; specimen_id: string }, idx: number) => {
           const specimenLabel = specimen.specimen_id?.trim() || `Specimen ${idx + 1}`
           const row: DynamicRow = {
             id: `row-${idx + 1}`,
@@ -230,7 +288,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
           })
           
           return row
-        }).filter((row: DynamicRow) => row.label && row.label.trim() !== "") || [createDefaultRow()]
+        }).filter((row: DynamicRow) => row.label && String(row.label).trim() !== "") || [createDefaultRow()]
 
         items.push({
           id: generateId(),
@@ -256,7 +314,10 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
 
     setFormData(prev => ({
       ...prev,
-      selectedRequest: request,
+      selectedRequest: {
+        ...request,
+        specimens: request.sample_lots.flatMap(lot => lot.specimens)
+      },
       customers_name_no: prev.customers_name_no || "",
       customer_po: prev.customer_po || "",
       items
@@ -264,7 +325,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
   }
 
   // Update form field
-  const updateField = (field: keyof TestReportFormData, value: any) => {
+  const updateField = (field: keyof TestReportFormData, value: string | TestReportFormData['selectedRequest'] | TestReportItem[]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -542,10 +603,10 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
             <Label>Preparation / Request #</Label>
             <RequestSelector
               value={formData.selectedRequest?.id || ""}
-              onValueChange={handleRequestSelect}
+              onValueChange={(requestId, request) => handleRequestSelect(requestId, request as any)}
               placeholder="Select a request..."
               disabled={readOnly || isEditing}
-              selectedRequest={formData.selectedRequest}
+              selectedRequest={formData.selectedRequest as any}
             />
           </div>
         </CardContent>
@@ -677,7 +738,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
                           const selectedRow = item.data.find(row => row.label === value)
                           updateItem(item.id, { 
                             specimenId: value,
-                            specimenOid: selectedRow?.specimen_oid || ""
+                            specimenOid: String(selectedRow?.specimen_oid || "")
                           })
                         }
                       }}
@@ -688,13 +749,13 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
                       </SelectTrigger>
                       <SelectContent>
                         {item.data
-                          .filter((row) => row.label && row.label.trim() !== "")
+                          .filter((row) => row.label && String(row.label).trim() !== "")
                           .map((row) => (
-                            <SelectItem key={row.id} value={row.label}>
+                            <SelectItem key={row.id} value={String(row.label)}>
                               {row.label}
                             </SelectItem>
                           ))}
-                        {item.data.filter((row) => row.label && row.label.trim() !== "").length === 0 && (
+                        {item.data.filter((row) => row.label && String(row.label).trim() !== "").length === 0 && (
                           <SelectItem value="no-specimens" disabled>
                             No specimens available
                           </SelectItem>

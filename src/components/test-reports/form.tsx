@@ -14,7 +14,29 @@ interface TestReport {
   id: string
   reportNo: string
   preparationId: string
-  selectedRequest?: any // The selected request object
+  selectedRequest?: {
+    id: string;
+    request_no: string;
+    sample_lots: Array<{
+      item_description: string;
+      planned_test_date: string | null;
+      dimension_spec: string | null;
+      request_by: string | null;
+      client_name: string | null;
+      project_name: string | null;
+      remarks: string | null;
+      specimens: Array<{
+        specimen_oid: string;
+        specimen_id: string;
+      }>;
+      specimens_count: number;
+    }>;
+    sample_lots_count: number;
+    specimens: Array<{
+      specimen_oid: string;
+      specimen_id: string;
+    }>;
+  }
   certificate: CertificateDetails
   items: ReportItem[]
 }
@@ -52,8 +74,8 @@ interface ReportItem {
   temperature: string
   humidity: string
   comments: string
-  columns: any[]
-  data: any[]
+  columns: DynamicColumn[]
+  data: DynamicRow[]
   hasImage?: boolean
   images: Array<{
     image_url: string
@@ -89,7 +111,15 @@ interface CompleteCertificate {
   address: string
   tested_by: string
   reviewed_by: string
-  certificate_items_json: any[]
+  certificate_items_json: Array<{
+    specimen_sections: Array<{
+      specimen_id: string;
+      images_list: Array<{
+        image_url: string;
+        caption: string;
+      }>;
+    }>;
+  }>
 }
 import { DynamicTable, type DynamicColumn, type DynamicRow } from "@/components/pqr/form/dynamic-table"
 import { RequestSelector } from "@/components/common/request-selector"
@@ -115,7 +145,7 @@ function genLocalId(): string {
 }
 
 // Helper function to map test results back to form structure
-function mapTestResultsToFormData(testResults: { columns: string[], data: any[][] }, columns: DynamicColumn[]): DynamicRow[] {
+function mapTestResultsToFormData(testResults: { columns: string[], data: (string | number)[][] }, columns: DynamicColumn[]): DynamicRow[] {
   return testResults.data.map((rowData, rowIndex) => {
     const row: DynamicRow = {
       id: `row-${rowIndex + 1}`,
@@ -200,15 +230,35 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
         
         // Seed items based on the sample lots data
         if (selectedRequest.sample_lots && selectedRequest.sample_lots.length > 0) {
-          const seeded: ReportItem[] = selectedRequest.sample_lots.map((sampleLot: any, index: number) => {
+          const seeded: ReportItem[] = selectedRequest.sample_lots.map((sampleLot: {
+            item_description: string;
+            planned_test_date: string | null;
+            dimension_spec: string | null;
+            request_by: string | null;
+            remarks: string | null;
+            sample_lot_id: string;
+            test_method: {
+              test_method_oid: string;
+              test_name: string;
+            };
+            job_id: string;
+            item_no: string;
+            client_name: string | null;
+            project_name: string | null;
+            specimens: Array<{
+              specimen_oid: string;
+              specimen_id: string;
+            }>;
+            specimens_count: number;
+          }, index: number) => {
             // Create dynamic columns based on test_method.test_columns (will be fetched later)
             const dynamicColumns: DynamicColumn[] = fallbackColumns() // Default columns, will be updated when test method details are fetched
             
             // Create initial data rows based on specimens
-            const initialData: DynamicRow[] = sampleLot.specimens?.map((specimen: any, specIndex: number) => ({
+            const initialData: DynamicRow[] = sampleLot.specimens?.map((specimen: { specimen_oid: string; specimen_id: string }, specIndex: number) => ({
               id: `row-${specIndex + 1}`,
               label: specimen.specimen_id || `Specimen ${specIndex + 1}`,
-              specimen_oid: specimen.specimen_oid || specimen.id, // Store the OID for API calls
+              specimen_oid: specimen.specimen_oid, // Store the OID for API calls
               ...dynamicColumns.reduce((acc, col) => {
                 acc[col.accessorKey] = "" // Empty values for input columns
                 return acc
@@ -219,7 +269,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
                id: genLocalId(),
                preparationItemId: sampleLot.sample_lot_id || "",
                specimenId: sampleLot.specimens?.[0]?.specimen_id || "",
-               specimenOid: sampleLot.specimens?.[0]?.specimen_oid || sampleLot.specimens?.[0]?.id || "",
+               specimenOid: sampleLot.specimens?.[0]?.specimen_oid || "",
                testMethodId: sampleLot.test_method?.test_method_oid || "",
                testMethodName: sampleLot.test_method?.test_name || "",
                testEquipment: "",
@@ -449,15 +499,15 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
       for (const item of items) {
         // Transform test results table data to include column names and data
         const columnNames = item.columns.map(col => col.header)
-        const testResultsData: any[][] = []
+        const testResultsData: (string | number)[][] = []
         
         // Process each row in the dynamic table
         item.data.forEach((row, rowIndex) => {
-          const rowData: any[] = []
+          const rowData: (string | number)[] = []
           // Process each column in the row
           item.columns.forEach((column, colIndex) => {
             const value = row[column.accessorKey] || ""
-            rowData[colIndex] = value
+            rowData[colIndex] = String(value)
           })
           testResultsData[rowIndex] = rowData
         })
@@ -594,7 +644,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
                         const selectedRow = it.data?.find(row => row.label === value)
                         updateItem(it.id, { 
                           specimenId: value,
-                          specimenOid: selectedRow?.specimen_oid || ""
+                          specimenOid: String(selectedRow?.specimen_oid || "")
                         })
                       }} disabled={readOnly}>
                         <SelectTrigger className="w-[200px]">
@@ -602,7 +652,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
                         </SelectTrigger>
                         <SelectContent>
                           {it.data?.map((row, index) => (
-                            <SelectItem key={row.id} value={row.label || `Specimen ${index + 1}`}>
+                            <SelectItem key={row.id} value={String(row.label || `Specimen ${index + 1}`)}>
                               {row.label || `Specimen ${index + 1}`}
                             </SelectItem>
                           ))}

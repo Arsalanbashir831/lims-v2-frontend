@@ -34,8 +34,8 @@ export default function LoginPage() {
       
       // Redirect to dashboard - the dashboard will handle role-based routing
       router.push(ROUTES.APP.DASHBOARD)
-    } catch (err: any) {
-      toast.error(err.message || "Login failed. Please try again.")
+    } catch (err: unknown) {
+      toast.error((err as Error)?.message || "Login failed. Please try again.")
     } finally {
       setIsLoading(false)
     }

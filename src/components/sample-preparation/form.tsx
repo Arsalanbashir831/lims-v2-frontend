@@ -120,9 +120,9 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
   useEffect(() => {
     if (initialData && 'test_items' in initialData && initialData.test_items) {
       const descriptions: Record<string, string> = {}
-      initialData.test_items.forEach((item: any) => {
-        if (item.id && item.description) {
-          descriptions[item.id] = item.description
+      initialData.test_items.forEach((item: PreparationItem) => {
+        if (item.id && item.item_description) {
+          descriptions[item.id] = item.item_description
         }
       })
       setItemDescriptionByRow(descriptions)
@@ -197,8 +197,8 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
           material_storage_location: lot.storage_location,
           condition: lot.condition,
           status: lot.is_active ? "active" : "inactive",
-          test_methods: (lot.test_methods || []).map((tm: any) => tm.id),
-          test_method_names: (lot.test_methods || []).map((tm: any) => tm.test_name),
+          test_methods: (lot.test_methods || []).map((tm: { id: string; test_name: string }) => tm.id),
+          test_method_names: (lot.test_methods || []).map((tm: { id: string; test_name: string }) => tm.test_name),
           is_active: lot.is_active,
         }))
 
@@ -210,19 +210,19 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
             name: response.job_info?.client_name || "",
             is_active: true,
           } as any,
-          end_user: response.job_info?.end_user || undefined,
-          received_date: response.job_info?.receive_date || new Date().toISOString(),
-          remarks: response.job_info?.remarks || undefined,
+          end_user: (response.job_info as any)?.end_user || undefined,
+          received_date: (response.job_info as any)?.receive_date || new Date().toISOString(),
+          remarks: (response.job_info as any)?.remarks || undefined,
           is_active: true,
-          created_at: response.job_info?.created_at || new Date().toISOString(),
-          updated_at: response.job_info?.updated_at || new Date().toISOString(),
+          created_at: (response.job_info as any)?.created_at || new Date().toISOString(),
+          updated_at: (response.job_info as any)?.updated_at || new Date().toISOString(),
           samples: localSamples as any,
           sample_lots_count: response.total || localSamples.length,
         }
 
         // Map local numeric sample id -> real lot id (ObjectId string)
         const idMap: Record<number, string> = {}
-          ; (response.data || []).forEach((lot: any, idx: number) => { idMap[idx + 1] = String(lot.id) })
+          ; (response.data || []).forEach((lot: { id: string }, idx: number) => { idMap[idx + 1] = String(lot.id) })
 
         setSampleIdMap(idMap)
         setCompleteJob(localJob)
@@ -281,7 +281,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
     setItems(prev => prev.filter(item => item.id !== rowId).map((i, idx) => ({ ...i, indexNo: idx + 1 })))
   }, [])
 
-  const updateItemField = useCallback((rowId: string, key: keyof PreparationItem, value: any) => {
+  const updateItemField = useCallback((rowId: string, key: keyof PreparationItem, value: string | number | string[]) => {
     setItems(prev => prev.map(item =>
       item.id === rowId ? { ...item, [key]: value } : item
     ))

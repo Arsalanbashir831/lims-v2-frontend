@@ -74,7 +74,7 @@ export function SampleReceivingForm({ initialData, onSubmit, readOnly = false }:
     setItems(prev => prev.filter(i => i.id !== id).map((i, idx) => ({ ...i, indexNo: idx + 1 })))
   }, [])
 
-  const updateItemField = useCallback((id: string, key: keyof SampleItem, value: any) => {
+  const updateItemField = useCallback((id: string, key: keyof SampleItem, value: unknown) => {
     setItems(prev => prev.map(i => (i.id === id ? { ...i, [key]: value } : i)))
   }, [])
 

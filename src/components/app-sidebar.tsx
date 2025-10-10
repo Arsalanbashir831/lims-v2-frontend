@@ -17,7 +17,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
-import { Home, FlaskConical, Microscope, ClipboardList, FileText, Archive, Route, BookOpenText, ChevronDown, ChevronRight, Users } from "lucide-react"
+import { Home, FlaskConical, Microscope, ClipboardList, FileText, Route, ChevronDown, ChevronRight, Users } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { ThemeSwitcher } from "@/components/ui/theme-switcher"
 import { useTheme } from "next-themes"
@@ -66,10 +66,10 @@ export function AppSidebar() {
     )
   }
 
-  const renderNavItem = (item: any) => {
+  const renderNavItem = (item: { href?: string; label: string; icon: React.ElementType; items?: { href: string; label: string }[] }) => {
     if (item.items) {
       // This is a dropdown item
-      const isActive = item.items.some((subItem: any) => pathname?.startsWith(subItem.href))
+      const isActive = item.items.some((subItem: { href: string }) => pathname?.startsWith(subItem.href))
       const isExpanded = expandedSections.includes(item.label)
       
       return (
@@ -88,7 +88,7 @@ export function AppSidebar() {
           
           {isExpanded && (
             <SidebarMenuSub>
-              {item.items.map((subItem: any) => {
+              {item.items.map((subItem: { href: string; label: string }) => {
                 const isSubActive = pathname?.startsWith(subItem.href)
                 return (
                   <SidebarMenuSubItem key={subItem.href}>
@@ -104,7 +104,7 @@ export function AppSidebar() {
           )}
         </SidebarMenuItem>
       )
-    } else {
+    } else if (item.href) {
       // This is a regular menu item
       const Icon = item.icon
       const isActive = pathname?.startsWith(item.href)
@@ -119,6 +119,8 @@ export function AppSidebar() {
         </SidebarMenuItem>
       )
     }
+    
+    return null
   }
 
   return (
@@ -133,7 +135,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map(renderNavItem)}
+              {navItems.map((item) => renderNavItem(item))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

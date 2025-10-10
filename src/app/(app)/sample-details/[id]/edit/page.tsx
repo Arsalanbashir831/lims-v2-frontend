@@ -55,19 +55,22 @@ export default function EditSampleDetailPage() {
     job: {
       id: id, // Use the document ID
       job_id: data?.job_info?.job_id || "",
-      client_id: data?.job_info?.client_id || "",
+      client_id: "", // Not available in API response
       project_name: data?.job_info?.project_name || "",
       client_name: data?.job_info?.client_name || "",
-      end_user: data?.job_info?.end_user || "",
-      receive_date: data?.job_info?.receive_date || "",
-      received_by: data?.job_info?.received_by || "",
-      remarks: data?.job_info?.remarks || "",
+      end_user: "", // Not available in API response
+      receive_date: "", // Not available in API response
+      received_by: "", // Not available in API response
+      remarks: "", // Not available in API response
       is_active: true,
-      created_at: data?.job_info?.created_at || "",
-      updated_at: data?.job_info?.updated_at || "",
+      created_at: "", // Not available in API response
+      updated_at: "", // Not available in API response
       sample_lots_count: data?.total || 0,
     },
-    lots: data?.data || [],
+    lots: (data?.data || []).map(lot => ({
+      ...lot,
+      job_id: data?.job_info?.job_id || "",
+    })),
   }
 
   return (

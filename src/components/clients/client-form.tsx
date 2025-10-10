@@ -6,11 +6,24 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import type { Client, CreateClientData, UpdateClientData } from "@/services/clients.service"
+import type { Client, CreateClientData } from "@/services/clients.service"
+
+// Form data type that allows optional fields for form state
+type ClientFormData = {
+  client_name?: string
+  phone?: string | null
+  contact_person?: string | null
+  email?: string | null
+  address?: string | null
+  city?: string | null
+  state?: string | null
+  postal_code?: string | null
+  country?: string | null
+}
 
 interface ClientFormProps {
   initialData?: Client
-  onSubmit: (data: CreateClientData | UpdateClientData) => void
+  onSubmit: (data: CreateClientData) => void
   onCancel: () => void
   readOnly?: boolean
 }
@@ -21,7 +34,7 @@ export function ClientForm({
   onCancel,
   readOnly = false
 }: ClientFormProps) {
-  const createInitialFormData = (): CreateClientData => ({
+  const createInitialFormData = (): ClientFormData => ({
     client_name: "",
     phone: "",
     contact_person: "",
@@ -44,8 +57,8 @@ export function ClientForm({
     } : {}),
   })
 
-  const [formData, setFormData] = useState<CreateClientData>(createInitialFormData())
-  const [originalFormData, setOriginalFormData] = useState<CreateClientData>(createInitialFormData())
+  const [formData, setFormData] = useState<ClientFormData>(createInitialFormData())
+  const [originalFormData, setOriginalFormData] = useState<ClientFormData>(createInitialFormData())
 
   useEffect(() => {
     // Update both form data and original data when initialData changes
@@ -54,7 +67,7 @@ export function ClientForm({
     setOriginalFormData(updatedData)
   }, [initialData])
 
-  const handleInputChange = (field: keyof CreateClientData, value: any) => {
+  const handleInputChange = (field: keyof ClientFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -64,7 +77,26 @@ export function ClientForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
+    
+    // Ensure client_name is not empty before submitting
+    if (!formData.client_name?.trim()) {
+      return
+    }
+    
+    // Create a properly typed data object
+    const submitData: CreateClientData = {
+      client_name: formData.client_name.trim(),
+      phone: formData.phone || null,
+      contact_person: formData.contact_person || null,
+      email: formData.email || null,
+      address: formData.address || null,
+      city: formData.city || null,
+      state: formData.state || null,
+      postal_code: formData.postal_code || null,
+      country: formData.country || null,
+    }
+    
+    onSubmit(submitData)
   }
 
   const handleCancel = () => {
@@ -192,4 +224,3 @@ export function ClientForm({
   )
 }
 
-export type { Client } from "@/lib/clients"

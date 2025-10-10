@@ -16,15 +16,12 @@ export function useSampleInformation(page: number = 1, searchQuery?: string, ena
   return useQuery({
     queryKey: searchQuery ? SAMPLE_INFORMATION_QUERY_KEYS.search(searchQuery, page) : SAMPLE_INFORMATION_QUERY_KEYS.list(page, searchQuery),
     queryFn: () => {
-      if (searchQuery?.trim()) {
-        return sampleInformationService.search(searchQuery.trim(), page)
-      }
-      return sampleInformationService.getAll(page)
+      return sampleInformationService.search(searchQuery?.trim() ?? "", page)
     },
     enabled,
     staleTime: 3 * 60 * 1000, // 3 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData: any) => previousData,
   })
 }
 
@@ -48,7 +45,7 @@ export function useCreateSampleInformation() {
     onSuccess: (newSampleInfo) => {
       // Invalidate and refetch sample information list
       queryClient.invalidateQueries({ queryKey: SAMPLE_INFORMATION_QUERY_KEYS.lists() })
-      
+
       // Add the new sample information to the cache
       queryClient.setQueryData(SAMPLE_INFORMATION_QUERY_KEYS.detail(newSampleInfo.job_id), newSampleInfo)
     },
@@ -60,12 +57,12 @@ export function useUpdateSampleInformation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateSampleInformationData }) => 
+    mutationFn: ({ id, data }: { id: string; data: UpdateSampleInformationData }) =>
       sampleInformationService.update(id, data),
     onSuccess: (updatedSampleInfo, { id }) => {
       // Update the specific sample information in cache
       queryClient.setQueryData(SAMPLE_INFORMATION_QUERY_KEYS.detail(id), updatedSampleInfo)
-      
+
       // Invalidate lists to refetch with updated data
       queryClient.invalidateQueries({ queryKey: SAMPLE_INFORMATION_QUERY_KEYS.lists() })
     },
@@ -81,7 +78,7 @@ export function useDeleteSampleInformation() {
     onSuccess: (_, deletedId) => {
       // Remove the sample information from cache
       queryClient.removeQueries({ queryKey: SAMPLE_INFORMATION_QUERY_KEYS.detail(deletedId) })
-      
+
       // Invalidate lists to refetch without the deleted sample information
       queryClient.invalidateQueries({ queryKey: SAMPLE_INFORMATION_QUERY_KEYS.lists() })
     },

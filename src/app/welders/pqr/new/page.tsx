@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PQRForm, PQRFormData } from "@/components/pqr/form/pqr-form"
 import { toast } from "sonner"
-import { createPqr } from "@/services/pqr.service"
+// import { createPqr } from "@/services/pqr.service"
 import { savePqrForm } from "@/lib/pqr-form-store"
 import { BackButton } from "@/components/ui/back-button"
 import { ROUTES } from "@/constants/routes"
@@ -19,8 +19,19 @@ export default function NewPQRPage() {
 
   function extractHeaderValue(formData: PQRFormData, key: string): string {
     const rows = formData.headerInfo?.data ?? []
-    const row = rows.find(r => (r.description ?? "").toLowerCase() === key.toLowerCase())
-    return (row?.value ?? "").trim()
+    const row = rows.find(r => {
+      const desc = r.description
+      // Only call toLowerCase if desc is string
+      return typeof desc === "string" && desc.toLowerCase() === key.toLowerCase()
+    })
+    const value = row?.value
+    // Only call trim if value is string, else convert to string
+    if (typeof value === "string") {
+      return value.trim()
+    } else if (typeof value === "number" || typeof value === "boolean") {
+      return String(value)
+    }
+    return ""
   }
 
   const handleSubmit = (data: PQRFormData) => {
@@ -33,23 +44,24 @@ export default function NewPQRPage() {
     const clientEndUser = extractHeaderValue(data, "Client/End User")
     const dateOfTesting = extractHeaderValue(data, "Date of Testing")
 
-    const rec = createPqr({
-      contractorName,
-      pqrNo,
-      supportingPwpsNo,
-      dateOfIssue,
-      dateOfWelding,
-      biNumber,
-      clientEndUser,
-      dateOfTesting,
-      createdAt: 0 as unknown as never,
-      updatedAt: 0 as unknown as never,
-    } as any)
+    const rec = null
+    // createPqr({
+    //   contractorName,
+    //   pqrNo,
+    //   supportingPwpsNo,
+    //   dateOfIssue,
+    //   dateOfWelding,
+    //   biNumber,
+    //   clientEndUser,
+    //   dateOfTesting,
+    //   createdAt: 0 as unknown as never,
+    //   updatedAt: 0 as unknown as never,
+    // } as any)
 
     // Persist full form for preview
-    if (rec?.id) {
-      savePqrForm(rec.id, data)
-    }
+    // if (rec?.id) {
+    //   savePqrForm(rec.id, data)
+    // }
 
     toast.success("PQR saved")
     router.push(ROUTES.APP.WELDERS.PQR.ROOT)

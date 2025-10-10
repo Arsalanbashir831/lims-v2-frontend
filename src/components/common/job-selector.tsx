@@ -18,7 +18,7 @@ interface Job {
 interface JobSelectorProps {
   value?: string
   onValueChange: (value: string) => void
-  onJobSelect?: (job: any) => void
+  onJobSelect?: (job: unknown) => void
   placeholder?: string
   disabled?: boolean
   className?: string
@@ -50,7 +50,29 @@ export function JobSelector({
   // Use the optimized useSampleInformation hook - only load when popover is open
   const { data: jobsData, isLoading: loading } = useSampleInformation(1, debouncedSearchQuery.trim() || undefined)
   
-  const jobs: any[] = jobsData?.results ?? []
+  const jobs: Array<{
+    id: string;
+    job_id: string;
+    client_name: string;
+    project_name: string;
+    sample_count: number;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    created_by: string;
+    updated_by: string;
+  }> = (jobsData as { results: Array<{
+    id: string;
+    job_id: string;
+    client_name: string;
+    project_name: string;
+    sample_count: number;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    created_by: string;
+    updated_by: string;
+  }> } | undefined)?.results ?? []
 
   // Find selected job
   const selectedJobData = useMemo(() => {

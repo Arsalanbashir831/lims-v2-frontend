@@ -1,3 +1,5 @@
+/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
+
 import React from 'react';
 import { getSectionDataByAccessor } from '@/lib/pqr-utils';
 

@@ -18,11 +18,11 @@ export function useCertificates(page: number = 1, searchQuery?: string, enabled:
   
   return useQuery({
     queryKey: hasSearchQuery 
-      ? CERTIFICATES_QUERY_KEYS.search(searchQuery, page)
+      ? CERTIFICATES_QUERY_KEYS.search(searchQuery || "", page)
       : CERTIFICATES_QUERY_KEYS.list(page, searchQuery),
     queryFn: () => {
       if (hasSearchQuery) {
-        return certificatesService.search(searchQuery, page)
+        return certificatesService.search(searchQuery || "", page)
       }
       return certificatesService.getAll(page)
     },

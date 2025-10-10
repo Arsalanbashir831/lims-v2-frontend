@@ -1,3 +1,5 @@
+/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
+
 import { getSectionDataByAccessor } from '@/lib/pqr-utils';
 
 export const TensileTestView = ({ tensileTestData, isAsme }: { tensileTestData: any; isAsme: boolean }) => {

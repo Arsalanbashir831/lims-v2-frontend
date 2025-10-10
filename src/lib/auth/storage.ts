@@ -1,3 +1,5 @@
+import { User } from "../schemas/user"
+
 const ACCESS_KEY = "lims:access"
 const REFRESH_KEY = "lims:refresh"
 const USER_KEY = "lims:user"
@@ -21,14 +23,14 @@ export function clearTokens() {
   try { localStorage.removeItem(ACCESS_KEY); localStorage.removeItem(REFRESH_KEY) } catch {}
 }
 
-export function setUser(user: any | undefined) {
+export function setUser(user: User | undefined) {
   try {
     if (user) localStorage.setItem(USER_KEY, JSON.stringify(user))
     else localStorage.removeItem(USER_KEY)
   } catch {}
 }
 
-export function getUser<T = any>(): T | undefined {
+export function getUser<T = User>(): T | undefined {
   try {
     const raw = localStorage.getItem(USER_KEY)
     return raw ? (JSON.parse(raw) as T) : undefined

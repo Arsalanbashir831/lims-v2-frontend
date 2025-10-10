@@ -9,6 +9,58 @@ import type { TrackingRow } from "@/services/tracking.service"
 import { useSampleLotsByJob } from "@/hooks/use-sample-lots"
 import { useSamplePreparationsByJob } from "@/hooks/use-sample-preparations"
 import { useCertificatesByJob } from "@/hooks/use-certificates"
+
+// Types for API responses
+interface TestMethod {
+  id: string;
+  test_name: string;
+}
+
+interface Specimen {
+  specimen_id: string;
+  specimen_oid: string;
+}
+
+interface SampleLot {
+  id: string;
+  item_no: string;
+  description: string;
+  sample_type: string;
+  material_type: string;
+  heat_no: string;
+  mtc_no: string;
+  test_methods: TestMethod[];
+}
+
+interface SamplePreparation {
+  id: string;
+  request_no: string;
+  created_at: string;
+  sample_lots: Array<{
+    sample_lot_info?: {
+      item_no: string;
+    };
+    item_description: string;
+    test_method?: {
+      test_name: string;
+    };
+    planned_test_date?: string;
+    specimens_count: number;
+    specimens: Specimen[];
+  }>;
+}
+
+interface Certificate {
+  id: string;
+  certificate_id: string;
+  issue_date: string;
+  request_info?: {
+    request_no: string;
+    sample_lots_count: number;
+    total_specimens: number;
+    specimens: Specimen[];
+  };
+}
 import Link from "next/link"
 import { ROUTES } from "@/constants/routes"
 
@@ -52,10 +104,10 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                 <Field label="Client" value={row?.clientName} />
                 <Field label="Project" value={row?.projectName} />
                 <Field label="Items" value={String(sampleLotsData?.total ?? row?.itemsCount ?? 0)} />
-                <Field label="End User" value={sampleLotsData?.job_info?.end_user ?? row?.endUser} />
-                <Field label="Received By" value={sampleLotsData?.job_info?.received_by ?? row?.receivedBy} />
-                <Field label="Received Date" value={sampleLotsData?.job_info?.receive_date ? new Date(sampleLotsData.job_info.receive_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : row?.receivedDate} />
-                <Field label="Remarks" value={sampleLotsData?.job_info?.remarks ?? row?.remarks} />
+                <Field label="End User" value={(sampleLotsData?.job_info as any)?.end_user ?? row?.endUser} />
+                <Field label="Received By" value={(sampleLotsData?.job_info as any)?.received_by ?? row?.receivedBy} />
+                <Field label="Received Date" value={(sampleLotsData?.job_info as any)?.receive_date ? new Date((sampleLotsData?.job_info as any).receive_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : row?.receivedDate} />
+                <Field label="Remarks" value={(sampleLotsData?.job_info as any)?.remarks ?? row?.remarks} />
               </div>
             </section>
 
@@ -86,14 +138,14 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                         </div>
                         <div className="text-right space-y-1">
                           <div className="flex flex-wrap gap-1 justify-end">
-                            {sampleLot.test_methods.slice(0, 2).map((method: any, idx: number) => (
+                            {(sampleLot.test_method_oids || []).slice(0, 2).map((methodId: string, idx: number) => (
                               <Badge key={idx} variant="outline" className="text-xs">
-                                {method.test_name.length > 12 ? method.test_name.substring(0, 12) + "..." : method.test_name}
+                                {methodId.length > 12 ? methodId.substring(0, 12) + "..." : methodId}
                               </Badge>
                             ))}
-                            {sampleLot.test_methods.length > 2 && (
+                            {(sampleLot.test_method_oids || []).length > 2 && (
                               <Badge variant="outline" className="text-xs">
-                                +{sampleLot.test_methods.length - 2}
+                                +{(sampleLot.test_method_oids || []).length - 2}
                               </Badge>
                             )}
                           </div>
@@ -163,7 +215,7 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                               <div key={index} className="text-sm">
                                 <div className="font-medium">{lot.specimens_count} specimens</div>
                                 <div className="text-xs text-muted-foreground">
-                                  {lot.specimens.slice(0, 2).map((spec: any) => spec.specimen_id).join(', ')}
+                                  {lot.specimens.slice(0, 2).map((spec: Specimen) => spec.specimen_id).join(', ')}
                                   {lot.specimens.length > 2 && ` +${lot.specimens.length - 2} more`}
                                 </div>
                               </div>
@@ -235,7 +287,7 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                           <div className="space-y-1">
                             <div className="text-sm font-medium">{certificate.request_info?.total_specimens} specimens</div>
                             <div className="text-xs text-muted-foreground">
-                              {certificate.request_info?.specimens?.slice(0, 2).map((spec: any) => spec.specimen_id).join(', ')}
+                              {certificate.request_info?.specimens?.slice(0, 2).map((spec: Specimen) => spec.specimen_id).join(', ')}
                               {certificate.request_info?.specimens && certificate.request_info.specimens.length > 2 && 
                                 ` +${certificate.request_info.specimens.length - 2} more`}
                             </div>

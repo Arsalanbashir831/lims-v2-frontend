@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PQRForm, PQRFormData } from "@/components/pqr/form/pqr-form"
 import { toast } from "sonner"
-import { getPqr, updatePqr } from "@/services/pqr.service"
+// import { getPqr, updatePqr } from "@/services/pqr.service"
 import { ROUTES } from "@/constants/routes"
 import { FormHeader } from "@/components/common/form-header"
 
@@ -18,16 +18,20 @@ export default function EditPQRPage() {
   const isAsme = useMemo(() => formType === "asme", [formType])
 
   // In a real app, load full PQR form data by id; for now we only have list summary
-  const [summary, setSummary] = useState(() => (id ? getPqr(id) : null))
+  const [summary, setSummary] = useState(() => (id ? null : null))
 
   useEffect(() => {
-    if (id) setSummary(getPqr(id))
+    // if (id) setSummary(getPqr(id))
   }, [id])
 
   function extractHeaderValue(formData: PQRFormData, key: string): string {
     const rows = formData.headerInfo?.data ?? []
-    const row = rows.find(r => (r.description ?? "").toLowerCase() === key.toLowerCase())
-    return (row?.value ?? "").trim()
+    const row = rows.find(r => {
+      const desc = r.description
+      return typeof desc === "string" && desc.toLowerCase() === key.toLowerCase()
+    })
+    const value = row?.value
+    return typeof value === "string" ? value.trim() : value !== undefined ? String(value) : ""
   }
 
   const handleSubmit = (data: PQRFormData) => {
@@ -41,16 +45,16 @@ export default function EditPQRPage() {
     const clientEndUser = extractHeaderValue(data, "Client/End User")
     const dateOfTesting = extractHeaderValue(data, "Date of Testing")
 
-    updatePqr(id, {
-      contractorName,
-      pqrNo,
-      supportingPwpsNo,
-      dateOfIssue,
-      dateOfWelding,
-      biNumber,
-      clientEndUser,
-      dateOfTesting,
-    })
+    // updatePqr(id, {
+    //   contractorName,
+    //   pqrNo,
+    //   supportingPwpsNo,
+    //   dateOfIssue,
+    //   dateOfWelding,
+    //   biNumber,
+    //   clientEndUser,
+    //   dateOfTesting,
+    // })
 
     toast.success("PQR updated")
     router.push(ROUTES.APP.WELDERS.PQR.ROOT)

@@ -11,7 +11,7 @@ import { DataTablePagination } from "@/components/ui/data-table-pagination"
 import { FilterSearch } from "@/components/ui/filter-search"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ColumnDef } from "@tanstack/react-table"
+import { ColumnDef, Row } from "@tanstack/react-table"
 import { ROUTES } from "@/constants/routes"
 import Link from "next/link"
 
@@ -219,7 +219,7 @@ export default function TestingReportPage() {
         const selected = table.getSelectedRowModel().rows
         const hasSelected = selected.length > 0
         const onBulkDelete = () => {
-          const ids = selected.map((r: any) => r.original.id)
+          const ids = selected.map((r: Row<TestingReport>) => r.original.id)
           if (deleteMultipleTestingReports(ids)) {
             table.resetRowSelection()
             window.location.reload()

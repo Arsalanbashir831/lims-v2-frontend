@@ -13,6 +13,7 @@ import { toast } from "sonner"
 import { RegisterUserSchema, UserRoleSchema } from "@/lib/schemas/user"
 import { AuthService } from "@/services/auth.service"
 import { ROUTES } from "@/constants/routes"
+import { UserRole } from "@/lib/schemas/user"
 
 const registerSchema = RegisterUserSchema.extend({
   confirmPassword: z.string()
@@ -63,20 +64,22 @@ export function RegisterForm() {
       toast.success(message)
       router.push(ROUTES.AUTH.LOGIN)
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Registration error:', error)
       
       // Handle different error types
       let errorMessage = 'Registration failed. Please try again.'
       
-      if (error.message) {
+      if (error instanceof Error && 'message' in error) {
         errorMessage = error.message
-      } else if (error.error) {
-        errorMessage = error.error
+      } else if (error instanceof Error && 'error' in error) {
+        const errorVal = (error as { error: string }).error
+        if (typeof errorVal === 'string') {
+          errorMessage = errorVal
+        }
       } else if (typeof error === 'string') {
         errorMessage = error
       }
-      
       toast.error(errorMessage)
     } finally {
       setIsLoading(false)
@@ -117,7 +120,7 @@ export function RegisterForm() {
         <Label htmlFor="role">Role</Label>
         <Select
           value={selectedRole}
-          onValueChange={(value) => setValue('role', value as any)}
+          onValueChange={(value) => setValue('role', value as UserRole)}
           disabled={isLoading}
         >
           <SelectTrigger className="w-full">

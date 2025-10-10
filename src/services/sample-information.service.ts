@@ -42,7 +42,7 @@ export const sampleInformationService = {
     const endpoint = API_ROUTES.Lab_MANAGERS.ALL_SAMPLE_INFORMATION
     const response = await api.get(endpoint, { searchParams: { page: page.toString() } }).json<{
       status: string
-      data: any[]
+      data: Record<string, unknown>[]
       pagination: {
         current_page: number
         limit: number
@@ -55,10 +55,10 @@ export const sampleInformationService = {
     // Extract the data field from Django response
     if (response.status === "success" && response.data) {
       return {
-        results: response.data.map((item: any) => ({
-          ...mapToUi(item),
-          id: item.id || item._id, // Ensure id field is included
-        })),
+        results: response.data.map((item: Record<string, unknown>) => ({
+          ...mapToUi(item as any),
+          id: (item.id || item._id) as string, // Ensure id field is included
+        })) as any,
         count: response.pagination.total_records,
         next: response.pagination.has_next ? 'next' : null,
         previous: response.pagination.current_page > 1 ? 'prev' : null,
@@ -195,22 +195,33 @@ export const sampleInformationService = {
     await api.delete(endpoint)
   },
 
-  async search(query: string, page: number = 1): Promise<{ results: any[]; count: number; next: string | null; previous: string | null }> {
+  async search(query: string, page: number = 1): Promise<{ results: Array<{
+    id: string;
+    job_id: string;
+    client_name: string;
+    project_name: string;
+    sample_count: number;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    created_by: string;
+    updated_by: string;
+  }>; count: number; next: string | null; previous: string | null }> {
     const endpoint = API_ROUTES.Lab_MANAGERS.SEARCH_SAMPLE_INFORMATION
     const response = await api.get(endpoint, { searchParams: { job_id: query, page: page.toString() } }).json<{
       status: string
-      data: any[]
+      data: Record<string, unknown>[]
       total: number
-      filters_applied?: any
+      filters_applied?: Record<string, unknown>
     }>()
     
     // Extract the data field from Django response
     if (response.status === "success" && response.data) {
       return {
-        results: response.data.map((item: any) => ({
-          ...mapToUi(item),
-          id: item.id || item._id, // Ensure id field is included
-        })),
+        results: response.data.map((item: Record<string, unknown>) => ({
+          ...mapToUi(item as any),
+          id: (item.id || item._id) as string, // Ensure id field is included
+        })) as any,
         count: response.total,
         next: null, // Simplified for now
         previous: null, // Simplified for now
@@ -220,10 +231,62 @@ export const sampleInformationService = {
     throw new Error("Failed to search sample information")
   },
 
-  async getCompleteSampleInformation(id: string): Promise<{ job: any, lots: any[] }> {
+  async getCompleteSampleInformation(id: string): Promise<{ job: {
+    id: string;
+    job_id: string;
+    client_name: string;
+    project_name: string;
+    sample_count: number;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    created_by: string;
+    updated_by: string;
+  }, lots: Array<{
+    id: string;
+    item_no: string;
+    description: string;
+    sample_type: string;
+    material_type: string;
+    heat_no: string;
+    mtc_no: string;
+    storage_location: string;
+    test_method_oids: string[];
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    created_by: string;
+    updated_by: string;
+  }> }> {
     const endpoint = API_ROUTES.Lab_MANAGERS.SAMPLE_INFORMATION_COMPLETE_INFO(id)
     const response = await api.get(endpoint).json()
-    return response as { job: any, lots: any[] }
+    return response as { job: {
+      id: string;
+      job_id: string;
+      client_name: string;
+      project_name: string;
+      sample_count: number;
+      is_active: boolean;
+      created_at: string;
+      updated_at: string;
+      created_by: string;
+      updated_by: string;
+    }, lots: Array<{
+      id: string;
+      item_no: string;
+      description: string;
+      sample_type: string;
+      material_type: string;
+      heat_no: string;
+      mtc_no: string;
+      storage_location: string;
+      test_method_oids: string[];
+      is_active: boolean;
+      created_at: string;
+      updated_at: string;
+      created_by: string;
+      updated_by: string;
+    }> }
   },
 }
 export type { CreateSampleInformationData, UpdateSampleInformationData }

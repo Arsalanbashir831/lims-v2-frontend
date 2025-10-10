@@ -5,10 +5,10 @@ import { samplePreparationService, SamplePreparationResponse, CreateSamplePrepar
 export const SAMPLE_PREPARATIONS_QUERY_KEYS = {
     all: ['sample-preparations'] as const,
     lists: () => [...SAMPLE_PREPARATIONS_QUERY_KEYS.all, 'list'] as const,
-    list: (page: number, search?: string, filters?: any) => [...SAMPLE_PREPARATIONS_QUERY_KEYS.lists(), { page, search, filters }] as const,
+    list: (page: number, search?: string, filters?: Record<string, unknown>) => [...SAMPLE_PREPARATIONS_QUERY_KEYS.lists(), { page, search, filters }] as const,
     details: () => [...SAMPLE_PREPARATIONS_QUERY_KEYS.all, 'detail'] as const,
     detail: (id: string) => [...SAMPLE_PREPARATIONS_QUERY_KEYS.details(), id] as const,
-    search: (query: string, page: number, filters?: any) => [...SAMPLE_PREPARATIONS_QUERY_KEYS.all, 'search', { query, page, filters }] as const,
+    search: (query: string, page: number, filters?: Record<string, unknown>) => [...SAMPLE_PREPARATIONS_QUERY_KEYS.all, 'search', { query, page, filters }] as const,
     byJob: (jobId: string) => [...SAMPLE_PREPARATIONS_QUERY_KEYS.all, 'by-job', jobId] as const,
 }
 
@@ -18,10 +18,10 @@ export function useSamplePreparations(page: number = 1, searchQuery?: string, en
   const hasSearch = searchQuery?.trim()
   
   return useQuery({
-    queryKey: hasSearch ? SAMPLE_PREPARATIONS_QUERY_KEYS.search(searchQuery, page) : SAMPLE_PREPARATIONS_QUERY_KEYS.list(page, searchQuery),
+    queryKey: hasSearch ? SAMPLE_PREPARATIONS_QUERY_KEYS.search(searchQuery ?? "", page) : SAMPLE_PREPARATIONS_QUERY_KEYS.list(page, searchQuery),
     queryFn: () => {
       if (hasSearch) {
-        return samplePreparationService.search(searchQuery.trim(), page)
+        return samplePreparationService.search((searchQuery || "").trim(), page)
       }
       return samplePreparationService.getAll(page)
     },
