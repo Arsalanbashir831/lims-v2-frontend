@@ -10,30 +10,22 @@ import { toast } from "sonner"
 import { ServerPagination } from "@/components/ui/server-pagination"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
+import { FilterSearch } from "@/components/ui/filter-search"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { PencilIcon, TrashIcon } from "lucide-react"
 import { formatDateSafe } from "@/utils/hydration-fix"
-import { AdvancedSearch } from "@/components/sample-preparation/advanced-search"
 import { SamplePrepDrawer } from "@/components/sample-preparation/sample-prep-drawer"
 import { useSamplePreparations, useDeleteSamplePreparation } from "@/hooks/use-sample-preparations"
 
 export default function SamplePreparationPage() {
   const [currentPage, setCurrentPage] = useState(1)
-  const [searchFilters, setSearchFilters] = useState({
-    query: "",
-    jobId: "",
-    clientName: "",
-    projectName: "",
-    specimenId: "",
-    dateFrom: "",
-    dateTo: ""
-  })
+  const [searchQuery, setSearchQuery] = useState("")
   const [selectedSamplePrepId, setSelectedSamplePrepId] = useState<string | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   // Use the new hooks
-  const { data, error, isFetching } = useSamplePreparations(currentPage, searchFilters.query, searchFilters)
+  const { data, error, isFetching } = useSamplePreparations(currentPage, searchQuery)
   const deleteMutation = useDeleteSamplePreparation()
 
   // Handle errors with useEffect
@@ -61,21 +53,8 @@ export default function SamplePreparationPage() {
     })
   }, [deleteMutation])
 
-  const handleSearch = useCallback((filters: typeof searchFilters) => {
-    setSearchFilters(filters)
-    setCurrentPage(1)
-  }, [])
-
-  const handleClearSearch = useCallback(() => {
-    setSearchFilters({
-      query: "",
-      jobId: "",
-      clientName: "",
-      projectName: "",
-      specimenId: "",
-      dateFrom: "",
-      dateTo: ""
-    })
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value)
     setCurrentPage(1)
   }, [])
 
@@ -201,14 +180,23 @@ export default function SamplePreparationPage() {
   // Define toolbar and footer callbacks outside of JSX
   const toolbar = useCallback((table: TanstackTable<SamplePreparationResponse>) => {
     return (
-      <div className="flex items-center gap-2 w-full justify-end">
-        <DataTableViewOptions table={table} />
-        <Button asChild size="sm">
-          <Link href={ROUTES.APP.SAMPLE_PREPARATION.NEW}>New Preparation</Link>
-        </Button>
+      <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
+        <FilterSearch
+          placeholder="Search by Request #..."
+          value={searchQuery}
+          onChange={handleSearchChange}
+          className="w-full"
+          inputClassName="max-w-md"
+        />
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <DataTableViewOptions table={table} />
+          <Button asChild size="sm">
+            <Link href={ROUTES.APP.SAMPLE_PREPARATION.NEW}>New Preparation</Link>
+          </Button>
+        </div>
       </div>
     )
-  }, [])
+  }, [searchQuery, handleSearchChange])
 
   const footer = useCallback((_table: TanstackTable<SamplePreparationResponse>) => (
     <ServerPagination
@@ -223,12 +211,7 @@ export default function SamplePreparationPage() {
   ), [currentPage, totalCount, hasNext, hasPrevious, handlePageChange, isFetching])
 
   return (
-    <div className="space-y-4">
-      <AdvancedSearch
-        onSearch={handleSearch}
-        onClear={handleClearSearch}
-        isLoading={isFetching}
-      />
+    <>
       <DataTable
         columns={columns}
         data={items}
@@ -238,7 +221,6 @@ export default function SamplePreparationPage() {
         onRowClick={handleRowClick}
         toolbar={toolbar}
         footer={footer}
-        className="h-[calc(100vh-16rem)]"
       />
 
       <SamplePrepDrawer
@@ -246,7 +228,7 @@ export default function SamplePreparationPage() {
         onClose={handleCloseDrawer}
         samplePrepId={selectedSamplePrepId}
       />
-    </div>
+    </>
   )
 }
 

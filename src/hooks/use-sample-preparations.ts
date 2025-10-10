@@ -13,15 +13,15 @@ export const SAMPLE_PREPARATIONS_QUERY_KEYS = {
 }
 
 // Hook for getting sample preparations list with pagination
-export function useSamplePreparations(page: number = 1, searchQuery?: string, filters?: any, enabled: boolean = true) {
-  // Check if there are actual filter values (not just empty strings)
-  const hasFilters = searchQuery?.trim() || (filters && Object.values(filters).some(value => value && value.toString().trim() !== ''))
+export function useSamplePreparations(page: number = 1, searchQuery?: string, enabled: boolean = true) {
+  // Check if there's a search query
+  const hasSearch = searchQuery?.trim()
   
   return useQuery({
-    queryKey: hasFilters ? SAMPLE_PREPARATIONS_QUERY_KEYS.search(searchQuery || '', page, filters) : SAMPLE_PREPARATIONS_QUERY_KEYS.list(page, searchQuery, filters),
+    queryKey: hasSearch ? SAMPLE_PREPARATIONS_QUERY_KEYS.search(searchQuery, page) : SAMPLE_PREPARATIONS_QUERY_KEYS.list(page, searchQuery),
     queryFn: () => {
-      if (hasFilters) {
-        return samplePreparationService.search(searchQuery?.trim() || '', page, filters)
+      if (hasSearch) {
+        return samplePreparationService.search(searchQuery.trim(), page)
       }
       return samplePreparationService.getAll(page)
     },

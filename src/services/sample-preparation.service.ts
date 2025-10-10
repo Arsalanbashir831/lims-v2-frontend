@@ -59,18 +59,8 @@ export const samplePreparationService = {
     await api.delete(API_ROUTES.Lab_MANAGERS.DELETE_SAMPLE_PREPARATION(id))
   },
 
-  async search(query: string, page: number = 1, filters?: any): Promise<SamplePreparationListResponse> {
-    const searchParams: Record<string, string> = { q: query, page: page.toString() }
-    
-    // Add filter parameters if provided
-    if (filters) {
-      if (filters.jobId) searchParams.job_id = filters.jobId
-      if (filters.clientName) searchParams.client_name = filters.clientName
-      if (filters.projectName) searchParams.project_name = filters.projectName
-      if (filters.specimenId) searchParams.specimen_id = filters.specimenId
-      if (filters.dateFrom) searchParams.date_from = filters.dateFrom
-      if (filters.dateTo) searchParams.date_to = filters.dateTo
-    }
+  async search(query: string, page: number = 1): Promise<SamplePreparationListResponse> {
+    const searchParams: Record<string, string> = { request_no: query, page: page.toString() }
     
     const response = await api.get(API_ROUTES.Lab_MANAGERS.SEARCH_SAMPLE_PREPARATIONS, { 
       searchParams 

@@ -429,8 +429,8 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
                                         <Image
                                             src={image.src}
                                             alt={image.caption || `${section.specimenId} image ${imageIdx + 1}`}
-                                            width={500}
-                                            height={300}
+                                            width={250}
+                                            height={150}
                                             className="bg-white print:border print:border-gray-300"
                                         />
                                     </div>
