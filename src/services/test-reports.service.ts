@@ -6,6 +6,9 @@ import { TokenStorage } from "@/lib/auth/token-storage"
 export interface TestReport {
   id: string
   certificate_id: string
+  client_name?: string
+  job_id?: string
+  project_name?: string
   date_of_sampling: string
   date_of_testing: string
   issue_date: string

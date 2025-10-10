@@ -17,6 +17,17 @@ import {
 } from "@/components/ui/table";
 import { ROUTES } from "@/constants/routes";
 import { BackButton } from "@/components/ui/back-button";
+import { useTestReportDetail, useTestReportItems } from "@/hooks/use-test-reports";
+import { toast } from "sonner";
+
+// Helper function to get full image URL
+function getFullImageUrl(imageUrl: string): string {
+  if (imageUrl.startsWith('http') || imageUrl.startsWith('blob:')) {
+    return imageUrl
+  }
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://192.168.1.2:8000"
+  return `${backendUrl}${imageUrl}`
+}
 
 interface CertificateInfo {
     clientName: string;
@@ -41,7 +52,7 @@ interface TestMethodSection {
     metaLeft?: Record<string, string>;
     metaRight?: Record<string, string>;
     table: { columns: string[]; rows: Array<Record<string, string | number>> };
-    image?: { src: string; caption?: string };
+    images?: Array<{ src: string; caption?: string }>;
 }
 
 interface TestReportData {
@@ -52,117 +63,19 @@ interface TestReportData {
     reviewedBy?: string;
 }
 
-const DUMMY: TestReportData = {
-    certificate: {
-        clientName: "ZEECO MIDDLE EAST LTD",
-        poNo: "ST4A-MS-PO-020-4600066339",
-        customerName: "ZEECO MIDDLE EAST LTD",
-        projectName: "Mechanical & OES Testing",
-        nameOfLaboratory:
-            "GLOBAL RESOURCE INSPECTION CONTRACTING COMPANY-DAMMAM",
-        address:
-            "P.O. Box 100, Dammam 31411, Kingdom of Saudi Arabia",
-        dateOfSampling: "09/08/2025",
-        dateOfTesting: "17/08/2025",
-        issueDate: "17/08/2025",
-        gripcoRefNo: "MTL-2025-0092",
-        revisionNo: "00",
-        mtcNo: "00003650320/2",
-        heatNo: "131521",
-    },
-    sections: [
-        {
-            title: "ASTM A751-CHEMICAL ANALYSIS-OES - SPECIMEN ID (982)",
-            specimenId: "982",
-            metaLeft: {
-                "Test Equipment": "Optical Emission Spectrometer",
-                "Test Method": "ASTM A751-Chemical Analysis-OES",
-                "Sample Prep Method": "Cutting & Milling",
-                "Sample Description": "RED ECENTRIC, A234, WPB- 4'' * 3''. SCH-40, BW",
-            },
-            metaRight: {
-                "Material Grade": "ASTM A106, Gr.B",
-                "Heat No.": "131521",
-                Temperature: "30 °C",
-                Humidity: "40 %RH",
-            },
-            table: {
-                columns: [
-                    "C (%)",
-                    "Mn (%)",
-                    "P (%)",
-                    "S (%)",
-                    "Si (%)",
-                    "Cr (%)",
-                    "Mo (%)",
-                    "Al (%)",
-                    "Cu (%)",
-                    "Nb (%)",
-                    "Ti (%)",
-                    "V (%)",
-                    "Ta (%)",
-                ],
-                rows: [{ "C (%)": 0, "Mn (%)": 0 }],
-            },
-        },
-        {
-            title: "ASTM E 10-BRINELL HARDNESS TEST - SPECIMEN ID (983)",
-            specimenId: "983",
-            metaLeft: {
-                "Test Equipment": "Brinell Hardness Tester",
-                "Test Method": "ASTM E 10-Brineell Hardness Test",
-                "Sample Prep Method": "Cutting & Milling",
-                "Sample Description": "RED ECENTRIC, A234, WPB- 4'' * 3''. SCH-40, BW",
-            },
-            metaRight: {
-                "Material Grade": "ASTM A106, Gr.B",
-                "Heat No.": "131521",
-                Temperature: "30 °C",
-                Humidity: "40 %RH",
-            },
-            table: {
-                columns: [
-                    "Sample ID",
-                    "Point 1",
-                    "Point 2",
-                    "POINT 3",
-                    "Average",
-                    "Unit",
-                    "Test Method",
-                    "images",
-                    "notes",
-                    "Remarks",
-                ],
-                rows: [
-                    {
-                        "Sample ID": "983",
-                        "Point 1": 115.6,
-                        "Point 2": 118.9,
-                        "POINT 3": 121.1,
-                        Average: 118.5,
-                        Unit: "HBW",
-                        "Test Method": "ASTM E10",
-                    },
-                ],
-            },
-            image: { src: "https://images.unsplash.com/photo-1570615541379-e6b7ab6d4eb9?q=80&w=2073&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", caption: "Specimen 983 – macro image" },
-        },
-    ],
-    comments: [
-        "ASTM E 10-BRINELL HARDNESS TEST - Specimen (983): Result is acceptable as per ASTM A 106 Gr.B & AMIMS-L-1035",
-    ],
-    testedBy: "Jawad Al-Hajri",
-    reviewedBy: "Ahmed Al-Khalil",
-};
 
 export default function TestReportPreview({ showButton = true, isPublic = true }) {
     const params = useParams();
     const id = (params as any)?.id as string | undefined;
     const [data, setData] = useState<TestReportData | null>(null);
-    const [loading, setLoading] = useState(true);
     const [qr, setQr] = useState<string | null>(null);
-
     const [baseUrl, setBaseUrl] = useState("")
+
+    // Fetch certificate and certificate items data
+    const { data: certificate, isLoading: certificateLoading, error: certificateError } = useTestReportDetail(id || "", !!id);
+    const { data: certificateItems, isLoading: itemsLoading, error: itemsError } = useTestReportItems(id || "", !!id);
+
+    const loading = certificateLoading || itemsLoading;
     
     useEffect(() => {
         const url = (process.env.NEXT_PUBLIC_FRONTEND_URL as string | undefined) ||
@@ -173,14 +86,123 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
     
     const publicUrl = `${baseUrl}${ROUTES.PUBLIC.TEST_REPORT_PREVIEW(id ?? "")}`;
 
+    // Transform API data to component format
     useEffect(() => {
-        setLoading(true);
-        // TODO: Replace with real store fetch
-        setTimeout(() => {
-            setData(DUMMY);
-            setLoading(false);
-        }, 200);
-    }, [id]);
+        if (!certificate?.data || !certificateItems?.data) {
+            setData(null);
+            return;
+        }
+
+        try {
+            const cert = certificate.data;
+            const items = certificateItems.data;
+
+            // Map certificate info using new flattened structure
+            const certificateInfo: CertificateInfo = {
+                clientName: cert.client_name || "N/A",
+                poNo: cert.customer_po || "N/A",
+                customerName: cert.customers_name_no || "N/A",
+                atten: cert.atten || "N/A",
+                projectName: cert.project_name || "N/A",
+                nameOfLaboratory: "GLOBAL RESOURCE INSPECTION CONTRACTING COMPANY-DAMMAM",
+                address: "P.O. Box 100, Dammam 31411, Kingdom of Saudi Arabia",
+                dateOfSampling: cert.date_of_sampling || "N/A",
+                dateOfTesting: cert.date_of_testing || "N/A",
+                issueDate: cert.issue_date || "N/A",
+                gripcoRefNo: cert.job_id || cert.certificate_id || "N/A",
+                revisionNo: cert.revision_no || "N/A",
+                mtcNo: "N/A",
+                heatNo: "N/A"
+            };
+
+            // Map certificate items to sections
+            const sections: TestMethodSection[] = items.map((item, index) => {
+                // Parse test results JSON
+                let testResults: { columns: string[]; data: any[][] } = { columns: [], data: [] };
+                try {
+                    if (item.specimen_sections?.[0]?.test_results) {
+                        testResults = JSON.parse(item.specimen_sections[0].test_results);
+                    }
+                } catch (error) {
+                    console.error("Failed to parse test results:", error);
+                }
+
+                // Get specimen info
+                const specimenSection = item.specimen_sections?.[0];
+                const specimenId = specimenSection?.specimen_id || "N/A";
+                
+                // Find specimen name from certificate request info
+                let specimenName = specimenId;
+                if (cert.request_info?.specimens) {
+                    const specimen = cert.request_info.specimens.find(s => s.specimen_oid === specimenId);
+                    if (specimen?.specimen_id) {
+                        specimenName = specimen.specimen_id;
+                    }
+                }
+
+                // Get test method name
+                const testMethodName = cert.request_info?.sample_lots?.[0]?.test_method?.test_name || "N/A";
+
+                return {
+                    title: `${testMethodName} - SPECIMEN ID (${specimenName})`,
+                    specimenId: specimenName,
+                    metaLeft: {
+                        "Test Equipment": item.equipment_name || "N/A",
+                        "Test Method": testMethodName,
+                        "Sample Prep Method": item.sample_preparation_method || "N/A",
+                        "Sample Description": cert.request_info?.sample_lots?.[0]?.item_description || "N/A",
+                    },
+                    metaRight: {
+                        "Material Grade": item.material_grade || "N/A",
+                        "Heat No.": item.heat_no || "N/A",
+                        "Temperature": item.temperature || "N/A",
+                        "Humidity": item.humidity || "N/A",
+                    },
+                    table: {
+                        columns: testResults.columns || [],
+                        rows: testResults.data?.map(row => {
+                            const rowObj: Record<string, string | number> = {};
+                            testResults.columns.forEach((col, colIndex) => {
+                                rowObj[col] = row[colIndex] || "";
+                            });
+                            return rowObj;
+                        }) || []
+                    },
+                    // Map all images if available
+                    images: specimenSection?.images_list?.map(img => ({
+                        src: getFullImageUrl(img.image_url),
+                        caption: img.caption || `Specimen ${specimenName} – image`
+                    })) || []
+                };
+            });
+
+            const transformedData: TestReportData = {
+                certificate: certificateInfo,
+                sections,
+                comments: items.length > 0 ? [items[0].comments || "N/A"] : [],
+                testedBy: cert.tested_by || "N/A",
+                reviewedBy: cert.reviewed_by || "N/A",
+            };
+
+            setData(transformedData);
+        } catch (error) {
+            console.error("Failed to transform certificate data:", error);
+            toast.error("Failed to load certificate data");
+            setData(null);
+        }
+    }, [certificate, certificateItems]);
+
+    // Handle API errors
+    useEffect(() => {
+        if (certificateError) {
+            console.error("Certificate fetch error:", certificateError);
+            toast.error("Failed to load certificate");
+        }
+        if (itemsError) {
+            console.error("Certificate items fetch error:", itemsError);
+            toast.error("Failed to load certificate items");
+        }
+    }, [certificateError, itemsError]);
 
     useEffect(() => {
         if (!isPublic) return;
@@ -275,17 +297,25 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
         );
     }
 
-    if (!data) {
+    if (!loading && (!data || (certificateError || itemsError))) {
         return (
-            <div className="container mx-auto p-6 text-center">
-                <p>No test report found.</p>
-                <BackButton variant="default" label="Back to List" href={ROUTES.APP.TEST_REPORTS.ROOT} />
+            <div className="container mx-auto p-6 text-center space-y-4">
+                <p className="text-lg text-muted-foreground">
+                    {certificateError || itemsError ? "Failed to load test report data." : "No test report found."}
+                </p>
+                {showButton && (
+                    <BackButton variant="default" label="Back to List" href={ROUTES.APP.TEST_REPORTS.ROOT} />
+                )}
             </div>
         );
     }
 
+    if (!data) {
+        return null;
+    }
+
     return (
-        <div className="max-w-7xl mx-auto rounded-2xl p-2 sm:p-4 md:p-8 print:bg-white print:text-black print:border-0">
+        <div className="max-w-7xl mx-auto rounded p-2 sm:p-4 md:p-8 print:bg-white print:text-black print:border-0">
             {/* Header */}
             <header className="mb-6 flex items-center justify-between sm:mb-8 print:mb-4">
                 <div>
@@ -314,13 +344,13 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
                     <div><span className="font-medium">Client Name:</span> {data.certificate.clientName}</div>
                     <div><span className="font-medium">PO #:</span> {data.certificate.poNo}</div>
                     <div><span className="font-medium">Customer Name:</span> {data.certificate.customerName}</div>
-                    {data.certificate.projectName && (
+                    {data.certificate.projectName && data.certificate.projectName !== "N/A" && (
                         <div><span className="font-medium">Project Name:</span> {data.certificate.projectName}</div>
                     )}
-                    {data.certificate.nameOfLaboratory && (
+                    {data.certificate.nameOfLaboratory && data.certificate.nameOfLaboratory !== "N/A" && (
                         <div><span className="font-medium">Name of Laboratory:</span> {data.certificate.nameOfLaboratory}</div>
                     )}
-                    {data.certificate.address && (
+                    {data.certificate.address && data.certificate.address !== "N/A" && (
                         <div><span className="font-medium">Address:</span> {data.certificate.address}</div>
                     )}
                 </div>
@@ -363,7 +393,7 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
                                 <TableHeader>
                                     <TableRow className="bg-muted print:bg-gray-100">
                                         {section.table.columns.map((c) => (
-                                            <TableHead key={c} className="border px-2 py-1 text-left font-medium print:border-gray-300">{c}</TableHead>
+                                            <TableHead key={c} className="border px-2 py-1 text-left font-medium print:border-gray-300 print:text-black">{c}</TableHead>
                                         ))}
                                     </TableRow>
                                 </TableHeader>
@@ -371,7 +401,7 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
                                     {section.table.rows.map((row, i) => (
                                         <TableRow key={i}>
                                             {section.table.columns.map((c) => (
-                                                <TableCell key={c} className="border px-2 py-1 print:border-gray-300">{String(row[c] ?? "")}</TableCell>
+                                                <TableCell key={c} className="border px-2 py-1 print:border-gray-300 print:text-black">{String(row[c] ?? "")}</TableCell>
                                             ))}
                                         </TableRow>
                                     ))}
@@ -383,25 +413,29 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
             </div>
 
             {/* Images Section */}
-            {data.sections.some(s => s.image?.src) && (
+            {data.sections.some(s => s.images && s.images.length > 0) && (
                 <section className="mt-10 print:mt-6">
                     <div className="space-y-6 print:space-y-4">
                         {data.sections
-                            .filter(s => s.image?.src)
-                            .map((section, idx) => (
-                                <div key={idx} className="flex flex-col items-center">
-                                    {section.image?.caption && (
-                                        <span className="mb-2 text-xl font-semibold self-start print:text-lg">{section.image.caption}</span>
-                                    )}
-                                    <Image
-                                        src={section.image!.src}
-                                        alt={section.image!.caption || "section image"}
-                                        width={500}
-                                        height={300}
-                                        className="bg-white print:border print:border-gray-300"
-                                    />
-                                </div>
-                            ))}
+                            .filter(s => s.images && s.images.length > 0)
+                            .map((section, sectionIdx) => 
+                                section.images!.map((image, imageIdx) => (
+                                    <div key={`${sectionIdx}-${imageIdx}`} className="flex flex-col items-center">
+                                        {image.caption && (
+                                            <span className="mb-2 text-xl font-semibold self-start print:text-lg">
+                                                {image.caption}
+                                            </span>
+                                        )}
+                                        <Image
+                                            src={image.src}
+                                            alt={image.caption || `${section.specimenId} image ${imageIdx + 1}`}
+                                            width={500}
+                                            height={300}
+                                            className="bg-white print:border print:border-gray-300"
+                                        />
+                                    </div>
+                                ))
+                            )}
                     </div>
                 </section>
             )}
