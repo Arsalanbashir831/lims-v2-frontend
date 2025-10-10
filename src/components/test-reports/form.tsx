@@ -14,6 +14,7 @@ interface TestReport {
   id: string
   reportNo: string
   preparationId: string
+  selectedRequest?: any // The selected request object
   certificate: CertificateDetails
   items: ReportItem[]
 }
@@ -39,6 +40,7 @@ interface ReportItem {
   id: string
   preparationItemId: string
   specimenId: string
+  specimenOid: string // Store the specimen OID for API calls
   testMethodId: string
   testMethodName: string
   testEquipment: string
@@ -52,13 +54,24 @@ interface ReportItem {
   comments: string
   columns: any[]
   data: any[]
+  hasImage?: boolean
+  images: Array<{
+    image_url: string
+    caption: string
+    file?: File
+  }>
 }
 
 const generateReportNo = () => `RPT-${Date.now()}`
-import { samplePreparationService } from "@/services/sample-preparation.service"
+import { testMethodService } from "@/services/test-methods.service"
 import { listSampleReceivings } from "@/lib/sample-receiving"
 import { generateStableId } from "@/utils/hydration-fix"
-import { completeCertificateService } from "@/services/complete-certificates.service"
+import { useCreateCertificate } from "@/hooks/use-certificates"
+import { useCreateCertificateItem, useUploadCertificateItemImage } from "@/hooks/use-certificate-items"
+// Remove unused import
+import { type CreateCertificateData } from "@/services/certificates.service"
+import { type CreateCertificateItemData } from "@/services/certificate-items.service"
+import { toast } from "sonner"
 // Define CompleteCertificate locally for now
 interface CompleteCertificate {
   request_id: string
@@ -80,7 +93,6 @@ interface CompleteCertificate {
 }
 import { DynamicTable, type DynamicColumn, type DynamicRow } from "@/components/pqr/form/dynamic-table"
 import { RequestSelector } from "@/components/common/request-selector"
-import { EquipmentSelector } from "@/components/common/equipment-selector"
 
 export interface TestReportFormData extends Omit<TestReport, "id" | "createdAt" | "updatedAt"> {}
 
@@ -121,7 +133,7 @@ function mapTestResultsToFormData(testResults: { columns: string[], data: any[][
 
 export function TestReportForm({ initialData, onSubmit, readOnly = false }: Props) {
   const [preparationId, setPreparationId] = useState(initialData?.preparationId ?? "")
-  const [selectedRequest, setSelectedRequest] = useState<any>(null)
+  const [selectedRequest, setSelectedRequest] = useState<any>(initialData?.selectedRequest ?? null)
   const [certificate, setCertificate] = useState<CertificateDetails>(initialData?.certificate ?? {
     date_of_sampling: "", date_of_testing: "", issue_date: "", gripco_ref_no: "", revision_no: "",
     client_name: "", customer_name_no: "", atten: "", customer_po: "",
@@ -129,6 +141,32 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
     address: "P.O. Box 100, Dammam 31411, Kingdom of Saudi Arabia", tested_by: "", reviewed_by: "",
   })
   const [items, setItems] = useState<ReportItem[]>(initialData?.items ?? [])
+
+  // Update state when initialData changes (for edit mode)
+  useEffect(() => {
+    if (initialData) {      
+      if (initialData.preparationId !== undefined) {
+        setPreparationId(initialData.preparationId)
+      }
+      
+      if (initialData.selectedRequest !== undefined) {
+        setSelectedRequest(initialData.selectedRequest)
+      }
+      
+      if (initialData.certificate) {
+        setCertificate(initialData.certificate)
+      }
+      
+      if (initialData.items) {
+        setItems(initialData.items)
+      }
+    }
+  }, [initialData])
+
+  // Certificate creation hooks
+  const createCertificateMutation = useCreateCertificate()
+  const createCertificateItemMutation = useCreateCertificateItem()
+  const uploadImageMutation = useUploadCertificateItemImage()
 
   const recMap = useMemo(() => new Map(listSampleReceivings().map(r => [r.id, r])), [])
 
@@ -138,23 +176,20 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
     
     const loadDetailedPreparationData = async () => {
       try {
+        // Map the sample preparation data to certificate fields
+        const firstSampleLot = selectedRequest.sample_lots?.[0]
         
-        // Call GET_SAMPLE_PREPARATION API to get all details
-        const detailedData = await samplePreparationService.getById(selectedRequest.request_id)
-        
-        // Map the detailed data to certificate fields
-        const apiResponse = detailedData as any
         const newCertificate = {
           date_of_sampling: certificate.date_of_sampling,
           date_of_testing: certificate.date_of_testing,
           issue_date: certificate.issue_date,
-          gripco_ref_no: apiResponse.job_id || selectedRequest.job_id || "",
+          gripco_ref_no: firstSampleLot?.job_id || "", // Map job_id to gripco_ref_no
           revision_no: certificate.revision_no,
-          client_name: apiResponse.client_details?.name || selectedRequest.client_details?.name || "",
+          client_name: firstSampleLot?.client_name || "", // Map client_name
           customer_name_no: certificate.customer_name_no,
           atten: certificate.atten,
           customer_po: certificate.customer_po,
-          project_name: apiResponse.job_project_name || selectedRequest.job_project_name || "",
+          project_name: firstSampleLot?.project_name || "", // Map project_name
           name_of_laboratory: "GLOBAL RESOURCE INSPECTION CONTRACTING COMPANY-DAMMAM",
           address: "P.O. Box 100, Dammam 31411, Kingdom of Saudi Arabia",
           tested_by: certificate.tested_by,
@@ -163,75 +198,123 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
         
         setCertificate(newCertificate)
         
-        // Seed items based on the detailed preparation data
-        if (apiResponse.test_items && apiResponse.test_items.length > 0) {
-          const seeded: ReportItem[] = apiResponse.test_items.map((item: any, index: number) => {
-             
-            // Create dynamic columns based on test_method_details.test_columns
-            const dynamicColumns: DynamicColumn[] = item.test_method_details?.test_columns?.map((columnName: string, colIndex: number) => ({
-              id: `col-${colIndex}`,
-              header: columnName,
-              accessorKey: `col-${colIndex}`,
-              type: "input" // All columns as input fields
-            })) || fallbackColumns()
+        // Seed items based on the sample lots data
+        if (selectedRequest.sample_lots && selectedRequest.sample_lots.length > 0) {
+          const seeded: ReportItem[] = selectedRequest.sample_lots.map((sampleLot: any, index: number) => {
+            // Create dynamic columns based on test_method.test_columns (will be fetched later)
+            const dynamicColumns: DynamicColumn[] = fallbackColumns() // Default columns, will be updated when test method details are fetched
             
-            // Create initial data rows based on specimens (without specimen IDs in table)
-            const initialData: DynamicRow[] = item.specimens?.map((specimen: any, specIndex: number) => ({
+            // Create initial data rows based on specimens
+            const initialData: DynamicRow[] = sampleLot.specimens?.map((specimen: any, specIndex: number) => ({
               id: `row-${specIndex + 1}`,
               label: specimen.specimen_id || `Specimen ${specIndex + 1}`,
+              specimen_oid: specimen.specimen_oid || specimen.id, // Store the OID for API calls
               ...dynamicColumns.reduce((acc, col) => {
                 acc[col.accessorKey] = "" // Empty values for input columns
                 return acc
               }, {} as any)
             })) || [{ id: "row-1", label: "" } as DynamicRow]
             
-            return {
-              id: genLocalId(),
-              preparationItemId: item.id?.toString() || "",
-              specimenId: item.specimens?.[0]?.specimen_id || "",
-              testMethodId: item.test_method_details?.id || item.test_method_name || "",
-              testMethodName: item.test_method_details?.test_name || item.test_method_name || "",
-              testEquipment: "",
-              testEquipmentId: "",
-              samplePrepMethod: "",
-              sampleDescription: "",
-              materialGrade: "",
-              heatNo: "",
-              temperature: "",
-              humidity: "",
-              comments: item.test_method_details?.comments || "",
-              columns: dynamicColumns,
-              data: initialData,
-            }
+             return {
+               id: genLocalId(),
+               preparationItemId: sampleLot.sample_lot_id || "",
+               specimenId: sampleLot.specimens?.[0]?.specimen_id || "",
+               specimenOid: sampleLot.specimens?.[0]?.specimen_oid || sampleLot.specimens?.[0]?.id || "",
+               testMethodId: sampleLot.test_method?.test_method_oid || "",
+               testMethodName: sampleLot.test_method?.test_name || "",
+               testEquipment: "",
+               testEquipmentId: "",
+               samplePrepMethod: "",
+               sampleDescription: sampleLot.item_description || "",
+               materialGrade: "",
+               heatNo: "",
+               temperature: "",
+               humidity: "",
+               comments: sampleLot.remarks || "",
+               columns: dynamicColumns,
+               data: initialData,
+               hasImage: false, // Will be updated when test method details are fetched
+               images: [],
+             }
           })
           setItems(seeded)
         }
       } catch (error) {
         console.error("Failed to load detailed preparation data:", error)
-        
-        // Fallback to basic request data if detailed API fails
-        const fallbackCertificate = {
-          date_of_sampling: certificate.date_of_sampling,
-          date_of_testing: certificate.date_of_testing,
-          issue_date: certificate.issue_date,
-          gripco_ref_no: selectedRequest.job_id || "",
-          revision_no: certificate.revision_no,
-          client_name: selectedRequest.client_details?.name || "",
-          customer_name_no: certificate.customer_name_no,
-          atten: certificate.atten,
-          customer_po: certificate.customer_po,
-          project_name: selectedRequest.job_project_name || "",
-          name_of_laboratory: "GLOBAL RESOURCE INSPECTION CONTRACTING COMPANY-DAMMAM",
-          address: "P.O. Box 100, Dammam 31411, Kingdom of Saudi Arabia",
-          tested_by: certificate.tested_by,
-          reviewed_by: certificate.reviewed_by,
-        }
-        setCertificate(fallbackCertificate)
       }
     }
     
     loadDetailedPreparationData()
   }, [selectedRequest])
+
+  // Fetch test method details for each item
+  useEffect(() => {
+    if (!items.length) return
+    
+    // Check if any item needs test method details
+    const needsFetch = items.some(item => 
+      item.testMethodId && 
+      (!item.columns || item.columns.length === 0 || item.columns[0].header === "Test Data")
+    )
+    
+    if (!needsFetch) return
+
+    const fetchTestMethodDetails = async () => {
+      const updatedItems = await Promise.all(
+        items.map(async (item) => {
+          // Skip if already has proper columns
+          if (item.columns && item.columns.length > 0 && item.columns[0].header !== "Test Data") {
+            return item
+          }
+          
+          if (item.testMethodId) {
+            try {
+              // Use the test method service directly instead of the hook
+              const testMethodDetails = await testMethodService.getById(item.testMethodId)
+              
+              if (testMethodDetails && testMethodDetails.test_columns) {
+                // Create dynamic columns based on test_method_details.test_columns
+                const dynamicColumns: DynamicColumn[] = testMethodDetails.test_columns.map((columnName: string, colIndex: number) => ({
+                  id: `col-${colIndex}`,
+                  header: columnName,
+                  accessorKey: `col-${colIndex}`,
+                  type: "input" // All columns as input fields
+                }))
+                
+                // Update existing data rows to include new columns
+                const updatedData = item.data.map((row) => {
+                  const newRow = { ...row }
+                  // Initialize new columns with empty values
+                  dynamicColumns.forEach((col) => {
+                    if (!(col.accessorKey in newRow)) {
+                      newRow[col.accessorKey] = ""
+                    }
+                  })
+                  return newRow
+                })
+                
+                 return {
+                   ...item,
+                   columns: dynamicColumns,
+                   data: updatedData,
+                   testMethodName: testMethodDetails.test_name,
+                   comments: testMethodDetails.comments || item.comments,
+                   hasImage: testMethodDetails.hasImage || false,
+                 }
+              }
+            } catch (error) {
+              console.error(`Failed to fetch test method details for ${item.testMethodId}:`, error)
+            }
+          }
+          return item
+        })
+      )
+      
+      setItems(updatedItems)
+    }
+
+    fetchTestMethodDetails()
+  }, [items]) // Run when items change
 
   const updateCertificate = <K extends keyof CertificateDetails>(key: K, value: CertificateDetails[K]) => setCertificate(prev => ({ ...prev, [key]: value }))
   const updateItem = useCallback((id: string, payload: Partial<ReportItem>) => {
@@ -246,6 +329,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
       id: genLocalId(),
       preparationItemId: base.preparationItemId,
       specimenId: "",
+      specimenOid: "",
       testMethodId: base.testMethodId,
       testMethodName: base.testMethodName,
       testEquipment: "",
@@ -259,75 +343,156 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
       comments: "",
       columns: Array.isArray(base.columns) && base.columns.length ? base.columns : fallbackColumns(),
       data: Array.isArray(base.data) && base.data.length ? base.data : [{ id: "row-1", label: "" } as DynamicRow],
+      hasImage: base.hasImage || false,
+      images: [],
     }
     setItems(prev => [...prev, clone])
   }, [items, selectedRequest])
+
+  // Image upload handlers
+  const handleImageUpload = useCallback(async (itemId: string, files: FileList) => {
+    const item = items.find(i => i.id === itemId)
+    if (!item || !item.specimenOid) {
+      toast.error("Please select a specimen ID before uploading images")
+      return
+    }
+
+    // Validate file types and sizes
+    const validFiles = Array.from(files).filter(file => {
+      const isValidType = file.type.startsWith('image/')
+      const isValidSize = file.size <= 10 * 1024 * 1024 // 10MB limit
+      
+      if (!isValidType) {
+        toast.error(`${file.name} is not a valid image file`)
+        return false
+      }
+      if (!isValidSize) {
+        toast.error(`${file.name} is too large (max 10MB)`)
+        return false
+      }
+      return true
+    })
+
+    if (validFiles.length === 0) return
+
+    const uploadPromises = validFiles.map(async (file) => {
+      try {
+        const response = await uploadImageMutation.mutateAsync({
+          image: file,
+          specimen_id: item.specimenOid
+        })
+        
+        return {
+          image_url: response.data.image_url,
+          caption: "", // User can add caption later
+          file: file
+        }
+      } catch (error) {
+        console.error("Failed to upload image:", error)
+        toast.error(`Failed to upload ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        return null
+      }
+    })
+
+    const uploadedImages = (await Promise.all(uploadPromises)).filter((img): img is NonNullable<typeof img> => img !== null)
+    
+    if (uploadedImages.length > 0) {
+      updateItem(itemId, {
+        images: [...item.images, ...uploadedImages]
+      })
+      toast.success(`${uploadedImages.length} image(s) uploaded successfully`)
+    }
+  }, [items, uploadImageMutation])
+
+  const handleImageCaptionChange = useCallback((itemId: string, imageIndex: number, caption: string) => {
+    const item = items.find(i => i.id === itemId)
+    if (!item) return
+
+    const updatedImages = [...item.images]
+    updatedImages[imageIndex] = { ...updatedImages[imageIndex], caption }
+    
+    updateItem(itemId, { images: updatedImages })
+  }, [items, updateItem])
+
+  const handleRemoveImage = useCallback((itemId: string, imageIndex: number) => {
+    const item = items.find(i => i.id === itemId)
+    if (!item) return
+
+    const updatedImages = item.images.filter((_, index) => index !== imageIndex)
+    updateItem(itemId, { images: updatedImages })
+  }, [items, updateItem])
 
   const onFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!preparationId || !selectedRequest) return
 
     try {
-      // Transform form data to API format
-      const certificateData: CompleteCertificate = {
-        request_id: selectedRequest.request_id || selectedRequest.id || "",
+      // Step 1: Create certificate
+      const certificateData: CreateCertificateData = {
+        request_id: selectedRequest.id || "",
         date_of_sampling: certificate.date_of_sampling,
         date_of_testing: certificate.date_of_testing,
         issue_date: certificate.issue_date,
-        gripco_ref_no: certificate.gripco_ref_no,
         revision_no: certificate.revision_no,
-        client_name: certificate.client_name,
-        customer_name_no: certificate.customer_name_no,
+        customers_name_no: certificate.customer_name_no,
         atten: certificate.atten,
         customer_po: certificate.customer_po,
-        project_name: certificate.project_name,
-        name_of_laboratory: certificate.name_of_laboratory,
-        address: certificate.address,
         tested_by: certificate.tested_by,
         reviewed_by: certificate.reviewed_by,
-        certificate_items_json: items.map(item => {
-          // Transform test results table data to include column names and data
-          const columnNames = item.columns.map(col => col.header)
-          const testResultsData: any[][] = []
-          
-          // Process each row in the dynamic table
-          item.data.forEach((row, rowIndex) => {
-            const rowData: any[] = []
-            // Process each column in the row
-            item.columns.forEach((column, colIndex) => {
-              const value = row[column.accessorKey] || ""
-              rowData[colIndex] = value
-            })
-            testResultsData[rowIndex] = rowData
-          })
-          
-          const testResults = {
-            columns: columnNames,
-            data: testResultsData
-          }
-          
-          return {
-            test_items_id: item.preparationItemId,
-            specimen_id: item.specimenId,
-            calibration_equipment_id: item.testEquipmentId,
-            sample_description: item.sampleDescription,
-            sample_preparation_method: item.samplePrepMethod,
-            material_grade: item.materialGrade,
-            temperature: item.temperature,
-            humidity: item.humidity,
-            po_number: certificate.customer_po,
-            mtc_no: "", // This would need to be added to the form if required
-            heat_no: item.heatNo,
-            comments: item.comments,
-            specimen_sections: [{
-              test_results: testResults
-            }]
-          }
-        })
       }
 
-      // Call the API
-      const response = await completeCertificateService.create(certificateData)
+      const certificateResponse = await createCertificateMutation.mutateAsync(certificateData)
+      const certificateId = certificateResponse.data.id
+      toast.success("Certificate created successfully")
+
+      // Step 2: Create certificate items for each test item
+      for (const item of items) {
+        // Transform test results table data to include column names and data
+        const columnNames = item.columns.map(col => col.header)
+        const testResultsData: any[][] = []
+        
+        // Process each row in the dynamic table
+        item.data.forEach((row, rowIndex) => {
+          const rowData: any[] = []
+          // Process each column in the row
+          item.columns.forEach((column, colIndex) => {
+            const value = row[column.accessorKey] || ""
+            rowData[colIndex] = value
+          })
+          testResultsData[rowIndex] = rowData
+        })
+        
+        const testResults = {
+          columns: columnNames,
+          data: testResultsData
+        }
+
+         const certificateItemData: CreateCertificateItemData = {
+           certificate_id: certificateId,
+           sample_preparation_method: item.samplePrepMethod,
+           material_grade: item.materialGrade,
+           temperature: item.temperature,
+           humidity: item.humidity,
+           po: certificate.customer_po,
+           mtc_no: "", // This would need to be added to the form if required
+           heat_no: item.heatNo,
+           comments: item.comments,
+           specimen_sections: [{
+             specimen_id: item.specimenOid, // Use the OID instead of the name
+             test_results: JSON.stringify(testResults), // Convert to JSON string
+             equipment_name: item.testEquipment,
+             equipment_calibration: "Calibrated on " + new Date().toISOString().split('T')[0], // Default calibration date
+             images_list: item.images.map(img => ({
+               image_url: img.image_url,
+               caption: img.caption
+             }))
+           }]
+         }
+
+        await createCertificateItemMutation.mutateAsync(certificateItemData)
+      }
+      
+      toast.success(`Certificate and ${items.length} certificate items created successfully`)
       
       // Call the original onSubmit for local storage (if needed)
       onSubmit({ 
@@ -339,7 +504,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
       
     } catch (error) {
       console.error('Failed to create certificate:', error)
-      // Handle error (show toast, etc.)
+      toast.error("Failed to create certificate. Please try again.")
     }
   }
 
@@ -353,9 +518,9 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
           <div className="grid gap-2">
             <Label>Preparation / Request #</Label>
             <RequestSelector
-              value={selectedRequest?.request_id || selectedRequest?.id || ""}
+              value={selectedRequest?.id || ""}
               onValueChange={(requestId, request) => {
-                setPreparationId(request?.request_id || requestId || "")
+                setPreparationId(requestId || "")
                 setSelectedRequest(request)
               }}
               placeholder="Select a request..."
@@ -376,13 +541,13 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
               ["date_of_sampling", "Date of Sampling", "date", false],
               ["date_of_testing", "Date of Testing", "date", false],
               ["issue_date", "Issue Date", "date", false],
-              ["gripco_ref_no", "Gripco Ref No", "text", true],
+              ["gripco_ref_no", "Gripco Ref No", "text", true], // Disabled - mapped from job_id
               ["revision_no", "Revision No", "text", false],
-              ["client_name", "Client Name", "text", false],
+              ["client_name", "Client Name", "text", true], // Disabled - mapped from client_name
               ["customer_name_no", "Customer's Name & no.", "text", false],
               ["atten", "Atten", "text", false],
               ["customer_po", "Customer PO", "text", false],
-              ["project_name", "Project Name", "text", true],
+              ["project_name", "Project Name", "text", true], // Disabled - mapped from project_name
               ["name_of_laboratory", "Name of Laboratory", "text", true],
               ["address", "Address", "text", true],
             ] as const).map(([key, label, type, isDisabled]) => (
@@ -425,7 +590,13 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
                     <CardTitle className="text-lg">{it.testMethodName}</CardTitle>
                     <div className="grid gap-1 mt-2">
                       <Label>Select Specimen ID</Label>
-                      <Select value={it.specimenId} onValueChange={(value) => updateItem(it.id, { specimenId: value })} disabled={readOnly}>
+                      <Select value={it.specimenId} onValueChange={(value) => {
+                        const selectedRow = it.data?.find(row => row.label === value)
+                        updateItem(it.id, { 
+                          specimenId: value,
+                          specimenOid: selectedRow?.specimen_oid || ""
+                        })
+                      }} disabled={readOnly}>
                         <SelectTrigger className="w-[200px]">
                           <SelectValue placeholder="Select specimen" />
                         </SelectTrigger>
@@ -444,16 +615,11 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                       <div className="grid gap-1">
                         <Label>Test Equipment</Label>
-                        <EquipmentSelector
-                          value={it.testEquipmentId}
-                          onValueChange={(equipmentId, equipment) => {
-                            updateItem(it.id, { 
-                              testEquipmentId: equipmentId || "",
-                              testEquipment: equipment?.equipmentName || ""
-                            })
-                          }}
-                          placeholder="Select test equipment"
+                        <Input 
+                          value={it.testEquipment} 
+                          onChange={(e) => updateItem(it.id, { testEquipment: e.target.value })} 
                           disabled={readOnly}
+                          placeholder="Enter test equipment"
                         />
                       </div>
                       <div className="grid gap-1">
@@ -470,8 +636,9 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
                         <Input 
                           value={it.sampleDescription} 
                           onChange={(e) => updateItem(it.id, { sampleDescription: e.target.value })} 
-                          disabled={readOnly}
-                          placeholder="Enter sample description"
+                          disabled={true} // Always disabled - mapped from sample preparation
+                          placeholder="Sample description from preparation"
+                          className="bg-muted/50"
                         />
                       </div>
                       <div className="grid gap-1">
@@ -513,25 +680,105 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false }: Prop
                     </div>
                     
                     <DynamicTable
+                      key={`${it.id}-${it.columns.length}-${it.testMethodId}`}
                       initialColumns={cols}
                       initialData={rows}
                       onColumnsChange={(newCols) => updateItem(it.id, { columns: (newCols as DynamicColumn[]) ?? [] })}
                       onDataChange={(newRows) => updateItem(it.id, { data: (newRows as DynamicRow[]) ?? [] })}
                     />
                     
-                    {/* Comments Section */}
-                    <div className="mt-4">
-                      <Label htmlFor={`comments-${it.id}`}>Comments</Label>
-                      <Textarea
-                        id={`comments-${it.id}`}
-                        value={it.comments}
-                        onChange={(e) => updateItem(it.id, { comments: e.target.value })}
-                        disabled={readOnly}
-                        placeholder="Enter test comments..."
-                        className="mt-1"
-                        rows={3}
-                      />
-                    </div>
+                     {/* Comments Section */}
+                     <div className="mt-4">
+                       <Label htmlFor={`comments-${it.id}`}>Comments</Label>
+                       <Textarea
+                         id={`comments-${it.id}`}
+                         value={it.comments}
+                         onChange={(e) => updateItem(it.id, { comments: e.target.value })}
+                         disabled={readOnly}
+                         placeholder="Enter test comments..."
+                         className="mt-1"
+                         rows={3}
+                       />
+                     </div>
+
+                     {/* Image Upload Section - Only show if test method has images */}
+                     {it.hasImage && (
+                       <div className="mt-4">
+                         <Label>Test Images</Label>
+                         <div className="mt-2 space-y-4">
+                           {/* File Upload */}
+                           {!readOnly && (
+                             <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4">
+                               <input
+                                 type="file"
+                                 multiple
+                                 accept="image/*"
+                                 onChange={(e) => {
+                                   if (e.target.files && e.target.files.length > 0) {
+                                     handleImageUpload(it.id, e.target.files)
+                                   }
+                                 }}
+                                 className="hidden"
+                                 id={`image-upload-${it.id}`}
+                               />
+                               <label
+                                 htmlFor={`image-upload-${it.id}`}
+                                 className="cursor-pointer flex flex-col items-center justify-center space-y-2"
+                               >
+                                 <div className="text-muted-foreground">
+                                   <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                   </svg>
+                                 </div>
+                                 <span className="text-sm text-muted-foreground">
+                                   Click to upload images or drag and drop
+                                 </span>
+                                 <span className="text-xs text-muted-foreground">
+                                   PNG, JPG, GIF up to 10MB each
+                                 </span>
+                               </label>
+                             </div>
+                           )}
+
+                           {/* Uploaded Images */}
+                           {it.images.length > 0 && (
+                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                               {it.images.map((image, imageIndex) => (
+                                 <div key={imageIndex} className="border rounded-lg p-3 space-y-2">
+                                   <div className="aspect-video bg-muted rounded-md overflow-hidden">
+                                     <img
+                                       src={image.image_url}
+                                       alt={`Test image ${imageIndex + 1}`}
+                                       className="w-full h-full object-cover"
+                                     />
+                                   </div>
+                                   <div className="space-y-2">
+                                     <Input
+                                       placeholder="Image caption..."
+                                       value={image.caption}
+                                       onChange={(e) => handleImageCaptionChange(it.id, imageIndex, e.target.value)}
+                                       disabled={readOnly}
+                                       className="text-sm"
+                                     />
+                                     {!readOnly && (
+                                       <Button
+                                         type="button"
+                                         variant="destructive"
+                                         size="sm"
+                                         onClick={() => handleRemoveImage(it.id, imageIndex)}
+                                         className="w-full"
+                                       >
+                                         Remove Image
+                                       </Button>
+                                     )}
+                                   </div>
+                                 </div>
+                               ))}
+                             </div>
+                           )}
+                         </div>
+                       </div>
+                     )}
                     
                     <div className="flex justify-between mt-2">
                       {!readOnly && (

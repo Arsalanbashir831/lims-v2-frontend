@@ -1,49 +1,264 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { TestReportForm, type TestReportFormData } from "@/components/test-reports/form"
-import { getTestReport, updateTestReport } from "@/lib/test-reports"
+import { TestReportForm } from "@/components/test-reports/test-report-form"
 import { Button } from "@/components/ui/button"
 import { PencilIcon, XIcon } from "lucide-react"
 import { FormHeader } from "@/components/common/form-header"
 import { ROUTES } from "@/constants/routes"
+import { useTestReportDetail, useTestReportItems } from "@/hooks/use-test-reports"
+import { type DynamicColumn, type DynamicRow } from "@/components/pqr/form/dynamic-table"
+
+interface TestReportFormData {
+  date_of_sampling: string
+  date_of_testing: string
+  issue_date: string
+  revision_no: string
+  customers_name_no: string
+  atten: string
+  customer_po: string
+  tested_by: string
+  reviewed_by: string
+  selectedRequest?: any
+  items: Array<{
+    id: string
+    specimenId: string
+    specimenOid: string
+    testMethodId: string
+    testMethodName: string
+    testEquipment: string
+    samplePrepMethod: string
+    sampleDescription: string
+    materialGrade: string
+    heatNo: string
+    temperature: string
+    humidity: string
+    comments: string
+    columns: DynamicColumn[]
+    data: DynamicRow[]
+    hasImage: boolean
+    images: Array<{
+      image_url: string
+      caption: string
+      file?: File
+    }>
+  }>
+}
 
 export default function EditTestReportPage() {
   const { id } = useParams<{ id: string }>()
-  const [initial, setInitial] = useState<TestReportFormData | null>(null)
+  const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
+  const [formData, setFormData] = useState<TestReportFormData | null>(null)
 
+  // Fetch data
+  const { data: testReportResponse, isLoading: reportLoading, error: reportError } = useTestReportDetail(id || "")
+  const { data: testReportItemsResponse, isLoading: itemsLoading, error: itemsError } = useTestReportItems(id || "")
+
+
+  // Map API data to form data
   useEffect(() => {
-    if (!id) return
-    const rec = getTestReport(id)
-    if (rec) setInitial(rec as any)
-  }, [id])
+    if (!testReportResponse?.data || !testReportItemsResponse?.data) return
 
-  const handleSubmit = (data: TestReportFormData) => {
-    if (!id) return
-    updateTestReport(id, data)
-    toast.success("Report updated")
+    const report = testReportResponse.data
+    const items = testReportItemsResponse.data
+
+    // Map items
+    const mappedItems = items.map((item) => {
+      // Parse test results
+      let testResults: { columns: string[], data: any[][] } = { columns: [], data: [] }
+      try {
+        if (item.specimen_sections?.[0]?.test_results) {
+          const parsed = JSON.parse(item.specimen_sections[0].test_results)
+          if (parsed.columns && parsed.data) {
+            testResults = parsed
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse test results:", e)
+      }
+
+      // Create dynamic columns
+      const dynamicColumns: DynamicColumn[] = testResults.columns?.map((colName: string, idx: number) => ({
+        id: `col-${idx}`,
+        header: colName,
+        accessorKey: `col-${idx}`,
+        type: "input"
+      })) || [
+        { id: "col-0", header: "Test Data", accessorKey: "col-0", type: "input" },
+        { id: "col-1", header: "Result", accessorKey: "col-1", type: "input" },
+        { id: "col-2", header: "Remarks", accessorKey: "col-2", type: "input" },
+      ]
+
+      // Create dynamic data rows
+      const dynamicData: DynamicRow[] = testResults.data?.map((rowData: any[], rowIdx: number) => {
+        const row: DynamicRow = {
+          id: `row-${rowIdx + 1}`,
+          label: rowData[0] || `Row ${rowIdx + 1}`,
+          specimen_oid: item.specimen_sections?.[0]?.specimen_id || ""
+        }
+        dynamicColumns.forEach((col, colIdx) => {
+          row[col.accessorKey] = rowData[colIdx] || ""
+        })
+        return row
+      }) || [{ id: "row-1", label: "Row 1", "col-0": "", "col-1": "", "col-2": "" }]
+
+      // Find specimen name from request_info
+      const specimenOid = item.specimen_sections?.[0]?.specimen_id || ""
+      
+      // Look for specimen in both global specimens and sample lot specimens
+      let specimenInfo = report.request_info?.specimens?.find((spec: any) => spec.specimen_oid === specimenOid)
+      
+      if (!specimenInfo) {
+        // Also check in sample lots specimens
+        for (const lot of report.request_info?.sample_lots || []) {
+          specimenInfo = lot.specimens?.find((spec: any) => spec.specimen_oid === specimenOid)
+          if (specimenInfo) break
+        }
+      }
+      
+      const specimenName = specimenInfo?.specimen_id || "Unknown Specimen"
+
+      return {
+        id: item._id,
+        specimenId: specimenName,
+        specimenOid: specimenOid,
+        testMethodId: report.request_info?.sample_lots?.[0]?.test_method?.test_method_oid || "",
+        testMethodName: report.request_info?.sample_lots?.[0]?.test_method?.test_name || "",
+        testEquipment: item.equipment_name || "",
+        samplePrepMethod: item.sample_preparation_method || "",
+        sampleDescription: report.request_info?.sample_lots?.[0]?.item_description || "",
+        materialGrade: item.material_grade || "",
+        heatNo: item.heat_no || "",
+        temperature: item.temperature || "",
+        humidity: item.humidity || "",
+        comments: item.comments || "",
+        columns: dynamicColumns,
+        data: dynamicData,
+        hasImage: report.request_info?.sample_lots?.[0]?.test_method?.hasImage || false,
+        images: item.specimen_sections?.[0]?.images_list?.map((img: any) => ({
+          image_url: img.image_url,
+          caption: img.caption || ""
+        })) || []
+      }
+    })
+
+    // Reconstruct selectedRequest
+    const selectedRequest = report.request_info ? {
+      id: report.request_info.request_id,
+      request_no: report.request_info.request_no,
+      sample_lots: report.request_info.sample_lots?.map((lot: any) => ({
+        item_description: lot.item_description || "",
+        planned_test_date: lot.planned_test_date || null,
+        dimension_spec: lot.dimension_spec || null,
+        request_by: lot.request_by || null,
+        remarks: lot.remarks || null,
+        sample_lot_id: lot.sample_lot_info?.sample_lot_id || "",
+        test_method: {
+          test_method_oid: lot.test_method?.test_method_oid || "",
+          test_name: lot.test_method?.test_name || ""
+        },
+        job_id: lot.sample_lot_info?.job_id || "",
+        item_no: lot.sample_lot_info?.item_no || "",
+        client_name: null,
+        project_name: lot.sample_lot_info?.job_details?.project_name || null,
+        specimens: lot.specimens?.map((spec: any) => ({
+          specimen_oid: spec.specimen_oid,
+          specimen_id: spec.specimen_id
+        })) || [],
+        specimens_count: lot.specimens_count || 0
+      })) || [],
+      sample_lots_count: report.request_info.sample_lots_count || 0,
+      created_at: report.request_info.created_at || "",
+      updated_at: report.request_info.updated_at || ""
+    } : undefined
+
+    // Set form data
+    const mappedFormData: TestReportFormData = {
+      date_of_sampling: report.date_of_sampling,
+      date_of_testing: report.date_of_testing,
+      issue_date: report.issue_date,
+      revision_no: report.revision_no,
+      customers_name_no: report.customers_name_no,
+      atten: report.atten,
+      customer_po: report.customer_po,
+      tested_by: report.tested_by,
+      reviewed_by: report.reviewed_by,
+      selectedRequest: selectedRequest,
+      items: mappedItems,
+    }
+
+    setFormData(mappedFormData)
+  }, [testReportResponse, testReportItemsResponse])
+
+  // Handle form submission
+  const handleSubmit = async (data: TestReportFormData) => {
+    // Form handles the submission internally, just handle navigation
     setIsEditing(false)
+    router.push(ROUTES.APP.TEST_REPORTS.ROOT)
+  }
+
+  if (reportLoading || itemsLoading) {
+    return (
+      <div className="space-y-6">
+        <FormHeader 
+          title="Edit Test Report" 
+          description="Update the test report details" 
+          label={null} 
+          href={ROUTES.APP.TEST_REPORTS.ROOT} 
+        />
+        <p className="text-sm text-muted-foreground">Loading test report details…</p>
+      </div>
+    )
+  }
+
+  if (reportError || itemsError || !testReportResponse) {
+    return (
+      <div className="space-y-6">
+        <FormHeader 
+          title="Edit Test Report" 
+          description="Update the test report details" 
+          label={null} 
+          href={ROUTES.APP.TEST_REPORTS.ROOT} 
+        />
+        <p className="text-sm text-destructive">Failed to load test report details</p>
+      </div>
+    )
   }
 
   return (
-    <div className="grid gap-4">
-      <FormHeader title="Edit Test Report" description="Update the test report details" label={null} href={ROUTES.APP.TEST_REPORTS.ROOT}>
-      {!isEditing ? (
-          <Button size="sm" onClick={() => setIsEditing(true)}><PencilIcon className="w-4 h-4 mr-1" /> Edit</Button>
+    <div className="space-y-6">
+      <FormHeader 
+        title="Edit Test Report" 
+        description="Update the test report details" 
+        label={null} 
+        href={ROUTES.APP.TEST_REPORTS.ROOT}
+      >
+        {!isEditing ? (
+          <Button size="sm" onClick={() => setIsEditing(true)}>
+            <PencilIcon className="w-4 h-4 mr-1" /> Edit
+          </Button>
         ) : (
-          <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}><XIcon className="w-4 h-4 mr-1" /> Cancel</Button>
+          <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>
+            <XIcon className="w-4 h-4 mr-1" /> Cancel
+          </Button>
         )}
       </FormHeader>
-      {initial ? (
-        <TestReportForm initialData={initial} onSubmit={handleSubmit} readOnly={!isEditing} />
+      
+      {formData ? (
+        <TestReportForm 
+          key={`edit-${id}-${isEditing}`}
+          initialData={formData} 
+          onSubmit={handleSubmit} 
+          readOnly={!isEditing}
+          isEditing={isEditing}
+          certificateId={id}
+        />
       ) : (
         <p className="text-sm text-muted-foreground">Loading…</p>
       )}
     </div>
   )
 }
-
-

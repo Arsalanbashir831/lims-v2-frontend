@@ -1,27 +1,40 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Check, ChevronsUpDown, Search } from "lucide-react"
+import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { samplePreparationService } from "@/services/sample-preparation.service"
+import { useSamplePreparations } from "@/hooks/use-sample-preparations"
 
 interface Request {
-  id?: string
-  prepNo?: string
-  request_id: string
-  job?: string
-  job_id?: string
-  job_project_name?: string
-  request_description?: string
-  created_at?: string
-  updated_at?: string
-  created_by?: string
-  updated_by?: string
-  test_items_count?: number
-  total_specimens?: number
+  id: string
+  request_no: string
+  sample_lots: Array<{
+    item_description: string
+    planned_test_date: string | null
+    dimension_spec: string | null
+    request_by: string | null
+    remarks: string | null
+    sample_lot_id: string
+    test_method: {
+      test_method_oid: string
+      test_name: string
+    }
+    job_id: string
+    item_no: string
+    client_name: string | null
+    project_name: string | null
+    specimens: Array<{
+      specimen_oid: string
+      specimen_id: string
+    }>
+    specimens_count: number
+  }>
+  sample_lots_count: number
+  created_at: string
+  updated_at: string
 }
 
 interface RequestSelectorProps {
@@ -42,68 +55,35 @@ export function RequestSelector({
   selectedRequest: propSelectedRequest
 }: RequestSelectorProps) {
   const [open, setOpen] = useState(false)
-  const [requests, setRequests] = useState<Request[]>([])
-  const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
 
-  // Load requests based on search query
+  // Debounce search query to avoid API calls on every keystroke
   useEffect(() => {
-    const loadRequests = async () => {
-      try {
-        setLoading(true)
-        // If no search query, load all requests; otherwise search
-        const response = searchQuery.trim() 
-          ? await samplePreparationService.search(searchQuery, 1)
-          : await samplePreparationService.getAll(1)
-          
-        // Convert API response to Request interface
-        const convertedRequests: Request[] = response.results.map((item: any) => ({
-          id: item.id,
-          prepNo: item.prepNo,
-          request_id: item.request_id,
-          job: item.job,
-          job_id: item.job_id,
-          job_project_name: item.job_project_name,
-          request_description: item.request_description,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          created_by: item.created_by,
-          updated_by: item.updated_by,
-          test_items_count: item.test_items_count,
-          total_specimens: item.total_specimens,
-        }))
-        
-        setRequests(convertedRequests)
-      } catch (error) {
-        console.error("Failed to load requests:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300) // 300ms debounce delay
 
-    // Debounce the search to avoid too many API calls
-    const timeoutId = setTimeout(() => {
-      loadRequests()
-    }, searchQuery.trim() ? 300 : 0) // No delay for initial load
-
-    return () => clearTimeout(timeoutId)
+    return () => clearTimeout(timer)
   }, [searchQuery])
 
-  // No need for client-side filtering since we're using server-side search
-  const filteredRequests = requests
+  // Use the optimized useSamplePreparations hook - only load when popover is open
+  const { data: requestsData, isLoading: loading } = useSamplePreparations(1, debouncedSearchQuery.trim() || undefined, open)
+  
+  const requests: Request[] = requestsData?.data ?? []
 
   // Find selected request - use prop if available, otherwise find from requests array
   const selectedRequest = useMemo(() => {
     // If we have a prop selected request and it matches the value, use it
-    if (propSelectedRequest && (propSelectedRequest.id === value || propSelectedRequest.request_id === value)) {
+    if (propSelectedRequest && propSelectedRequest.id === value) {
       return propSelectedRequest
     }
     // Otherwise, try to find from the requests array
-    return requests.find(request => request.id === value || request.request_id === value)
+    return requests.find(request => request.id === value)
   }, [requests, value, propSelectedRequest])
 
   const handleSelect = (requestId: string) => {
-    const request = requests.find(r => r.id === requestId || r.request_id === requestId)
+    const request = requests.find(r => r.id === requestId)
     if (request) {
       onValueChange(requestId, request)
       setOpen(false)
@@ -128,9 +108,9 @@ export function RequestSelector({
         >
           {selectedRequest ? (
             <div className="flex flex-col items-start">
-              <p className="font-medium">{selectedRequest.request_id || selectedRequest.prepNo}</p>
-              {selectedRequest.job_project_name && (
-                <p className="text-xs text-muted-foreground">{selectedRequest.job_project_name}</p>
+              <p className="font-medium">{selectedRequest.request_no}</p>
+              {selectedRequest.sample_lots?.[0]?.project_name && (
+                <p className="text-xs text-muted-foreground">{selectedRequest.sample_lots[0].project_name}</p>
               )}
             </div>
           ) : (
@@ -141,48 +121,45 @@ export function RequestSelector({
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
         <Command shouldFilter={false}>
-          <div className="flex items-center border-b">
-           <CommandInput
-              placeholder="Search requests..."
-              value={searchQuery}
-              onValueChange={setSearchQuery}
-              className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          </div>
+          <CommandInput 
+            placeholder="Search requests..." 
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+          />
           <CommandList>
-            {loading ? (
+            {loading || (searchQuery !== debouncedSearchQuery) ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
-                Loading requests...
+                {searchQuery !== debouncedSearchQuery ? "Searching..." : "Loading requests..."}
               </div>
-            ) : filteredRequests.length === 0 ? (
+            ) : requests.length === 0 ? (
               <CommandEmpty>
                 {searchQuery ? `No requests found for "${searchQuery}".` : "No requests available."}
               </CommandEmpty>
             ) : (
               <CommandGroup>
-                {filteredRequests.map((request) => (
+                {requests.map((request) => (
                   <CommandItem
-                    key={request.request_id || request.id}
-                    value={request.request_id || request.id}
-                    onSelect={() => handleSelect(request.request_id || request.id || "")}
+                    key={request.id}
+                    value={request.id}
+                    onSelect={() => handleSelect(request.id)}
                     className="flex flex-col items-start py-3"
                   >
                     <div className="flex items-center justify-between w-full">
                       <div className="flex flex-col items-start">
-                        <p className="font-medium">{request.request_id || request.prepNo}</p>
-                        {request.job_project_name && (
-                          <p className="text-xs text-muted-foreground">{request.job_project_name}</p>
+                        <p className="font-medium">{request.request_no}</p>
+                        {request.sample_lots?.[0]?.project_name && (
+                          <p className="text-xs text-muted-foreground">{request.sample_lots[0].project_name}</p>
                         )}
-                        {request.test_items_count && (
+                        {request.sample_lots_count && (
                           <p className="text-xs text-muted-foreground">
-                            {request.test_items_count} test items, {request.total_specimens || 0} specimens
+                            {request.sample_lots_count} sample lots, {request.sample_lots.reduce((total, lot) => total + lot.specimens_count, 0)} specimens
                           </p>
                         )}
                       </div>
                       <Check
                         className={cn(
                           "ml-auto h-4 w-4",
-                          value === (request.request_id || request.id) ? "opacity-100" : "opacity-0"
+                          value === request.id ? "opacity-100" : "opacity-0"
                         )}
                       />
                     </div>

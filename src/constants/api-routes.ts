@@ -78,13 +78,23 @@ export const API_ROUTES = {
     DELETE_SPECIMEN: (id: string) => `specimens/${id}/`,
     SPECIMEN_BY_ID: (id: string) => `specimens/${id}/`,
 
-    // Complete Certificates
-    ADD_COMPLETE_CERTIFICATE: "complete-certificates/",
-    UPDATE_COMPLETE_CERTIFICATE: (id: string) => `complete-certificates/${id}/`,
-    DELETE_COMPLETE_CERTIFICATE: (id: string) => `complete-certificates/${id}/`,
-    ALL_COMPLETE_CERTIFICATES: "complete-certificates/",
-    COMPLETE_CERTIFICATE_BY_ID: (id: string) => `complete-certificates/${id}/`,
-    SEARCH_COMPLETE_CERTIFICATES: "complete-certificates/search/",
+    // Certificates
+    ADD_CERTIFICATE: "certificates/",
+    UPDATE_CERTIFICATE: (id: string) => `certificates/${id}/`,
+    DELETE_CERTIFICATE: (id: string) => `certificates/${id}/`,
+    ALL_CERTIFICATES: "certificates/",
+    CERTIFICATE_BY_ID: (id: string) => `certificates/${id}/`,
+    SEARCH_CERTIFICATES: "certificates/search/",
+
+    // Certificate Items
+    ADD_CERTIFICATE_ITEM: "certificate-items/",
+    UPDATE_CERTIFICATE_ITEM: (id: string) => `certificate-items/${id}/`,
+    DELETE_CERTIFICATE_ITEM: (id: string) => `certificate-items/${id}/`,
+    ALL_CERTIFICATE_ITEMS: "certificate-items/",
+    CERTIFICATE_ITEM_BY_ID: (id: string) => `certificate-items/${id}/`,
+    SEARCH_CERTIFICATE_ITEMS: "certificate-items/search/",
+    GET_CERTIFICATE_ITEMS_BY_CERTIFICATE_ID: (id: string) => `certificate-items/certificate/${id}/`,
+    UPLOAD_CERTIFICATE_ITEM_IMAGE: "certificate-items/upload-image/",
 
     // Sample Lots
     ADD_SAMPLE_LOT: "sample-lots/",

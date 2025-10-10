@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -9,7 +9,8 @@ import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { DataTablePagination } from "@/components/ui/data-table-pagination"
 import { FilterSearch } from "@/components/ui/filter-search"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
-import { completeCertificateService, type CompleteCertificate } from "@/services/complete-certificates.service"
+import { useTestReports, useDeleteTestReport } from "@/hooks/use-test-reports"
+import { type TestReport } from "@/services/test-reports.service"
 import { toast } from "sonner"
 import { PencilIcon, TrashIcon, EyeIcon } from "lucide-react"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
@@ -18,62 +19,121 @@ import { ROUTES } from "@/constants/routes"
 import { useRouter } from "next/navigation"
 
 export default function TestReportsPage() {
-  const [items, setItems] = useState<CompleteCertificate[]>([])
-  const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
   const router = useRouter()
 
-  const reload = useCallback(async () => {
-    try {
-      setLoading(true)
-      const response = searchQuery.trim() 
-        ? await completeCertificateService.search(searchQuery, currentPage)
-        : await completeCertificateService.getAll(currentPage)
-      setItems(response.results)
-    } catch (error) {
-      console.error("Failed to load certificates:", error)
-      toast.error("Failed to load certificates")
-    } finally {
-      setLoading(false)
-    }
-  }, [searchQuery, currentPage])
-  
-  useEffect(() => { 
-    reload()
-  }, [reload])
+  const { data, error, isFetching } = useTestReports(currentPage, searchQuery)
+  const deleteMutation = useDeleteTestReport()
 
   const doDelete = useCallback(async (id: string) => {
     try {
-      await completeCertificateService.delete(id)
-      toast.success("Certificate deleted successfully")
-      reload()
+      await deleteMutation.mutateAsync(id)
+      toast.success("Test report deleted successfully")
     } catch (error) {
-      console.error("Failed to delete certificate:", error)
-      toast.error("Failed to delete certificate")
+      console.error("Failed to delete test report:", error)
+      toast.error("Failed to delete test report")
     }
-  }, [reload])
+  }, [deleteMutation])
 
-  const columns: ColumnDef<CompleteCertificate>[] = useMemo(() => [
-    { id: "select", header: ({ table }) => (<Checkbox className="size-4" checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")} onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)} aria-label="Select all" />), cell: ({ row }) => (<Checkbox className="size-4" checked={row.getIsSelected()} onCheckedChange={(v) => row.toggleSelected(!!v)} aria-label="Select row" />), meta: { className: "w-fit min-w-fit px-4" }, enableSorting: false, enableHiding: false },
-    { id: "rowNumber", header: "S.No", cell: ({ row }) => row.index + 1, meta: { className: "w-fit min-w-fit px-4" }, enableSorting: false, enableHiding: false },
-    { accessorKey: "gripco_ref_no", header: ({ column }) => <DataTableColumnHeader column={column} title="Report #" /> },
-    { accessorKey: "request_id", header: ({ column }) => <DataTableColumnHeader column={column} title="Request #" /> },
-    { accessorKey: "project_name", header: ({ column }) => <DataTableColumnHeader column={column} title="Project" /> },
-    { accessorKey: "client_name", header: ({ column }) => <DataTableColumnHeader column={column} title="Client" /> },
-    { id: "items", header: ({ column }) => <DataTableColumnHeader column={column} title="# Items" />, cell: ({ row }) => row.original.certificate_items_json?.length ?? 0 },
+  const columns: ColumnDef<TestReport>[] = useMemo(() => [
+    { 
+      id: "select", 
+      header: ({ table }) => (
+        <Checkbox 
+          className="size-4" 
+          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")} 
+          onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)} 
+          aria-label="Select all" 
+        />
+      ), 
+      cell: ({ row }) => (
+        <Checkbox 
+          className="size-4" 
+          checked={row.getIsSelected()} 
+          onCheckedChange={(v) => row.toggleSelected(!!v)} 
+          aria-label="Select row" 
+        />
+      ), 
+      meta: { className: "w-fit min-w-fit px-4" }, 
+      enableSorting: false, 
+      enableHiding: false 
+    },
+    { 
+      id: "rowNumber", 
+      header: "S.No", 
+      cell: ({ row }) => row.index + 1, 
+      meta: { className: "w-fit min-w-fit px-4" }, 
+      enableSorting: false, 
+      enableHiding: false 
+    },
+    { 
+      accessorKey: "certificate_id", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Certificate ID" /> 
+    },
+    { 
+      accessorKey: "request_info.request_no", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Request No" />,
+      cell: ({ row }) => row.original.request_info?.request_no || "N/A"
+    },
+    { 
+      accessorKey: "customers_name_no", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Customer" /> 
+    },
+    { 
+      accessorKey: "customer_po", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="PO" /> 
+    },
+    { 
+      accessorKey: "issue_date", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Issue Date" /> 
+    },
+    { 
+      id: "specimens_count", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Specimens" />,
+      cell: ({ row }) => row.original.request_info?.total_specimens || 0,
+      accessorFn: (row) => row.request_info?.total_specimens || 0
+    },
+    { 
+      id: "sample_lots_count", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Sample Lots" />,
+      cell: ({ row }) => row.original.request_info?.sample_lots_count || 0,
+      accessorFn: (row) => row.request_info?.sample_lots_count || 0
+    },
+    { 
+      id: "test_methods", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Test Methods" />,
+      cell: ({ row }) => {
+        const testMethods = row.original.request_info?.sample_lots?.map(lot => lot.test_method?.test_name).filter(Boolean) || []
+        return testMethods.length > 0 ? testMethods.join(', ') : 'N/A'
+      },
+      accessorFn: (row) => row.request_info?.sample_lots?.map(lot => lot.test_method?.test_name).filter(Boolean).join(', ') || 'N/A'
+    },
     {
       id: "actions",
       header: () => "Actions",
       cell: ({ row }) => (
         <div className="text-right space-x-2 inline-flex">
           <Button variant="secondary" size="sm" asChild>
-            <Link href={`${ROUTES.APP.TEST_REPORTS.EDIT(row.original.request_id)}`}><PencilIcon className="w-4 h-4" /></Link>
+            <Link href={ROUTES.APP.TEST_REPORTS.EDIT(row.original.id)}>
+              <PencilIcon className="w-4 h-4" />
+            </Link>
           </Button>
           <Button variant="secondary" size="sm" asChild>
-            <Link href={`${ROUTES.APP.TEST_REPORTS.VIEW(row.original.request_id)}`}><EyeIcon className="w-4 h-4" /></Link>
+            <Link href={ROUTES.APP.TEST_REPORTS.VIEW(row.original.id)}>
+              <EyeIcon className="w-4 h-4" />
+            </Link>
           </Button>
-          <ConfirmPopover title="Delete this certificate?" confirmText="Delete" onConfirm={() => doDelete(row.original.request_id)} trigger={<Button variant="destructive" size="sm"><TrashIcon className="w-4 h-4" /></Button>} />
+          <ConfirmPopover 
+            title="Delete this test report?" 
+            confirmText="Delete" 
+            onConfirm={() => doDelete(row.original.id)} 
+            trigger={
+              <Button variant="destructive" size="sm">
+                <TrashIcon className="w-4 h-4" />
+              </Button>
+            } 
+          />
         </div>
       ),
     },
@@ -88,33 +148,37 @@ export default function TestReportsPage() {
     setCurrentPage(page)
   }, [])
 
+  const items = data?.data || []
+  const totalCount = data?.total || 0
+
   return (
     <DataTable
       columns={columns}
       data={items}
-      empty={<span className="text-muted-foreground">No certificates yet</span>}
+      empty={<span className="text-muted-foreground">No test reports yet</span>}
       pageSize={10}
-      tableKey="complete-certificates"
-      onRowClick={(row) => router.push(ROUTES.APP.TEST_REPORTS.VIEW(row.original.request_id))}
-      toolbar={useCallback((table: TanstackTable<CompleteCertificate>) => {
+      tableKey="test-reports"
+      onRowClick={(row) => router.push(ROUTES.APP.TEST_REPORTS.VIEW(row.original.id))}
+      toolbar={useCallback((table: TanstackTable<TestReport>) => {
         const selected = table.getSelectedRowModel().rows
         const hasSelected = selected.length > 0
+        
         const onBulkDelete = async () => {
-          const ids = selected.map(r => r.original.request_id)
+          const ids = selected.map(r => r.original.id)
           try {
-            await Promise.all(ids.map(id => completeCertificateService.delete(id)))
-            toast.success(`${ids.length} certificates deleted successfully`)
+            await Promise.all(ids.map(id => deleteMutation.mutateAsync(id)))
+            toast.success(`${ids.length} test reports deleted successfully`)
             table.resetRowSelection()
-            reload()
           } catch (error) {
-            console.error("Failed to delete certificates:", error)
-            toast.error("Failed to delete certificates")
+            console.error("Failed to delete test reports:", error)
+            toast.error("Failed to delete test reports")
           }
         }
+        
         return (
           <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
             <FilterSearch
-              placeholder="Search certificates..."
+              placeholder="Search by certificate ID, customer, PO, or request no..."
               value={searchQuery}
               onChange={handleSearchChange}
               className="w-full"
@@ -123,19 +187,25 @@ export default function TestReportsPage() {
             <div className="flex items-center gap-2 w-full md:w-auto">
               <DataTableViewOptions table={table} />
               {hasSelected && (
-                <ConfirmPopover title={`Delete ${selected.length} selected certificate(s)?`} confirmText="Delete" onConfirm={onBulkDelete} trigger={<Button variant="destructive" size="sm">Delete selected ({selected.length})</Button>} />
+                <ConfirmPopover 
+                  title={`Delete ${selected.length} selected test report(s)?`} 
+                  confirmText="Delete" 
+                  onConfirm={onBulkDelete} 
+                  trigger={
+                    <Button variant="destructive" size="sm">
+                      Delete selected ({selected.length})
+                    </Button>
+                  } 
+                />
               )}
               <Button asChild size="sm">
-                <Link href={ROUTES.APP.TEST_REPORTS.NEW}>New Certificate</Link>
+                <Link href={ROUTES.APP.TEST_REPORTS.NEW}>New Test Report</Link>
               </Button>
             </div>
           </div>
         )
-      }, [doDelete, searchQuery, handleSearchChange, reload])}
-      footer={useCallback((table: TanstackTable<CompleteCertificate>) => <DataTablePagination table={table} />, [])}
+      }, [deleteMutation, searchQuery, handleSearchChange])}
+      footer={useCallback((table: TanstackTable<TestReport>) => <DataTablePagination table={table} />, [])}
     />
-
   )
 }
-
-

@@ -35,6 +35,7 @@ interface DynamicTableProps {
   allowAddRow?: boolean
   allowAddColumn?: boolean
   allowDeleteColumn?: boolean
+  readOnly?: boolean
   className?: string
 }
 
@@ -46,6 +47,7 @@ export function DynamicTable({
   allowAddRow = true,
   allowAddColumn = true,
   allowDeleteColumn = true,
+  readOnly = false,
   className,
 }: DynamicTableProps) {
   const [columns, setColumns] = useState<DynamicColumn[]>(initialColumns)
@@ -207,7 +209,7 @@ export function DynamicTable({
                         </span>
                       )}
 
-                      {allowAddColumn && (
+                      {allowAddColumn && !readOnly && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -223,7 +225,7 @@ export function DynamicTable({
                           <DropdownMenuContent align="start">
                             <DropdownMenuItem onClick={() => openAddColumnDialog("before", column.id)}>Add column before</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openAddColumnDialog("after", column.id)}>Add column after</DropdownMenuItem>
-                            {allowDeleteColumn && column.type !== "label" && (
+                            {allowDeleteColumn && !readOnly && column.type !== "label" && (
                               <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => handleColumnDelete(column.id)} className="text-red-600">Delete column</DropdownMenuItem>
@@ -235,7 +237,7 @@ export function DynamicTable({
                     </div>
                   </th>
                 ))}
-                {allowAddRow && (
+                {allowAddRow && !readOnly && (
                   <th className="w-16 p-2">
                     <span className="sr-only">Actions</span>
                   </th>
@@ -276,6 +278,7 @@ export function DynamicTable({
                           onChange={(e) => handleCellChange(row.id, column.accessorKey, e.target.value)}
                           className="border-0 px-2 py-0.5 rounded-none h-auto text-sm"
                           placeholder={column.placeholder}
+                          disabled={readOnly}
                         />
                       ) : column.type === "numeric" ? (
                         <Input
@@ -284,6 +287,7 @@ export function DynamicTable({
                           onChange={(e) => handleCellChange(row.id, column.accessorKey, e.target.value)}
                           className="border-0 px-2 py-0.5 rounded-none h-auto text-sm"
                           placeholder={column.placeholder}
+                          disabled={readOnly}
                         />
                       ) : (
                         <Input
@@ -292,11 +296,12 @@ export function DynamicTable({
                           onChange={(e) => handleCellChange(row.id, column.accessorKey, e.target.value)}
                           className="border-0 px-2 py-0.5 rounded-none h-auto text-sm"
                           placeholder={column.placeholder}
+                          disabled={readOnly}
                         />
                       )}
                     </td>
                   ))}
-                  {allowAddRow && (
+                  {allowAddRow && !readOnly && (
                     <td className="p-2">
                       <div className="flex items-center gap-1">
                         <Button
