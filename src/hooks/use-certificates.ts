@@ -9,6 +9,7 @@ export const CERTIFICATES_QUERY_KEYS = {
   search: (query: string, page: number) => [...CERTIFICATES_QUERY_KEYS.all, 'search', query, page] as const,
   details: () => [...CERTIFICATES_QUERY_KEYS.all, 'detail'] as const,
   detail: (id: string) => [...CERTIFICATES_QUERY_KEYS.details(), id] as const,
+  byJob: (jobId: string) => [...CERTIFICATES_QUERY_KEYS.all, 'by-job', jobId] as const,
 }
 
 // Hooks
@@ -101,4 +102,15 @@ export function usePrefetchCertificate() {
       staleTime: 5 * 60 * 1000,
     })
   }
+}
+
+// Hook for getting certificates by job ID
+export function useCertificatesByJob(jobId: string) {
+  return useQuery({
+    queryKey: CERTIFICATES_QUERY_KEYS.byJob(jobId),
+    queryFn: () => certificatesService.getByJobId(jobId),
+    enabled: !!jobId,
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  })
 }

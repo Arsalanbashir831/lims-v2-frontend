@@ -110,6 +110,33 @@ export const samplePreparationService = {
   async deleteSpecimen(id: string): Promise<void> {
     await api.delete(API_ROUTES.Lab_MANAGERS.DELETE_SPECIMEN(id))
   },
+
+  // Get sample preparations by job ID
+  async getByJobId(jobId: string): Promise<{
+    status: string
+    data: any[]
+    total: number
+    job_oid: string
+    job_id: string
+    project_name: string
+    client_name: string
+  }> {
+    const response = await api.get(API_ROUTES.Lab_MANAGERS.GET_SAMPLE_PREPARATIONS_BY_JOB_ID(jobId)).json<{
+      status: string
+      data: any[]
+      total: number
+      job_oid: string
+      job_id: string
+      project_name: string
+      client_name: string
+    }>()
+    
+    if (response.status === "success") {
+      return response
+    }
+    
+    throw new Error("Failed to get sample preparations by job ID")
+  },
 }
 
 export type {

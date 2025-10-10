@@ -197,7 +197,7 @@ export const sampleInformationService = {
 
   async search(query: string, page: number = 1): Promise<{ results: any[]; count: number; next: string | null; previous: string | null }> {
     const endpoint = API_ROUTES.Lab_MANAGERS.SEARCH_SAMPLE_INFORMATION
-    const response = await api.get(endpoint, { searchParams: { q: query, page: page.toString() } }).json<{
+    const response = await api.get(endpoint, { searchParams: { job_id: query, page: page.toString() } }).json<{
       status: string
       data: any[]
       total: number

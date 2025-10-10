@@ -3,8 +3,14 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { TrackingRow } from "@/services/tracking.service"
+import { useSampleLotsByJob } from "@/hooks/use-sample-lots"
+import { useSamplePreparationsByJob } from "@/hooks/use-sample-preparations"
+import { useCertificatesByJob } from "@/hooks/use-certificates"
+import Link from "next/link"
+import { ROUTES } from "@/constants/routes"
 
 interface Props {
   open: boolean
@@ -13,104 +19,257 @@ interface Props {
 }
 
 export function TrackingDrawer({ open, onOpenChange, row }: Props) {
+  // Fetch sample lots data for the selected job
+  const { data: sampleLotsData, isLoading: isLoadingSampleLots, error: sampleLotsError } = useSampleLotsByJob(row?.id || "")
+  
+  // Fetch sample preparations data for the selected job
+  const { data: samplePreparationsData, isLoading: isLoadingSamplePreparations, error: samplePreparationsError } = useSamplePreparationsByJob(row?.id || "")
+  
+  // Fetch certificates data for the selected job
+  const { data: certificatesData, isLoading: isLoadingCertificates, error: certificatesError } = useCertificatesByJob(row?.id || "")
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-[95vw] sm:max-w-[70vw] lg:max-w-[60vw] p-0">
         <SheetHeader className="p-4 border-b">
           <SheetTitle className="flex items-center justify-between w-full">
             <span>{row?.sampleId} — {row?.projectName}</span>
-            <Badge variant="secondary" className="capitalize">{row?.status?.replaceAll("_"," ")}</Badge>
           </SheetTitle>
         </SheetHeader>
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="m-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="items">Items</TabsTrigger>
             <TabsTrigger value="preparation">Preparation</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="discards">Discards</TabsTrigger>
+            {/* <TabsTrigger value="discards">Discards</TabsTrigger> */}
           </TabsList>
           <TabsContent value="overview" className="p-4 pt-0 space-y-4">
             <section className="rounded-lg border">
               <header className="px-4 py-3 border-b flex items-center justify-between">
                 <div className="text-sm font-medium">Summary</div>
-                <Badge variant="secondary" className="capitalize">{row?.status?.replaceAll("_"," ")}</Badge>
               </header>
               <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
                 <Field label="Client" value={row?.clientName} />
                 <Field label="Project" value={row?.projectName} />
-                <Field label="Items" value={String(row?.testMethods?.length ?? 0)} />
-                <Field label="Specimens" value={String(row?.equipmentUsed?.length ?? 0)} />
+                <Field label="Items" value={String(sampleLotsData?.total ?? row?.itemsCount ?? 0)} />
+                <Field label="End User" value={sampleLotsData?.job_info?.end_user ?? row?.endUser} />
+                <Field label="Received By" value={sampleLotsData?.job_info?.received_by ?? row?.receivedBy} />
+                <Field label="Received Date" value={sampleLotsData?.job_info?.receive_date ? new Date(sampleLotsData.job_info.receive_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : row?.receivedDate} />
+                <Field label="Remarks" value={sampleLotsData?.job_info?.remarks ?? row?.remarks} />
               </div>
             </section>
 
             <section className="rounded-lg border">
-              <header className="px-4 py-3 border-b text-sm font-medium">Timeline</header>
-              <ol className="p-4 space-y-3">
-                <TimelineItem title="Received" date={row?.receivedDate} active={!!row?.receivedDate} />
-                <TimelineItem title="Preparation" date={row?.preparationDate} active={!!row?.preparationDate} />
-                <TimelineItem title="Report Issued" date={row?.reportDate} active={!!row?.reportDate} />
-                <TimelineItem title="Discarded" date={row?.discardedDate} active={!!row?.discardedDate} />
-              </ol>
+              <header className="px-4 py-3 border-b text-sm font-medium">Items</header>
+              <div className="p-4">
+                {isLoadingSampleLots ? (
+                  <div className="text-center text-muted-foreground py-8">
+                    Loading sample lots...
+                  </div>
+                ) : sampleLotsError ? (
+                  <div className="text-center text-red-500 py-8">
+                    Error loading sample lots: {sampleLotsError.message}
+                  </div>
+                ) : sampleLotsData?.data && sampleLotsData.data.length > 0 ? (
+                  <div className="space-y-3">
+                    {sampleLotsData.data.map((sampleLot) => (
+                      <div key={sampleLot.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                        <div className="space-y-1">
+                          <div className="font-medium text-sm">{sampleLot.item_no}</div>
+                          <div className="text-sm text-muted-foreground">{sampleLot.description}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Type: {sampleLot.sample_type} | Material: {sampleLot.material_type}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Heat #: {sampleLot.heat_no} | MTC #: {sampleLot.mtc_no}
+                          </div>
+                        </div>
+                        <div className="text-right space-y-1">
+                          <div className="flex flex-wrap gap-1 justify-end">
+                            {sampleLot.test_methods.slice(0, 2).map((method: any, idx: number) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {method.test_name.length > 12 ? method.test_name.substring(0, 12) + "..." : method.test_name}
+                              </Badge>
+                            ))}
+                            {sampleLot.test_methods.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{sampleLot.test_methods.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground py-8">
+                    No sample lots available for this job
+                  </div>
+                )}
+              </div>
             </section>
-          </TabsContent>
-          <TabsContent value="items" className="p-4 pt-0">
-            <div className="rounded border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Heat #</TableHead>
-                    <TableHead>Methods</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">No items data available</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
           </TabsContent>
           <TabsContent value="preparation" className="p-4 pt-0">
             <div className="rounded border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Request #</TableHead>
-                    <TableHead>Item</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead>Specimens</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">No preparation data available</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+              {isLoadingSamplePreparations ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  Loading preparations...
+                </div>
+              ) : samplePreparationsError ? (
+                <div className="p-8 text-center text-red-500">
+                  Error loading preparations: {samplePreparationsError.message}
+                </div>
+              ) : samplePreparationsData?.data && samplePreparationsData.data.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Request #</TableHead>
+                      <TableHead>Sample Lots</TableHead>
+                      <TableHead>Test Methods</TableHead>
+                      <TableHead>Specimens</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {samplePreparationsData.data.map((preparation) => (
+                      <TableRow key={preparation.id}>
+                        <TableCell className="font-medium">{preparation.request_no}</TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            {preparation.sample_lots.map((lot: any, index: number) => (
+                              <div key={index} className="text-sm">
+                                <div className="font-medium">{lot.sample_lot_info?.item_no}</div>
+                                <div className="text-xs text-muted-foreground">{lot.item_description}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            {preparation.sample_lots.map((lot: any, index: number) => (
+                              <div key={index} className="text-sm">
+                                <div className="font-medium">{lot.test_method?.test_name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {lot.planned_test_date ? new Date(lot.planned_test_date).toLocaleDateString() : 'No date'}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            {preparation.sample_lots.map((lot: any, index: number) => (
+                              <div key={index} className="text-sm">
+                                <div className="font-medium">{lot.specimens_count} specimens</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {lot.specimens.slice(0, 2).map((spec: any) => spec.specimen_id).join(', ')}
+                                  {lot.specimens.length > 2 && ` +${lot.specimens.length - 2} more`}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(preparation.created_at).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: '2-digit'
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          <Link href={ROUTES.APP.SAMPLE_PREPARATION.EDIT(preparation.id)}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                          >
+                            View
+                          </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="p-8 text-center text-muted-foreground">
+                  No preparation data available for this job
+                </div>
+              )}
             </div>
           </TabsContent>
           <TabsContent value="reports" className="p-4 pt-0">
             <div className="rounded border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Report #</TableHead>
-                    <TableHead>Issue Date</TableHead>
-                    <TableHead>Items</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-center text-muted-foreground">No reports data available</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+              {isLoadingCertificates ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  Loading certificates...
+                </div>
+              ) : certificatesError ? (
+                <div className="p-8 text-center text-red-500">
+                  Error loading certificates: {certificatesError.message}
+                </div>
+              ) : certificatesData?.data && certificatesData.data.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Certificate #</TableHead>
+                      <TableHead>Request Info</TableHead>
+                      <TableHead>Specimens</TableHead>
+                      <TableHead>Issue Date</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {certificatesData.data.map((certificate) => (
+                      <TableRow key={certificate.id}>
+                        <TableCell className="font-medium">{certificate.certificate_id}</TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="text-sm font-medium">{certificate.request_info?.request_no}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {certificate.request_info?.sample_lots_count} sample lots
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="text-sm font-medium">{certificate.request_info?.total_specimens} specimens</div>
+                            <div className="text-xs text-muted-foreground">
+                              {certificate.request_info?.specimens?.slice(0, 2).map((spec: any) => spec.specimen_id).join(', ')}
+                              {certificate.request_info?.specimens && certificate.request_info.specimens.length > 2 && 
+                                ` +${certificate.request_info.specimens.length - 2} more`}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(certificate.issue_date).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: '2-digit'
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          <Link href={ROUTES.APP.TEST_REPORTS.EDIT(certificate.id)}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                          >
+                            View
+                          </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="p-8 text-center text-muted-foreground">
+                  No certificates available for this job
+                </div>
+              )}
             </div>
           </TabsContent>
-          <TabsContent value="discards" className="p-4 pt-0">
+          {/* <TabsContent value="discards" className="p-4 pt-0">
             <div className="rounded border">
               <Table>
                 <TableHeader>
@@ -118,16 +277,34 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                     <TableHead>Reason</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Specimens</TableHead>
+                    <TableHead>Operator</TableHead>
+                    <TableHead>Notes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-center text-muted-foreground">No discards data available</TableCell>
-                  </TableRow>
+                  {row?.discards && row.discards.length > 0 ? (
+                    row.discards.map((discard, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{discard.reason}</TableCell>
+                        <TableCell>{discard.date}</TableCell>
+                        <TableCell>{discard.specimens}</TableCell>
+                        <TableCell>{discard.operator}</TableCell>
+                        <TableCell>
+                          <div className="max-w-[200px] truncate" title={discard.notes}>
+                            {discard.notes || "—"}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">No discards data available</TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
-          </TabsContent>
+          </TabsContent> */}
         </Tabs>
       </SheetContent>
     </Sheet>
@@ -162,16 +339,5 @@ function Field({ label, value }: { label: string; value?: string }) {
   )
 }
 
-function TimelineItem({ title, date, active }: { title: string; date?: string; active?: boolean }) {
-  return (
-    <li className="flex items-start gap-3">
-      <span className={`mt-1 h-2.5 w-2.5 rounded-full ${active ? "bg-primary" : "bg-muted-foreground/40"}`} />
-      <div>
-        <div className="text-sm font-medium">{title}</div>
-        <div className="text-xs text-muted-foreground">{date || "—"}</div>
-      </div>
-    </li>
-  )
-}
 
 

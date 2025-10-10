@@ -9,6 +9,7 @@ export const SAMPLE_PREPARATIONS_QUERY_KEYS = {
     details: () => [...SAMPLE_PREPARATIONS_QUERY_KEYS.all, 'detail'] as const,
     detail: (id: string) => [...SAMPLE_PREPARATIONS_QUERY_KEYS.details(), id] as const,
     search: (query: string, page: number, filters?: any) => [...SAMPLE_PREPARATIONS_QUERY_KEYS.all, 'search', { query, page, filters }] as const,
+    byJob: (jobId: string) => [...SAMPLE_PREPARATIONS_QUERY_KEYS.all, 'by-job', jobId] as const,
 }
 
 // Hook for getting sample preparations list with pagination
@@ -105,4 +106,15 @@ export function usePrefetchSamplePreparation() {
             staleTime: 5 * 60 * 1000,
         })
     }
+}
+
+// Hook for getting sample preparations by job ID
+export function useSamplePreparationsByJob(jobId: string) {
+    return useQuery({
+        queryKey: SAMPLE_PREPARATIONS_QUERY_KEYS.byJob(jobId),
+        queryFn: () => samplePreparationService.getByJobId(jobId),
+        enabled: !!jobId,
+        staleTime: 3 * 60 * 1000, // 3 minutes
+        gcTime: 5 * 60 * 1000, // 5 minutes
+    })
 }

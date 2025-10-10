@@ -71,6 +71,7 @@ export const API_ROUTES = {
     ALL_SAMPLE_PREPARATIONS: "sample-preparations/",
     SAMPLE_PREPARATION_BY_ID: (id: string) => `sample-preparations/${id}/`,
     SEARCH_SAMPLE_PREPARATIONS: "sample-preparations/search/",
+    GET_SAMPLE_PREPARATIONS_BY_JOB_ID: (id: string) => `sample-preparations/job/${id}/`,
 
     // Specimens
     ADD_SPECIMEN: "specimens/",
@@ -85,6 +86,7 @@ export const API_ROUTES = {
     ALL_CERTIFICATES: "certificates/",
     CERTIFICATE_BY_ID: (id: string) => `certificates/${id}/`,
     SEARCH_CERTIFICATES: "certificates/search/",
+    GET_CERTIFICATES_BY_JOB_ID: (id: string) => `certificates/job/${id}/`,
 
     // Certificate Items
     ADD_CERTIFICATE_ITEM: "certificate-items/",

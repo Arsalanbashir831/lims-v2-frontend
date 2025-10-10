@@ -154,5 +154,31 @@ export const certificatesService = {
       return response
     }
     throw new Error("Failed to search certificates")
+  },
+
+  async getByJobId(jobId: string): Promise<{
+    status: string
+    data: Certificate[]
+    total: number
+    job_oid: string
+    job_id: string
+    project_name: string
+    client_name: string
+  }> {
+    const response = await api.get(API_ROUTES.Lab_MANAGERS.GET_CERTIFICATES_BY_JOB_ID(jobId)).json<{
+      status: string
+      data: Certificate[]
+      total: number
+      job_oid: string
+      job_id: string
+      project_name: string
+      client_name: string
+    }>()
+    
+    if (response.status === "success") {
+      return response
+    }
+    
+    throw new Error("Failed to get certificates by job ID")
   }
 }
