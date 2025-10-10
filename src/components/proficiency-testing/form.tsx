@@ -62,8 +62,6 @@ export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
       is_active: true,
     }
 
-    console.log("Submitting payload:", payload)
-
     if (isEditing && initial?.id) {
       proficiencyTestingService.update(initial.id, payload as UpdateProficiencyTestingData)
         .then(() => { 

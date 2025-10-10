@@ -52,10 +52,6 @@ export function EquipmentSelector({
           ? await calibrationTestingService.search(searchQuery, 1)
           : await calibrationTestingService.getAll(1)
         
-        console.log("Search query:", searchQuery)
-        console.log("API response:", response)
-        console.log("Equipments set:", response?.results)
-        
         // Convert API response to Equipment interface
         const convertedEquipments: Equipment[] = (response?.results ?? []).map((item): Equipment => ({
           id: String(item.id),

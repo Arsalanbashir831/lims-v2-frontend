@@ -246,7 +246,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
           ...it,
           id: it.id || generateStableId('item'), // Always generate a stable ID
         }))
-        
+
         // Ensure all IDs are unique by checking for duplicates
         const seenIds = new Set<string>()
         const uniqueMapped = mapped.map((item, idx) => {
@@ -257,7 +257,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
           seenIds.add(uniqueId)
           return { ...item, id: uniqueId }
         })
-        
+
         setItems(uniqueMapped)
         setItemsInitialized(true)
       }
@@ -282,7 +282,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
   }, [])
 
   const updateItemField = useCallback((rowId: string, key: keyof PreparationItem, value: any) => {
-    setItems(prev => prev.map(item => 
+    setItems(prev => prev.map(item =>
       item.id === rowId ? { ...item, [key]: value } : item
     ))
   }, [])
@@ -291,27 +291,22 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
     const token = (rawToken ?? specimenInputByRow[rowId] ?? "").trim()
     if (!token) return
 
-    console.log('commitSpecimenToken called with:', { rowId, token })
-
     // Defer creation to submit; just add locally without id
     setItems(prev => {
-      console.log('Current items before update:', prev.map(i => ({ id: i.id, specimens: i.specimens.length })))
       const updated = prev.map((item) => {
-        console.log('Processing item:', { itemId: item.id, rowId, matches: item.id === rowId })
         if (item.id !== rowId) return item
         // prevent duplicates within row
         if (item.specimens.some(s => s.specimen_id === token)) {
-          console.log('Duplicate token found in row, skipping')
           return item
         }
-        console.log('Adding token to row:', { itemId: item.id, token })
-        return { ...item, specimens: [...item.specimens, { 
-          specimen_id: token,
-          _uniqueId: `${rowId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Add unique identifier
-          id: undefined // Ensure new specimens don't have an id initially
-        }] }
+        return {
+          ...item, specimens: [...item.specimens, {
+            specimen_id: token,
+            _uniqueId: `${rowId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Add unique identifier
+            id: undefined // Ensure new specimens don't have an id initially
+          }]
+        }
       })
-      console.log('Updated items after update:', updated.map(i => ({ id: i.id, specimens: i.specimens.length })))
       return updated
     })
 
@@ -324,12 +319,12 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
       // Track deleted specimen IDs for submit
       setDeletedSpecimenOids(prev => Array.from(new Set([...prev, identifier])))
     }
-    
+
     // Update UI - remove from specific row only
     setItems(prev => prev.map((item) => {
       if (item.id !== rowId) return item
-      return { 
-        ...item, 
+      return {
+        ...item,
         specimens: item.specimens.filter(s => {
           // For existing specimens, match by document ID
           if (s.id) return s.id !== identifier
@@ -376,7 +371,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
     try {
       // Step 1: Handle specimen creation for new specimens (existing specimens are already handled in real-time)
       let specimenIdToDocumentIdMap: Record<string, string> = {}
-      
+
       // Build mapping for existing specimens (from initial data in edit mode)
       if (isEditing && initialData && 'test_items' in initialData && initialData.test_items) {
         const initialSpecimens = initialData.test_items.flatMap(item => item.specimens || [])
@@ -388,7 +383,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
       }
 
       // Create new specimens (those without document IDs)
-      const newSpecimens = items.flatMap(item => 
+      const newSpecimens = items.flatMap(item =>
         item.specimens.filter(specimen => specimen.specimen_id && !specimen.id)
       )
 
@@ -412,7 +407,6 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
         for (const specimenId of deletedSpecimenOids) {
           try {
             await deleteSpecimenMutation.mutateAsync(specimenId)
-            console.log(`Deleted specimen with document ID ${specimenId}`)
           } catch (error) {
             console.error(`Failed to delete specimen ${specimenId}:`, error)
             // Don't fail the entire operation for individual specimen deletion errors
@@ -442,20 +436,20 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
       if (isEditing && initialData && 'id' in initialData && initialData.id) {
         // Update existing sample preparation
         await updateSamplePrepMutation.mutateAsync({ id: initialData.id, data: payload as any })
-        
+
         // Force cache invalidation for the specific item
         queryClient.invalidateQueries({ queryKey: ['sample-preparations', 'detail', initialData.id] })
-        
+
         toast.success("Sample preparation updated successfully")
       } else {
         // Create new sample preparation
         await createSamplePrepMutation.mutateAsync(payload as any)
         toast.success("Sample preparation created successfully")
       }
-      
+
       // Clear deleted specimen IDs after successful submission
       setDeletedSpecimenOids([])
-      
+
       router.push(ROUTES.APP.SAMPLE_PREPARATION.ROOT)
     } catch (error) {
       console.error('Submit failed:', error)
@@ -636,43 +630,42 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                                 {row.specimens.map((specimen: SpecimenDraft, specIndex: number) => {
                                   // Create a truly unique key that combines row ID, specimen index, and specimen ID
                                   const uniqueKey = `${rowId}-specimen-${specIndex}-${specimen.specimen_id}-${specimen.id || 'new'}`
-                                  console.log('SpecimenBadge key:', { uniqueKey, rowId, index, specIndex, specimenId: specimen.specimen_id, uniqueId: (specimen as any)._uniqueId })
                                   return (
                                     <SpecimenBadge
                                       key={uniqueKey}
                                       specimen={specimen}
-                                    onDelete={(identifier) => removeSpecimenId(rowId, identifier)}
-                                    onUpdate={async (specimenId, newSpecimenId) => {
-                                      try {
-                                        // Real-time specimen update
-                                        if (isEditing && specimenId && specimenId.length >= 12) {
-                                          // This is an existing specimen - update it via API
-                                          await updateSpecimenMutation.mutateAsync({
-                                            id: specimenId,
-                                            data: { specimen_id: newSpecimenId }
-                                          })
-                                          toast.success("Specimen updated successfully")
-                                        } else {
-                                          // This is a new specimen - just update the UI
-                                          setItems(prev => prev.map((item) => {
-                                            return item.id === rowId 
-                                              ? {
+                                      onDelete={(identifier) => removeSpecimenId(rowId, identifier)}
+                                      onUpdate={async (specimenId, newSpecimenId) => {
+                                        try {
+                                          // Real-time specimen update
+                                          if (isEditing && specimenId && specimenId.length >= 12) {
+                                            // This is an existing specimen - update it via API
+                                            await updateSpecimenMutation.mutateAsync({
+                                              id: specimenId,
+                                              data: { specimen_id: newSpecimenId }
+                                            })
+                                            toast.success("Specimen updated successfully")
+                                          } else {
+                                            // This is a new specimen - just update the UI
+                                            setItems(prev => prev.map((item) => {
+                                              return item.id === rowId
+                                                ? {
                                                   ...item,
-                                                  specimens: item.specimens.map((spec: SpecimenDraft) => 
+                                                  specimens: item.specimens.map((spec: SpecimenDraft) =>
                                                     spec.id === specimenId ? { ...spec, specimen_id: newSpecimenId } : spec
                                                   )
                                                 }
-                                              : item
-                                          }))
-                                          toast.success("Specimen updated successfully")
+                                                : item
+                                            }))
+                                            toast.success("Specimen updated successfully")
+                                          }
+                                        } catch (e) {
+                                          console.error("Failed to update specimen:", e)
+                                          toast.error("Failed to update specimen")
                                         }
-                                      } catch (e) {
-                                        console.error("Failed to update specimen:", e)
-                                        toast.error("Failed to update specimen")
-                                      }
-                                    }}
-                                    disabled={readOnly}
-                                  />
+                                      }}
+                                      disabled={readOnly}
+                                    />
                                   )
                                 })}
                                 <Input
@@ -681,7 +674,6 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                                   value={specimenInputByRow[rowId] ?? ""}
                                   onChange={(e) => setSpecimenInputByRow(prev => ({ ...prev, [rowId]: e.target.value }))}
                                   onKeyDown={(e) => {
-                                    console.log('Input onKeyDown for row:', { rowId, key: e.key, rowIndex: index })
                                     if (e.key === "," || e.key === " " || e.key === "Enter") {
                                       e.preventDefault()
                                       commitSpecimenToken(rowId)
@@ -690,7 +682,6 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                                     }
                                   }}
                                   onBlur={() => {
-                                    console.log('Input onBlur for row:', { rowId, rowIndex: index })
                                     commitSpecimenToken(rowId)
                                   }}
                                   onPaste={(e) => {
@@ -698,7 +689,6 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                                     if (!txt) return
                                     e.preventDefault()
                                     const tokens = txt.split(/[\,\s]+/).map(s => s.trim()).filter(Boolean)
-                                    console.log('Input onPaste for row:', { rowId, tokens, rowIndex: index })
                                     for (const t of tokens) commitSpecimenToken(rowId, t)
                                   }}
                                   disabled={readOnly}
