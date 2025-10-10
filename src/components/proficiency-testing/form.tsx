@@ -25,9 +25,15 @@ export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
   const [description, setDescription] = useState(initial?.description ?? "")
   const [provider1, setProvider1] = useState(initial?.provider1 ?? "")
   const [provider2, setProvider2] = useState(initial?.provider2 ?? "")
-  const [lastTestDate, setLastTestDate] = useState(initial?.lastTestDate ?? "")
-  const [dueDate, setDueDate] = useState(initial?.dueDate ?? "")
-  const [nextScheduledDate, setNextScheduledDate] = useState(initial?.nextScheduledDate ?? "")
+  const [lastTestDate, setLastTestDate] = useState(
+    initial?.last_test_date ? String(initial.last_test_date).split('T')[0] : ""
+  )
+  const [dueDate, setDueDate] = useState(
+    initial?.due_date ? String(initial.due_date).split('T')[0] : ""
+  )
+  const [nextScheduledDate, setNextScheduledDate] = useState(
+    initial?.next_scheduled_date ? String(initial.next_scheduled_date).split('T')[0] : ""
+  )
   const [status, setStatus] = useState(initial?.status ?? "")
   const [remarks, setRemarks] = useState(initial?.remarks ?? "")
 
@@ -37,13 +43,20 @@ export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
       toast.error("Description is required")
       return
     }
+    
+    // Validate status if provided
+    if (status.trim() && !['Scheduled', 'In Progress', 'Completed', 'Cancelled', 'Overdue'].includes(status.trim())) {
+      toast.error("Status must be one of: Scheduled, In Progress, Completed, Cancelled, Overdue")
+      return
+    }
+    
     const payload: CreateProficiencyTestingData = {
       description: description.trim(),
       provider1: provider1.trim() || undefined,
       provider2: provider2.trim() || undefined,
-      lastTestDate: lastTestDate || undefined,
-      dueDate: dueDate || undefined,
-      nextScheduledDate: nextScheduledDate || undefined,
+      last_test_date: lastTestDate || undefined,
+      due_date: dueDate || undefined,
+      next_scheduled_date: nextScheduledDate || undefined,
       status: status.trim() || undefined,
       remarks: remarks.trim() || undefined,
       is_active: true,
@@ -51,7 +64,7 @@ export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
 
     console.log("Submitting payload:", payload)
 
-    if (isEditing && initial) {
+    if (isEditing && initial?.id) {
       proficiencyTestingService.update(initial.id, payload as UpdateProficiencyTestingData)
         .then(() => { 
           queryClient.invalidateQueries({ queryKey: ['proficiency-tests'] })
@@ -106,7 +119,13 @@ export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
           <div className="grid gap-2 md:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="status">Status</Label>
-              <Input id="status" value={status} onChange={(e) => setStatus(e.target.value)} placeholder="e.g., Pending, Completed" disabled={readOnly} />
+              <Input 
+                id="status" 
+                value={status} 
+                onChange={(e) => setStatus(e.target.value)} 
+                placeholder="Scheduled, In Progress, Completed, Cancelled, or Overdue" 
+                disabled={readOnly} 
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="remarks">Remarks</Label>

@@ -24,20 +24,20 @@ export const API_ROUTES = {
     SEARCH_EQUIPMENTS: "equipment/search/",
 
     // Proficiency Tests
-    ADD_PROF_TEST: "proficiency-testing/",
-    UPDATE_PROF_TEST: (id: string) => `proficiency-testing/${id}/`,
-    DELETE_PROF_TEST: (id: string) => `proficiency-testing/${id}/`,
-    ALL_PROF_TESTS: "proficiency-testing/",
-    PROF_TEST_BY_ID: (id: string) => `proficiency-testing/${id}/`,
-    SEARCH_PROF_TESTS: "proficiency-testing/search/",
+    ADD_PROF_TEST: "proficiency-tests/",
+    UPDATE_PROF_TEST: (id: string) => `proficiency-tests/${id}/`,
+    DELETE_PROF_TEST: (id: string) => `proficiency-tests/${id}/`,
+    ALL_PROF_TESTS: "proficiency-tests/",
+    PROF_TEST_BY_ID: (id: string) => `proficiency-tests/${id}/`,
+    SEARCH_PROF_TESTS: "proficiency-tests/search/",
     
     // Calibration Tests
-    ADD_CALIBRATION_TEST: "calibration-testing/",
-    UPDATE_CALIBRATION_TEST: (id: string) => `calibration-testing/${id}/`,
-    DELETE_CALIBRATION_TEST: (id: string) => `calibration-testing/${id}/`,
-    ALL_CALIBRATION_TESTS: "calibration-testing/",
-    CALIBRATION_TEST_BY_ID: (id: string) => `calibration-testing/${id}/`,
-    SEARCH_CALIBRATION_TESTS: "calibration-testing/search/",
+    ADD_CALIBRATION_TEST: "calibration-tests/",
+    UPDATE_CALIBRATION_TEST: (id: string) => `calibration-tests/${id}/`,
+    DELETE_CALIBRATION_TEST: (id: string) => `calibration-tests/${id}/`,
+    ALL_CALIBRATION_TESTS: "calibration-tests/",
+    CALIBRATION_TEST_BY_ID: (id: string) => `calibration-tests/${id}/`,
+    SEARCH_CALIBRATION_TESTS: "calibration-tests/search/",
 
     // Test Methods
     ADD_TEST_METHOD: "test-methods/",
@@ -94,5 +94,20 @@ export const API_ROUTES = {
     SAMPLE_LOT_BY_ID: (id: string) => `sample-lots/${id}/`,
     SEARCH_SAMPLE_LOTS: "sample-lots/search/",
     GET_SAMPLE_LOTS_BY_JOB_ID: (id: string) => `sample-lots/job/${id}/`,
+
+    // Dashboard Stats
+    CLIENTS_STATS: "clients/stats/",
+    JOBS_STATS: "jobs/stats/",
+    JOBS_STATS_CURRENT_MONTH: "jobs/stats/current-month/",
+    SAMPLE_LOTS_STATS: "sample-lots/stats/",
+    SAMPLE_LOTS_STATS_CURRENT_MONTH: "sample-lots/stats/current-month/",
+    SAMPLE_PREPARATIONS_STATS: "sample-preparations/stats/",
+    SPECIMENS_STATS: "specimens/stats/",
+    TEST_METHODS_STATS: "test-methods/stats/",
+    CERTIFICATES_STATS: "certificates/stats/",
+    CERTIFICATE_ITEMS_STATS: "certificate-items/stats/",
+    EQUIPMENT_STATS: "equipment/stats/",
+    CALIBRATION_TESTS_STATS: "calibration-tests/stats/",
+    PROFICIENCY_TESTS_STATS: "proficiency-tests/stats/",
   }
 }

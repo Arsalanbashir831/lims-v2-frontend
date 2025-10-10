@@ -19,11 +19,15 @@ export function EquipmentForm({ initial, readOnly = false }: Props) {
   const queryClient = useQueryClient()
   const isEditing = useMemo(() => Boolean(initial), [initial])
 
-  const [name, setName] = useState((initial as any)?.equipment_name ?? "")
-  const [serial, setSerial] = useState((initial as any)?.equipment_serial ?? "")
+  const [name, setName] = useState(initial?.equipment_name ?? "")
+  const [serial, setSerial] = useState(initial?.equipment_serial ?? "")
   const [status, setStatus] = useState(initial?.status ?? "")
-  const [lastInternalVerificationDate, setLastInternalVerificationDate] = useState((initial as any)?.last_verification ?? "")
-  const [internalVerificationDueDate, setInternalVerificationDueDate] = useState((initial as any)?.verification_due ?? "")
+  const [lastInternalVerificationDate, setLastInternalVerificationDate] = useState(
+    initial?.last_verification ? String(initial.last_verification).split('T')[0] : ""
+  )
+  const [internalVerificationDueDate, setInternalVerificationDueDate] = useState(
+    initial?.verification_due ? String(initial.verification_due).split('T')[0] : ""
+  )
   const [createdBy, setCreatedBy] = useState(initial?.created_by ?? "")
   const [updatedBy, setUpdatedBy] = useState(initial?.updated_by ?? "")
   const [remarks, setRemarks] = useState(initial?.remarks ?? "")
@@ -46,8 +50,8 @@ export function EquipmentForm({ initial, readOnly = false }: Props) {
       is_active: true,
     }
 
-    if (isEditing && initial) {
-      equipmentService.update((initial as any).id, payload as UpdateEquipmentData)
+    if (isEditing && initial?.id) {
+      equipmentService.update(initial.id, payload as UpdateEquipmentData)
         .then(() => { 
           queryClient.invalidateQueries({ queryKey: ['equipments'] })
           toast.success("Record updated"); 
