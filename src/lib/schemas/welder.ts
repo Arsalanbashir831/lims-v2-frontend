@@ -115,6 +115,20 @@ export const WelderCertificateVariableSchema = z.object({
 export const WelderCertificateSchema = z.object({
   id: z.string(),
   welder_card_id: z.string(),
+  welder_card_info: z.object({
+    card_id: z.string(),
+    card_no: z.string(),
+    company: z.string(),
+    welder_info: z.object({
+      welder_id: z.string(),
+      operator_name: z.string(),
+      operator_id: z.string(),
+      iqama: z.string(),
+      profile_image: z.string().optional(),
+    }),
+    authorized_by: z.string(),
+    welding_inspector: z.string(),
+  }).optional(),
   date_of_test: z.string(),
   identification_of_wps_pqr: z.string(),
   qualification_standard: z.string(),
