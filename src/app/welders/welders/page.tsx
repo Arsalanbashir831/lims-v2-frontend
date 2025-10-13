@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
@@ -12,41 +12,30 @@ import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Plus, Trash2, PencilIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
-import { Welder } from "@/components/welders/welder-form"
-import { welderService } from "@/services/welders.service"
+import { Welder } from "@/lib/schemas/welder"
+import { useWelders, useDeleteWelder } from "@/hooks/use-welders"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import Link from "next/link"
+import { toast } from "sonner"
 
 export default function WeldersPage() {
   const router = useRouter()
-  const [welders, setWelders] = useState<Welder[]>([])
-  const [loading, setLoading] = useState(true)
-
-  // Load welders on component mount
-  useEffect(() => {
-    const loadWelders = async () => {
-      try {
-        const data = await welderService.getAll()
-        setWelders(data)
-      } catch (error) {
-        console.error("Failed to load welders:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadWelders()
-  }, [])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [page, setPage] = useState(1)
+  
+  // Use React Query hooks
+  const { data: weldersData, isLoading, error } = useWelders(page, searchQuery, 10)
+  const deleteWelder = useDeleteWelder()
 
   const handleDelete = useCallback(async (id: string) => {
     try {
-      const success = await welderService.delete(id)
-      if (success) {
-        setWelders(prev => prev.filter(welder => welder.id !== id))
-      }
+      await deleteWelder.mutateAsync(id)
+      toast.success("Welder deleted successfully!")
     } catch (error) {
       console.error("Failed to delete welder:", error)
+      toast.error("Failed to delete welder. Please try again.")
     }
-  }, [])
+  }, [deleteWelder])
 
   const toolbar = useCallback((table: TanstackTable<Welder>) => {
     const selected = table.getSelectedRowModel().rows
@@ -60,8 +49,8 @@ export default function WeldersPage() {
       <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
         <FilterSearch
           placeholder="Search welders..."
-          value={(table.getColumn("operatorName")?.getFilterValue() as string) ?? ""}
-          onChange={(value) => table.getColumn("operatorName")?.setFilterValue(value)}
+          value={searchQuery}
+          onChange={setSearchQuery}
           className="w-full"
           inputClassName="max-w-md"
         />
@@ -88,7 +77,7 @@ export default function WeldersPage() {
         </div>
       </div>
     )
-  }, [handleDelete])
+  }, [handleDelete, searchQuery])
 
   const footer = useCallback((table: TanstackTable<Welder>) => <DataTablePagination table={table} />, [])
 
@@ -130,10 +119,10 @@ export default function WeldersPage() {
         const welder = row.original
         return (
           <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-            {welder.operatorImage ? (
+            {welder.profile_image_url ? (
               <img
-                src={welder.operatorImage}
-                alt={welder.operatorName}
+                src={process.env.NEXT_PUBLIC_BACKEND_URL + welder.profile_image_url}
+                alt={welder.operator_name}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -146,10 +135,10 @@ export default function WeldersPage() {
       enableHiding: false,
     },
     {
-      accessorKey: "operatorName",
+      accessorKey: "operator_name",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Operator Name" />,
       cell: ({ row }) => {
-        const operatorName = row.getValue("operatorName") as string
+        const operatorName = row.getValue("operator_name") as string
         return (
           <div className="max-w-[200px] truncate font-medium" title={operatorName}>
             {operatorName}
@@ -158,10 +147,10 @@ export default function WeldersPage() {
       },
     },
     {
-      accessorKey: "operatorId",
+      accessorKey: "operator_id",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Operator ID" />,
       cell: ({ row }) => {
-        const operatorId = row.getValue("operatorId") as string
+        const operatorId = row.getValue("operator_id") as string
         return (
           <div className="max-w-[100px] truncate font-medium" title={operatorId}>
             {operatorId}
@@ -170,13 +159,13 @@ export default function WeldersPage() {
       },
     },
     {
-      accessorKey: "iqamaPassport",
+      accessorKey: "iqama",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Iqama/Passport" />,
       cell: ({ row }) => {
-        const iqamaPassport = row.getValue("iqamaPassport") as string
+        const iqama = row.getValue("iqama") as string
         return (
-          <div className="max-w-[150px] truncate" title={iqamaPassport}>
-            {iqamaPassport}
+          <div className="max-w-[150px] truncate" title={iqama}>
+            {iqama}
           </div>
         )
       },
@@ -208,7 +197,7 @@ export default function WeldersPage() {
     },
   ], [handleDelete])
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto p-6 text-center">
         <div className="flex items-center justify-center">
@@ -218,6 +207,17 @@ export default function WeldersPage() {
       </div>
     )
   }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <h1 className="text-2xl font-bold text-red-600">Error loading welders</h1>
+        <p className="text-muted-foreground">Failed to load welders. Please try again.</p>
+      </div>
+    )
+  }
+
+  const welders = weldersData?.results || []
 
   return (
     <DataTable

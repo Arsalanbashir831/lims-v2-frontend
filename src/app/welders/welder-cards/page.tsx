@@ -1,11 +1,9 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
-
 "use client"
 
 import { useState, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { PlusIcon, EyeIcon, PencilIcon, TrashIcon } from "lucide-react"
+import { PlusIcon, PencilIcon, TrashIcon } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
@@ -15,91 +13,20 @@ import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ColumnDef } from "@tanstack/react-table"
 import { ROUTES } from "@/constants/routes"
+import { WelderCard } from "@/lib/schemas/welder"
+import { useWelderCards, useDeleteWelderCard } from "@/hooks/use-welder-cards"
 import Link from "next/link"
+import { toast } from "sonner"
 
-// Mock data and functions - replace with actual implementation
-interface WelderCard {
-  id: string
-  issuedIn: string
-  certificateNumber: string
-  welderId: string
-  welderName: string
-  clientName: string
-}
-
-const mockData: WelderCard[] = [
-  {
-    id: "1",
-    issuedIn: "2024",
-    certificateNumber: "WQ-2024-001",
-    welderId: "W001",
-    welderName: "John Smith",
-    clientName: "ACME Corporation"
-  },
-  {
-    id: "2",
-    issuedIn: "2024",
-    certificateNumber: "WQ-2024-002",
-    welderId: "W002",
-    welderName: "Sarah Johnson",
-    clientName: "Global Industries"
-  },
-  {
-    id: "3",
-    issuedIn: "2023",
-    certificateNumber: "WQ-2023-045",
-    welderId: "W003",
-    welderName: "Mike Wilson",
-    clientName: "Steel Works Ltd"
-  },
-  {
-    id: "4",
-    issuedIn: "2024",
-    certificateNumber: "WQ-2024-003",
-    welderId: "W004",
-    welderName: "Emily Davis",
-    clientName: "ACME Corporation"
-  }
-]
-
-const listWelderCards = (): WelderCard[] => {
-  if (typeof window === "undefined") return mockData
-  try {
-    const stored = localStorage.getItem("welder-qualifications")
-    return stored ? JSON.parse(stored) : mockData
-  } catch {
-    return mockData
-  }
-}
-
-const deleteWelderQualification = (id: string): boolean => {
-  try {
-    const stored = localStorage.getItem("welder-qualifications")
-    const data = stored ? JSON.parse(stored) : mockData
-    const filtered = data.filter((item: WelderCard) => item.id !== id)
-    localStorage.setItem("welder-qualifications", JSON.stringify(filtered))
-    return true
-  } catch {
-    return false
-  }
-}
-
-const deleteMultipleWelderCards = (ids: string[]): boolean => {
-  try {
-    const stored = localStorage.getItem("welder-qualifications")
-    const data = stored ? JSON.parse(stored) : mockData
-    const filtered = data.filter((item: WelderCard) => !ids.includes(item.id))
-    localStorage.setItem("welder-qualifications", JSON.stringify(filtered))
-    return true
-  } catch {
-    return false
-  }
-}
 
 export default function WelderCardPage() {
   const router = useRouter()
-  const [data] = useState(() => listWelderCards())
-  const [globalFilter, setGlobalFilter] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [page, setPage] = useState(1)
+  
+  // Use React Query hooks
+  const { data: welderCardsData, isLoading, error } = useWelderCards(page, searchQuery, 10)
+  const deleteWelderCard = useDeleteWelderCard()
 
   const columns: ColumnDef<WelderCard>[] = [
     {
@@ -131,46 +58,35 @@ export default function WelderCardPage() {
       size: 80,
     },
     {
-      accessorKey: "issuedIn",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Issued In" />,
+      accessorKey: "card_no",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Card No" />,
       cell: ({ row }) => {
-        const issuedIn = row.getValue("issuedIn") as string
+        const cardNo = row.getValue("card_no") as string
         return (
-          <div className="font-medium">
-            {issuedIn}
+          <div className="max-w-[150px] truncate font-medium" title={cardNo}>
+            {cardNo}
           </div>
         )
       },
     },
     {
-      accessorKey: "certificateNumber",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Certificate No" />,
+      accessorKey: "company",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Company" />,
       cell: ({ row }) => {
-        const certificateNumber = row.getValue("certificateNumber") as string
+        const company = row.getValue("company") as string
         return (
-          <div className="max-w-[150px] truncate font-medium" title={certificateNumber}>
-            {certificateNumber}
+          <div className="max-w-[200px] truncate" title={company}>
+            {company}
           </div>
         )
       },
     },
     {
-      accessorKey: "welderId",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Welder ID" />,
-      cell: ({ row }) => {
-        const welderId = row.getValue("welderId") as string
-        return (
-          <div className="max-w-[100px] truncate font-medium" title={welderId}>
-            {welderId}
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "welderName",
+      id: "welder_name",
+      accessorFn: (row) => row.welder_info?.operator_name || "N/A",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Welder Name" />,
       cell: ({ row }) => {
-        const welderName = row.getValue("welderName") as string
+        const welderName = row.getValue("welder_name") as string
         return (
           <div className="max-w-[150px] truncate" title={welderName}>
             {welderName}
@@ -179,13 +95,39 @@ export default function WelderCardPage() {
       },
     },
     {
-      accessorKey: "clientName",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Client Name" />,
+      id: "welder_id",
+      accessorFn: (row) => row.welder_info?.operator_id || "N/A",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Welder ID" />,
       cell: ({ row }) => {
-        const clientName = row.getValue("clientName") as string
+        const welderId = row.getValue("welder_id") as string
         return (
-          <div className="max-w-[200px] truncate" title={clientName}>
-            {clientName}
+          <div className="max-w-[100px] truncate" title={welderId}>
+            {welderId}
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "authorized_by",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Authorized By" />,
+      cell: ({ row }) => {
+        const authorizedBy = row.getValue("authorized_by") as string
+        return (
+          <div className="max-w-[150px] truncate" title={authorizedBy}>
+            {authorizedBy}
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "created_at",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
+      cell: ({ row }) => {
+        const createdAt = row.getValue("created_at") as string
+        const date = new Date(createdAt).toLocaleDateString()
+        return (
+          <div className="max-w-[100px] truncate" title={date}>
+            {date}
           </div>
         )
       },
@@ -194,17 +136,28 @@ export default function WelderCardPage() {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
+        const handleDelete = async () => {
+          if (!row.original.id) return
+          try {
+            await deleteWelderCard.mutateAsync(row.original.id)
+            toast.success("Welder card deleted successfully!")
+          } catch (error) {
+            console.error("Failed to delete welder card:", error)
+            toast.error("Failed to delete welder card. Please try again.")
+          }
+        }
+
         return (
           <div className="flex items-center gap-2">
             <Button variant="secondary" size="sm" asChild>
-              <Link href={ROUTES.APP.WELDERS.WELDER_CARDS.EDIT(row.original.id)}>
+              <Link href={ROUTES.APP.WELDERS.WELDER_CARDS.EDIT(row.original.id!)}>
                 <PencilIcon className="w-4 h-4" />
               </Link>
             </Button>
             <ConfirmPopover 
-              title="Delete this certificate?" 
+              title="Delete this welder card?" 
               confirmText="Delete" 
-              onConfirm={() => deleteWelderQualification(row.original.id)} 
+              onConfirm={handleDelete} 
               trigger={
                 <Button variant="destructive" size="sm">
                   <TrashIcon className="w-4 h-4" />
@@ -220,43 +173,54 @@ export default function WelderCardPage() {
     },
   ]
 
-  const filteredData = useMemo(() => {
-    if (!globalFilter) return data
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+          <span className="ml-2">Loading welder cards...</span>
+        </div>
+      </div>
+    )
+  }
 
-    return data.filter((qualification) => {
-      const searchTerm = globalFilter.toLowerCase()
-      return (
-        qualification.welderName.toLowerCase().includes(searchTerm) ||
-        qualification.certificateNumber.toLowerCase().includes(searchTerm) ||
-        qualification.welderId.toLowerCase().includes(searchTerm) ||
-        qualification.clientName.toLowerCase().includes(searchTerm) ||
-        qualification.issuedIn.toLowerCase().includes(searchTerm)
-      )
-    })
-  }, [data, globalFilter])
+  if (error) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <h1 className="text-2xl font-bold text-red-600">Error loading welder cards</h1>
+        <p className="text-muted-foreground">Failed to load welder cards. Please try again.</p>
+      </div>
+    )
+  }
+
+  const welderCards = welderCardsData?.results || []
 
   return (
     <DataTable
-      data={filteredData}
+      data={welderCards}
       columns={columns}
-      tableKey="welder-qualification"
-      onRowClick={(row) => router.push(ROUTES.APP.WELDERS.WELDER_CARDS.VIEW(row.original.id))}
+      tableKey="welder-cards"
+      onRowClick={(row) => router.push(ROUTES.APP.WELDERS.WELDER_CARDS.VIEW(row.original.id!))}
       toolbar={(table) => {
         const selected = table.getSelectedRowModel().rows
         const hasSelected = selected.length > 0
-        const onBulkDelete = () => {
+        const onBulkDelete = async () => {
           const ids = selected.map((r: any) => r.original.id)
-          if (deleteMultipleWelderCards(ids)) {
+          try {
+            await Promise.all(ids.map(id => deleteWelderCard.mutateAsync(id)))
+            toast.success(`${ids.length} welder cards deleted successfully!`)
             table.resetRowSelection()
-            window.location.reload()
+          } catch (error) {
+            console.error("Failed to delete welder cards:", error)
+            toast.error("Failed to delete welder cards. Please try again.")
           }
         }
         return (
           <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
             <FilterSearch
-              placeholder="Search certificates..."
-              value={globalFilter}
-              onChange={setGlobalFilter}
+              placeholder="Search welder cards..."
+              value={searchQuery}
+              onChange={setSearchQuery}
               className="w-full"
               inputClassName="max-w-md"
             />
@@ -264,7 +228,7 @@ export default function WelderCardPage() {
               <DataTableViewOptions table={table} />
               {hasSelected && (
                 <ConfirmPopover
-                  title={`Delete ${selected.length} selected certificate(s)?`}
+                  title={`Delete ${selected.length} selected welder card(s)?`}
                   confirmText="Delete"
                   onConfirm={onBulkDelete}
                   trigger={
@@ -274,10 +238,10 @@ export default function WelderCardPage() {
                   }
                 />
               )}
-              <Link href={ROUTES.APP.WELDERS.WELDER_QUALIFICATION.NEW}>
+              <Link href={ROUTES.APP.WELDERS.WELDER_CARDS.NEW}>
                 <Button size="sm">
                   <PlusIcon className="mr-2 h-4 w-4" />
-                  New Certificate
+                  New Welder Card
                 </Button>
               </Link>
             </div>

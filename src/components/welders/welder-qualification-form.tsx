@@ -289,10 +289,10 @@ export function WelderQualificationForm({
                     if (welder) {
                       // Auto-fill based on selected welder
                       setSelectedWelderId(welderId)
-                      handleInputChange('welderIdNo', welder.operatorId || "")
-                      handleInputChange('welderName', welder.operatorName || "")
-                      handleInputChange('iqamaId', welder.iqamaPassport || "")
-                      handleInputChange('welderImage', welder.operatorImage || null)
+                      handleInputChange('welderIdNo', welder.operator_id || "")
+                      handleInputChange('welderName', welder.operator_name || "")
+                      handleInputChange('iqamaId', welder.iqama || "")
+                      handleInputChange('welderImage', welder.profile_image || null)
                     }
                   }}
                   placeholder="Select welder by ID / name..."

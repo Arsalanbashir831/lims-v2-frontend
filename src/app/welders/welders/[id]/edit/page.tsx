@@ -2,39 +2,25 @@
 
 import { useRouter, useParams } from "next/navigation"
 import { WelderForm } from "@/components/welders/welder-form"
-import { Welder } from "@/components/welders/welder-form"
 import { ROUTES } from "@/constants/routes"
-import { welderService } from "@/services/welders.service"
-import { useState, useEffect } from "react"
+import { useWelder, useUpdateWelder } from "@/hooks/use-welders"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Loader2, PencilIcon, XIcon } from "lucide-react"
 import { FormHeader } from "@/components/common/form-header"
+import { toast } from "sonner"
 
 export default function EditWelderPage() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
-  const [welder, setWelder] = useState<Welder | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   
-  // Load welder data
-  useEffect(() => {
-    const loadWelder = async () => {
-      try {
-        const data = await welderService.getById(id)
-        setWelder(data)
-      } catch (error) {
-        console.error("Failed to load welder:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadWelder()
-  }, [id])
+  // Use React Query hooks
+  const { data: welder, isLoading, error } = useWelder(id)
+  const updateWelder = useUpdateWelder()
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto p-6 text-center">
         <div className="flex items-center justify-center">
@@ -45,7 +31,7 @@ export default function EditWelderPage() {
     )
   }
 
-  if (!welder) {
+  if (error || !welder) {
     return (
       <div className="container mx-auto p-6 text-center">
         <h1 className="text-2xl font-bold text-red-600">Welder not found</h1>
@@ -60,16 +46,19 @@ export default function EditWelderPage() {
     )
   }
 
-  const handleSubmit = async (data: Welder) => {
-    setSaving(true)
+  const handleSubmit = async (data: {
+    operator_name: string
+    operator_id: string
+    iqama: string
+    profile_image?: File
+  }) => {
     try {
-      await welderService.update(id, data)
+      await updateWelder.mutateAsync({ id, data })
+      toast.success("Welder updated successfully!")
       router.push(ROUTES.APP.WELDERS.WELDERS || "/welders/welders")
     } catch (error) {
       console.error("Failed to update welder:", error)
-      // TODO: Show error message to user
-    } finally {
-      setSaving(false)
+      toast.error("Failed to update welder. Please try again.")
     }
   }
 
@@ -87,7 +76,7 @@ export default function EditWelderPage() {
         )}
         </FormHeader>
 
-      {saving && (
+      {updateWelder.isPending && (
         <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
           <div className="flex items-center">
             <Loader2 className="animate-spin h-4 w-4 mr-2" />

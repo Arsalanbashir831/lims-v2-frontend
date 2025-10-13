@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { welderService } from "@/services/welders.service"
-import { Welder } from "@/components/welders/welder-form"
+import { useWelders } from "@/hooks/use-welders"
+import { Welder } from "@/lib/schemas/welder"
 
 interface WelderSelectorProps {
   value?: string // welder ID
@@ -25,57 +25,42 @@ export function WelderSelector({
   className
 }: WelderSelectorProps) {
   const [open, setOpen] = useState(false)
-  const [welders, setWelders] = useState<Welder[]>([])
-  const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
 
-  // Load welders on component mount
+  // Debounce search query
   useEffect(() => {
-    const loadWelders = async () => {
-      try {
-        setLoading(true)
-        const data = await welderService.getAll()
-        setWelders(data)
-      } catch (error) {
-        console.error("Failed to load welders:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300)
 
-    loadWelders()
-  }, [])
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
-  // Filter welders based on search query
-  const filteredWelders = useMemo(() => {
-    if (!searchQuery.trim()) return welders
+  // Use the welders hook with debounced search
+  const { data: weldersData, isLoading, error } = useWelders(1, debouncedSearchQuery, 50)
 
-    const query = searchQuery.toLowerCase()
-    return welders.filter(welder =>
-      welder.operatorName.toLowerCase().includes(query) ||
-      welder.operatorId.toLowerCase().includes(query) ||
-      welder.iqamaPassport.toLowerCase().includes(query)
-    )
-  }, [welders, searchQuery])
+  // Extract welders from the response
+  const welders = weldersData?.results || []
 
   // Find selected welder
   const selectedWelder = useMemo(() => {
     return welders.find(welder => welder.id === value)
   }, [welders, value])
 
-  const handleSelect = (welderId: string) => {
+  const handleSelect = useCallback((welderId: string) => {
     const welder = welders.find(w => w.id === welderId)
     if (welder) {
       onValueChange(welderId, welder)
       setOpen(false)
       setSearchQuery("")
     }
-  }
+  }, [welders, onValueChange])
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     onValueChange(undefined, undefined)
     setSearchQuery("")
-  }
+  }, [onValueChange])
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -88,9 +73,10 @@ export function WelderSelector({
           disabled={disabled}
         >
           {selectedWelder ? (
-            <p>
-              {selectedWelder.operatorId}
-            </p>
+            <div className="flex flex-col items-start">
+              <p className="font-medium">{selectedWelder.operator_name}</p>
+              {/* <p className="text-sm text-muted-foreground">{selectedWelder.operator_id}</p> */}
+            </div>
           ) : (
             <span className="text-muted-foreground">{placeholder}</span>
           )}
@@ -108,17 +94,21 @@ export function WelderSelector({
             />
           </div>
           <CommandList>
-            {loading ? (
+            {isLoading ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
                 Loading welders...
               </div>
-            ) : filteredWelders.length === 0 ? (
+            ) : error ? (
+              <div className="py-6 text-center text-sm text-red-500">
+                Failed to load welders
+              </div>
+            ) : welders.length === 0 ? (
               <CommandEmpty>
                 {searchQuery ? "No welders found." : "No welders available."}
               </CommandEmpty>
             ) : (
               <CommandGroup>
-                {filteredWelders.map((welder) => (
+                {welders.map((welder) => (
                   <CommandItem
                     key={welder.id}
                     value={welder.id}
@@ -126,9 +116,11 @@ export function WelderSelector({
                     className="flex flex-col items-start py-3"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <p>
-                        {welder.operatorId}
-                      </p>
+                      <div className="flex flex-col items-start">
+                        <p className="font-medium">{welder.operator_name}</p>
+                        <p className="text-sm text-muted-foreground">{welder.operator_id}</p>
+                        <p className="text-xs text-muted-foreground">IQAMA: {welder.iqama}</p>
+                      </div>
                       <Check
                         className={cn(
                           "ml-auto h-4 w-4",

@@ -11,18 +11,26 @@ import { Upload, QrCode } from "lucide-react"
 import Image from "next/image"
 import { ROUTES } from "@/constants/routes"
 import QRCode from "qrcode"
+import { Welder } from "@/lib/schemas/welder"
+import { toast } from "sonner"
 
-interface Welder {
+// Frontend form interface for backward compatibility
+interface WelderFormData {
   id?: string
   operatorName: string
   operatorId: string
   iqamaPassport: string
-  operatorImage: string | null
+  operatorImage: File | string | null
 }
 
 interface WelderFormProps {
   initialData?: Welder
-  onSubmit: (data: Welder) => void
+  onSubmit: (data: {
+    operator_name: string
+    operator_id: string
+    iqama: string
+    profile_image?: File
+  }) => void
   onCancel: () => void
   readOnly?: boolean
 }
@@ -33,17 +41,18 @@ export function WelderForm({
   onCancel,
   readOnly = false
 }: WelderFormProps) {
-  const createInitialFormData = (): Welder => ({
-    operatorName: "",
-    operatorId: "",
-    iqamaPassport: "",
-    operatorImage: null,
-    ...initialData
+  const createInitialFormData = (): WelderFormData => ({
+    operatorName: initialData?.operator_name || "",
+    operatorId: initialData?.operator_id || "",
+    iqamaPassport: initialData?.iqama || "",
+    operatorImage: initialData?.profile_image_url || null,
+    id: initialData?.id,
   })
 
-  const [formData, setFormData] = useState<Welder>(createInitialFormData())
-  const [originalFormData, setOriginalFormData] = useState<Welder>(createInitialFormData())
+  const [formData, setFormData] = useState<WelderFormData>(createInitialFormData())
+  const [originalFormData, setOriginalFormData] = useState<WelderFormData>(createInitialFormData())
   const [qrSrc, setQrSrc] = useState<string | null>(null)
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
 
   useEffect(() => {
     // Update both form data and original data when initialData changes
@@ -70,20 +79,49 @@ export function WelderForm({
     }
   }, [formData.id, readOnly])
 
-  const handleInputChange = (field: keyof Welder, value: any) => {
+  const handleInputChange = (field: keyof WelderFormData, value: string | File | null) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        handleInputChange('operatorImage', e.target?.result as string)
+      // Validate file type
+      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+      if (!allowedTypes.includes(file.type)) {
+        alert('Please select a valid image file (PNG, JPG, JPEG, or WebP)')
+        return
       }
-      reader.readAsDataURL(file)
+      
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024 // 5MB
+      if (file.size > maxSize) {
+        alert('Image file size must be less than 5MB')
+        return
+      }
+      
+      // Clean up previous object URL
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl)
+      }
+      
+      // Create new object URL for preview
+      const newPreviewUrl = URL.createObjectURL(file)
+      setImagePreviewUrl(newPreviewUrl)
+      
+      // Store the File object directly for FormData submission
+      handleInputChange('operatorImage', file)
     }
   }
+
+  // Cleanup object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl)
+      }
+    }
+  }, [imagePreviewUrl])
 
   const revertToOriginal = () => {
     setFormData(JSON.parse(JSON.stringify(originalFormData)))
@@ -91,7 +129,16 @@ export function WelderForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
+    
+    // Map frontend form data to API structure
+    const apiData = {
+      operator_name: formData.operatorName,
+      operator_id: formData.operatorId,
+      iqama: formData.iqamaPassport,
+      profile_image: formData.operatorImage instanceof File ? formData.operatorImage : undefined,
+    }
+    
+    onSubmit(apiData)
   }
 
   const handleCancel = () => {
@@ -108,7 +155,7 @@ export function WelderForm({
               <div className="w-48 h-48 border-2 overflow-hidden bg-gray-100 dark:bg-gray-700 rounded-lg">
                 {formData.operatorImage ? (
                   <Image
-                    src={formData.operatorImage}
+                    src={typeof formData.operatorImage === 'string' ? process.env.NEXT_PUBLIC_BACKEND_URL + formData.operatorImage : (imagePreviewUrl || URL.createObjectURL(formData.operatorImage))}
                     alt="Welder"
                     width={96}
                     height={96}
@@ -189,4 +236,5 @@ export function WelderForm({
   )
 }
 
-export type { Welder }
+// Export Welder type for backward compatibility
+export type { Welder } from "@/lib/schemas/welder"

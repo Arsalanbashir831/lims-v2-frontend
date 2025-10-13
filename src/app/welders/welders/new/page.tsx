@@ -2,28 +2,30 @@
 
 import { useRouter } from "next/navigation"
 import { WelderForm } from "@/components/welders/welder-form"
-import { Welder } from "@/components/welders/welder-form"
 import { ROUTES } from "@/constants/routes"
-import { welderService } from "@/services/welders.service"
+import { useCreateWelder } from "@/hooks/use-welders"
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
 import { FormHeader } from "@/components/common/form-header"
+import { toast } from "sonner"
 
 export default function NewWelderPage() {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
+  const createWelder = useCreateWelder()
 
-  const handleSubmit = async (data: Welder) => {
-    setLoading(true)
+  const handleSubmit = async (data: {
+    operator_name: string
+    operator_id: string
+    iqama: string
+    profile_image?: File
+  }) => {
     try {
-      const { id, ...welderData } = data
-      await welderService.create(welderData)
+      await createWelder.mutateAsync(data)
+      toast.success("Welder created successfully!")
       router.push(ROUTES.APP.WELDERS.WELDERS || "/welders/welders")
     } catch (error) {
       console.error("Failed to create welder:", error)
-      // TODO: Show error message to user
-    } finally {
-      setLoading(false)
+      toast.error("Failed to create welder. Please try again.")
     }
   }
 
@@ -36,7 +38,7 @@ export default function NewWelderPage() {
       <FormHeader title="Add New Welder" description="Create a new welder record" label={null} href={ROUTES.APP.WELDERS.WELDERS} />
 
 
-      {loading && (
+      {createWelder.isPending && (
         <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
           <div className="flex items-center">
             <Loader2 className="animate-spin h-4 w-4 mr-2" />

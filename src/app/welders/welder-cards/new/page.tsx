@@ -3,17 +3,32 @@
 import { useRouter } from "next/navigation"
 import { ROUTES } from "@/constants/routes"
 import { BackButton } from "@/components/ui/back-button"
-import { WelderCardForm, type WelderCardData } from "@/components/welders/welder-card-form"
+import { WelderCardForm } from "@/components/welders/welder-card-form"
+import { useCreateWelderCard } from "@/hooks/use-welder-cards"
+import { toast } from "sonner"
 
 export default function NewWelderCardPage() {
   const router = useRouter()
+  const createWelderCard = useCreateWelderCard()
 
-  const handleSubmit = (data: WelderCardData) => {
-    // TODO: Save to localStorage or API
-    console.log('Submitting welder card data:', data)
-    
-    // For now, just navigate back to the list
-    router.push(ROUTES.APP.WELDERS.WELDER_CARDS.ROOT)
+  const handleSubmit = async (data: {
+    id?: string
+    company: string
+    welder_id: string
+    authorized_by: string
+    welding_inspector: string
+    law_name: string
+    card_no: string
+    attributes: Record<string, any>
+  }) => {
+    try {
+      await createWelderCard.mutateAsync(data)
+      toast.success("Welder card created successfully!")
+      router.push(ROUTES.APP.WELDERS.WELDER_CARDS.ROOT)
+    } catch (error) {
+      console.error("Failed to create welder card:", error)
+      toast.error("Failed to create welder card. Please try again.")
+    }
   }
 
   const handleCancel = () => {

@@ -121,5 +121,54 @@ export const API_ROUTES = {
     EQUIPMENT_STATS: "equipment/stats/",
     CALIBRATION_TESTS_STATS: "calibration-tests/stats/",
     PROFICIENCY_TESTS_STATS: "proficiency-tests/stats/",
+  },
+  WELDERS_API:{
+    // Welders
+    GET_ALL_WELDERS: "welders/",
+    GET_WELDER_BY_ID: (id: string) => `welders/${id}/`,
+    CREATE_WELDER: "welders/",
+    UPDATE_WELDER: (id: string) => `welders/${id}/`,    
+    DELETE_WELDER: (id: string) => `welders/${id}/`,
+    SEARCH_WELDERS: "welders/search/",
+
+    // Welder Cards
+    GET_ALL_WELDER_CARDS: "welder-cards/",
+    GET_WELDER_CARD_BY_ID: (id: string) => `welder-cards/${id}/`,
+    CREATE_WELDER_CARD: "welder-cards/",
+    UPDATE_WELDER_CARD: (id: string) => `welder-cards/${id}/`,
+    DELETE_WELDER_CARD: (id: string) => `welder-cards/${id}/`,
+    SEARCH_WELDER_CARDS: "welder-cards/search/",
+
+    // Welder CERTIFICATES
+    GET_ALL_WELDER_CERTIFICATES: "welder-certificates/",
+    GET_WELDER_CERTIFICATE_BY_ID: (id: string) => `welder-certificates/${id}/`,
+    CREATE_WELDER_CERTIFICATE: "welder-certificates/",
+    UPDATE_WELDER_CERTIFICATE: (id: string) => `welder-certificates/${id}/`,
+    DELETE_WELDER_CERTIFICATE: (id: string) => `welder-certificates/${id}/`,
+    SEARCH_WELDER_CERTIFICATES: "welder-certificates/search/",
+
+    // Welder OPERATOR PERFORMANCE
+    GET_ALL_WELDER_OPERATOR_PERFORMANCE: "welder-performance-records/",
+    GET_WELDER_OPERATOR_PERFORMANCE_BY_ID: (id: string) => `welder-performance-records/${id}/`,
+    CREATE_WELDER_OPERATOR_PERFORMANCE: "welder-performance-records/",
+    UPDATE_WELDER_OPERATOR_PERFORMANCE: (id: string) => `welder-performance-records/${id}/`,
+    DELETE_WELDER_OPERATOR_PERFORMANCE: (id: string) => `welder-performance-records/${id}/`,
+    SEARCH_WELDER_OPERATOR_PERFORMANCE: "welder-performance-records/search/",
+
+    // Testing Reports
+    GET_ALL_WELDER_TESTING_REPORTS: "welder-testing-reports/",
+    GET_WELDER_TESTING_REPORT_BY_ID: (id: string) => `welder-testing-reports/${id}/`,
+    CREATE_WELDER_TESTING_REPORT: "welder-testing-reports/",
+    UPDATE_WELDER_TESTING_REPORT: (id: string) => `welder-testing-reports/${id}/`,
+    DELETE_WELDER_TESTING_REPORT: (id: string) => `welder-testing-reports/${id}/`,
+    SEARCH_WELDER_TESTING_REPORTS: "welder-testing-reports/search/",
+
+    // Welder PQR
+    GET_ALL_WELDER_PQRS: "pqrs/",
+    GET_WELDER_PQRS_BY_ID: (id: string) => `pqrs/${id}/`,
+    CREATE_WELDER_PQRS: "pqrs/",
+    UPDATE_WELDER_PQRS: (id: string) => `pqrs/${id}/`,
+    DELETE_WELDER_PQRS: (id: string) => `pqrs/${id}/`,
+    SEARCH_WELDER_PQRS: "pqrs/search/",
   }
 }

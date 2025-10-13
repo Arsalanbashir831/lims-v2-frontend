@@ -1,64 +1,45 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { PencilIcon, XIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { FormHeader } from "@/components/common/form-header"
-import { WelderCardData, WelderCardForm } from "@/components/welders/welder-card-form"
+import { WelderCardForm } from "@/components/welders/welder-card-form"
+import { useWelderCard, useUpdateWelderCard } from "@/hooks/use-welder-cards"
+import { toast } from "sonner"
 
 
 
-// Mock data - replace with actual data fetching
-const mockData: WelderCardData = {
-  id: "1",
-  company: "GULF HEAVY INDUSTRIES COMPANY",
-  welderImage: null,
-  welderName: "NASIR MAHMOOD",
-  wpsNo: "GHI-259-01 Rev.00",
-  iqamaId: "2542297615",
-  welderId: "ASME SEC IX(2023)",
-  cardNo: "SA-516 Gr.70NN to SA-334 Gr.6",
-  process: "GROOVE + SEAL WELD",
-  jointType: "W-533",
-  verticalProgression: "2025-08-18",
-  testPosition: "2025-08-18",
-  positionQualified: "2025-08-18",
-  testThickness: "2025-08-18",
-  testDia: "2025-08-18",
-  thicknessQualified: "2025-08-18",
-  pNoQualified: "2025-08-18",
-  diameterQualified: "2025-08-18",
-  fNoQualified: "2025-08-18",
-  fillerMetalElectrodeClassUsed: "2025-08-18",
-  placeOfIssue: "2025-08-18",
-  testMethod: "2025-08-18",
-  dateOfTest: "2025-08-18",
-  dateOfExp: "2025-08-18",
-  authorisedBy: "2025-08-18",
-  weldingInspector: "2025-08-18",
-  certificationStatement: "ASME SEC IX Ed(2023).",
-}
 
 export default function EditWelderCardPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
-  const [data, setData] = useState<WelderCardData | null>(null)
+  
+  // Use React Query hooks
+  const { data: welderCard, isLoading, error } = useWelderCard(params.id)
+  const updateWelderCard = useUpdateWelderCard()
 
-  useEffect(() => {
-    // TODO: Fetch actual data based on params.id
-    setData(mockData)
-  }, [params.id])
-
-  const handleSubmit = (formData: WelderCardData) => {
-    // TODO: Save to localStorage or API
-    console.log('Updating welder card data:', formData)
-
-    setIsEditing(false)
-    // Optionally update local state or refetch data
-    setData(formData)
+  const handleSubmit = async (formData: {
+    id?: string
+    company: string
+    welder_id: string
+    authorized_by: string
+    welding_inspector: string
+    law_name: string
+    card_no: string
+    attributes: Record<string, any>
+  }) => {
+    try {
+      await updateWelderCard.mutateAsync({ id: params.id, data: formData })
+      toast.success("Welder card updated successfully!")
+      router.push(ROUTES.APP.WELDERS.WELDER_CARDS.ROOT)
+    } catch (error) {
+      console.error("Failed to update welder card:", error)
+      toast.error("Failed to update welder card. Please try again.")
+    }
   }
 
   const handleCancel = () => {
@@ -69,8 +50,30 @@ export default function EditWelderCardPage() {
     }
   }
 
-  if (!data) {
-    return <div>Loading...</div>
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+          <span className="ml-2">Loading welder card...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !welderCard) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <h1 className="text-2xl font-bold text-red-600">Welder card not found</h1>
+        <p className="text-muted-foreground">The welder card you're looking for doesn't exist.</p>
+        <button
+          onClick={() => router.push(ROUTES.APP.WELDERS.WELDER_CARDS.ROOT)}
+          className="mt-4 text-blue-600 hover:underline"
+        >
+          Back to Welder Cards
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -83,7 +86,7 @@ export default function EditWelderCardPage() {
         )}
       </FormHeader>
       <WelderCardForm
-        initialData={data}
+        initialData={welderCard}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         readOnly={!isEditing}

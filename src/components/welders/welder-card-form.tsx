@@ -10,6 +10,8 @@ import { Upload, Plus, QrCode } from "lucide-react"
 import Image from "next/image"
 import { ROUTES } from "@/constants/routes"
 import QRCode from "qrcode"
+import { WelderCard } from "@/lib/schemas/welder"
+import { WelderSelector } from "@/components/common/welder-selector"
 
 interface WelderVariable {
   id: string
@@ -19,14 +21,20 @@ interface WelderVariable {
 }
 
 
-interface WelderCardData {
+interface WelderCardFormData {
   id?: string
-  welderImage: string | null
   company: string
-  welderName: string
-  iqamaId: string
-  welderId: string
-  cardNo: string
+  welder_id: string
+  authorized_by: string
+  welding_inspector: string
+  law_name: string
+  card_no: string
+  // Welder information fields
+  welder_name: string
+  iqama_no: string
+  operator_id: string
+  welder_image: string
+  // Attributes fields (mapped to attributes JSON)
   wpsNo: string
   process: string
   jointType: string
@@ -44,14 +52,20 @@ interface WelderCardData {
   testMethod: string
   dateOfTest: string
   dateOfExp: string
-  authorisedBy: string
-  weldingInspector: string
-  certificationStatement: string
 }
 
 interface WelderCardFormProps {
-  initialData?: WelderCardData
-  onSubmit: (data: WelderCardData) => void
+  initialData?: WelderCard
+  onSubmit: (data: {
+    id?: string
+    company: string
+    welder_id: string
+    authorized_by: string
+    welding_inspector: string
+    law_name: string
+    card_no: string
+    attributes: Record<string, any>
+  }) => void
   onCancel: () => void
   readOnly?: boolean
 }
@@ -62,45 +76,59 @@ export function WelderCardForm({
   onCancel,
   readOnly = false
 }: WelderCardFormProps) {
-  const [formData, setFormData] = useState<WelderCardData>({
-    company: "",
-    welderImage: null,
-    welderName: "",
-    iqamaId: "",
-    welderId: "",
-    cardNo: "",
-    wpsNo: "",
-    process: "",
-    jointType: "",
-    testPosition: "",
-    positionQualified: "",
-    verticalProgression: "",
-    testThickness: "",
-    testDia: "",
-    thicknessQualified: "",
-    pNoQualified: "",
-    diameterQualified: "",
-    fNoQualified: "",
-    fillerMetalElectrodeClassUsed: "",
-    placeOfIssue: "",
-    testMethod: "",
-    dateOfTest: "",
-    dateOfExp: "",
-    authorisedBy: "",
-    weldingInspector: "",
-    certificationStatement: "",
-    ...initialData
-  })
+  const createInitialFormData = (): WelderCardFormData => {
+    const attributes = initialData?.attributes as Record<string, any> || {}
+    return {
+      id: initialData?.id,
+      company: initialData?.company || "",
+      welder_id: initialData?.welder_id || "",
+      authorized_by: initialData?.authorized_by || "",
+      welding_inspector: initialData?.welding_inspector || "",
+      law_name: initialData?.law_name || "",
+      card_no: initialData?.card_no || "",
+      // Welder information fields
+      welder_name: initialData?.welder_info?.operator_name || "",
+      iqama_no: initialData?.welder_info?.iqama || "",
+      operator_id: initialData?.welder_info?.operator_id || "",
+      welder_image: initialData?.welder_info?.profile_image || "",
+      // Map attributes fields
+      wpsNo: attributes.wps_no || "",
+      process: attributes.process || "",
+      jointType: attributes.joint_type || "",
+      testPosition: attributes.test_position || "",
+      positionQualified: attributes.position_qualified || "",
+      verticalProgression: attributes.vertical_progression || "",
+      testThickness: attributes.test_thickness || "",
+      testDia: attributes.test_dia || "",
+      thicknessQualified: attributes.thickness_qualified || "",
+      pNoQualified: attributes.p_no_qualified || "",
+      diameterQualified: attributes.diameter_qualified || "",
+      fNoQualified: attributes.f_no_qualified || "",
+      fillerMetalElectrodeClassUsed: attributes.filler_metal_electrode_class_used || "",
+      placeOfIssue: attributes.place_of_issue || "",
+      testMethod: attributes.test_method || "",
+      dateOfTest: attributes.date_of_test || "",
+      dateOfExp: attributes.date_of_exp || "",
+    }
+  }
+
+  const [formData, setFormData] = useState<WelderCardFormData>(createInitialFormData())
 
   const [qrSrc, setQrSrc] = useState<string | null>(null)
 
+  // Update form data when initialData changes
+  useEffect(() => {
+    const updatedData = createInitialFormData()
+    setFormData(updatedData)
+  }, [initialData])
+
   useEffect(() => {
     // Generate QR code for existing forms (when we have an ID)
-    if (formData.id && !readOnly) {
+    if (formData.id) {
       const generateQR = async () => {
         try {
           const frontendBase = typeof window !== "undefined" ? window.location.origin : ""
-          const publicUrl = `${frontendBase}${ROUTES.PUBLIC?.WELDER_QUALIFICATION_PREVIEW(formData.id!)}`
+          const publicUrl = `${frontendBase}${ROUTES.PUBLIC?.WELDER_CARDS_PREVIEW(formData.id!)}`
           const dataUrl = await QRCode.toDataURL(publicUrl, { margin: 1, width: 120 })
           setQrSrc(dataUrl)
         } catch (error) {
@@ -110,26 +138,59 @@ export function WelderCardForm({
       }
       generateQR()
     }
-  }, [formData.id, readOnly])
+  }, [formData.id])
 
-  const handleInputChange = (field: keyof WelderCardData, value: any) => {
+  const handleInputChange = (field: keyof WelderCardFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        handleInputChange('welderImage', e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
+  const handleWelderSelect = (welderId: string | undefined, welder: any) => {
+    setFormData(prev => ({
+      ...prev,
+      welder_id: welderId || "",
+      welder_name: welder?.operator_name || "",
+      iqama_no: welder?.iqama || "",
+      operator_id: welder?.operator_id || "",
+      welder_image: welder?.profile_image_url || ""
+    }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
+
+    // Map form data to API structure with attributes
+    // Only send welder_id to backend, not welder details
+    const apiData = {
+      id: formData.id,
+      company: formData.company,
+      welder_id: formData.welder_id, // Only send the welder ID
+      authorized_by: formData.authorized_by,
+      welding_inspector: formData.welding_inspector,
+      law_name: formData.law_name,
+      card_no: formData.card_no,
+      // Map all form fields to attributes JSON
+      attributes: {
+        wps_no: formData.wpsNo,
+        process: formData.process,
+        joint_type: formData.jointType,
+        test_position: formData.testPosition,
+        position_qualified: formData.positionQualified,
+        vertical_progression: formData.verticalProgression,
+        test_thickness: formData.testThickness,
+        test_dia: formData.testDia,
+        thickness_qualified: formData.thicknessQualified,
+        p_no_qualified: formData.pNoQualified,
+        diameter_qualified: formData.diameterQualified,
+        f_no_qualified: formData.fNoQualified,
+        filler_metal_electrode_class_used: formData.fillerMetalElectrodeClassUsed,
+        place_of_issue: formData.placeOfIssue,
+        test_method: formData.testMethod,
+        date_of_test: formData.dateOfTest,
+        date_of_exp: formData.dateOfExp,
+      }
+    }
+
+    onSubmit(apiData)
   }
 
   return (
@@ -138,7 +199,7 @@ export function WelderCardForm({
       <div className="bg-background print:bg-white">
         {/* ATECO Header */}
         <div className="flex items-center justify-between mb-6">
-          {/* Left - ATECO Logo and Info */}
+          {/* Left - Gripco Logo Image */}
           <div className="flex-1">
             <Image src="/gripco-logo.webp" alt="Gripco" width={100} height={80} className="object-contain h-16 w-auto" />
           </div>
@@ -170,121 +231,80 @@ export function WelderCardForm({
             {/* Image */}
             <div className="flex-1 flex justify-end">
               <div className="w-full h-full border-2 overflow-hidden bg-gray-100 dark:bg-sidebar print:bg-white">
-                {formData.welderImage ? (
-                  <Image
-                    src={formData.welderImage}
-                    alt="Welder"
-                    width={128}
-                    height={160}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center print:bg-white">
-                    {!readOnly ? (
-                      <div className="text-center">
-                        <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                        <Label htmlFor="imageUpload" className="cursor-pointer text-blue-600 hover:text-blue-500 text-xs">
-                          Upload Photo
-                        </Label>
-                        <Input
-                          id="imageUpload"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageUpload}
+                <div className="w-full h-full flex items-center justify-center print:bg-white relative">
+                  {formData.welder_id ? (
+                    <div className="">
+                      {formData.welder_image ? (
+                        <Image
+                          src={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${formData.welder_image.replace(/\\/g, '/')}`}
+                          alt={formData.welder_name || "Welder"}
+                          fill
+                          className="w-full h-full object-cover"
                         />
-                      </div>
-                    ) : (
-                      <span className="text-gray-400 text-xs">No Photo</span>
-                    )}
-                  </div>
-                )}
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                          <span className="text-gray-500 text-xs print:!text-black">No Photo</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="">
+                      <span className="text-gray-500 text-xs print:!text-black">Select Welder</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-            
+
             <div className="print:bg-white">
               {/* Row 1 */}
               <div className="grid grid-cols-2 border">
-                <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Card No</div>
+                <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Company</div>
                 <div className="p-3 border">
                   {readOnly ? (
-                    <span className="text-sm print:text-black">{formData.cardNo}</span>
+                    <span className="text-sm print:!text-black">{formData.company}</span>
                   ) : (
                     <Input
-                      value={formData.cardNo}
-                      onChange={(e) => handleInputChange('cardNo', e.target.value)}
-                      placeholder="Enter Card No"
-                      className="border-0 p-0 h-auto text-sm"
+                      value={formData.company}
+                      onChange={(e) => handleInputChange('company', e.target.value)}
+                      placeholder="Enter Company"
+                      className="border-0 py-0 h-auto text-sm"
                     />
                   )}
                 </div>
               </div>
 
-              {/* Row 2 */}
+              {/* Row 2 - Welder Selection */}
               <div className="grid grid-cols-2 border">
-                <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Process</div>
+                <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Welder</div>
                 <div className="p-3 border">
                   {readOnly ? (
-                    <span className="text-sm">{formData.wpsNo}</span>
+                    <span className="text-sm print:!text-black">{formData.welder_name}</span>
                   ) : (
-                    <Input
-                      value={formData.wpsNo}
-                      onChange={(e) => handleInputChange('wpsNo', e.target.value)}
-                      placeholder="Enter WPS/PQR No"
-                      className="border-0 p-0 h-auto text-sm"
+                    <WelderSelector
+                      value={formData.welder_id}
+                      onValueChange={handleWelderSelect}
+                      placeholder="Select a welder..."
+                      disabled={readOnly}
+                      className="border-0 py-0 h-auto text-sm"
                     />
                   )}
                 </div>
               </div>
 
-              {/* Row 3 */}
+              {/* Row 3 - Iqama No (Read-only) */}
               <div className="grid grid-cols-2 border ">
-                <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Test Position</div>
+                <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Iqama No.</div>
                 <div className="p-3 border">
-                  {readOnly ? (
-                    <span className="text-sm">{formData.welderId}</span>
-                  ) : (
-                    <Input
-                      type="date"
-                      value={formData.welderId}
-                      onChange={(e) => handleInputChange('welderId', e.target.value)}
-                      className="border-0 p-0 h-auto text-sm"
-                    />
-                  )}
+                  <span className="text-sm white print:!text-black">{formData.iqama_no || "Select a welder first"}</span>
                 </div>
               </div>
 
-              {/* Row 4 */}
+              {/* Row 4 - Welder ID (Read-only) */}
               <div className="grid grid-cols-2 border">
-                <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Vertical Progression</div>
+                <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Welder ID</div>
                 <div className="p-3 border">
-                  {readOnly ? (
-                    <span className="text-sm">{formData.jointType}</span>
-                  ) : (
-                    <Input
-                      value={formData.jointType}
-                      onChange={(e) => handleInputChange('jointType', e.target.value)}
-                      placeholder="Enter Joint Type"
-                      className="border-0 p-0 h-auto text-sm"
-                    />
-                  )}
-                </div>
-              </div>
-
-              {/* Row 5 */}
-              <div className="grid grid-cols-2">
-                <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Test Position</div>
-                <div className="p-3 border">
-                  {readOnly ? (
-                    <span className="text-sm">{formData.testPosition}</span>
-                  ) : (
-                    <Input
-                      type="date"
-                      value={formData.testPosition}
-                      onChange={(e) => handleInputChange('testPosition', e.target.value)}
-                      className="border-0 p-0 h-auto text-sm"
-                    />
-                  )}
+                  <span className="text-sm text-white print:!text-black">{formData.operator_id || "Select a welder first"}</span>
                 </div>
               </div>
             </div>
@@ -295,52 +315,52 @@ export function WelderCardForm({
             <div>
               <div className="p-3 pb-0">
                 {readOnly ? (
-                  <span className="text-sm">{formData.authorisedBy}</span>
+                  <span className="text-sm print:text-black">{formData.authorized_by}</span>
                 ) : (
                   <Input
-                    value={formData.authorisedBy}
-                    onChange={(e) => handleInputChange('authorisedBy', e.target.value)}
+                    value={formData.authorized_by}
+                    onChange={(e) => handleInputChange('authorized_by', e.target.value)}
                     placeholder="Enter Authorized By"
-                    className="border-0 p-0 h-auto text-sm"
+                    className="border-0 py-0 h-auto text-sm"
                   />
                 )}
               </div>
-              <div className="p-3 font-semibold text-sm">Authorized By</div>
+              <div className="p-3 font-semibold text-sm print:!text-black">Authorized By</div>
             </div>
 
             <div>
               <div className="p-3 pb-0 text-right">
                 {readOnly ? (
-                  <span className="text-sm">{formData.weldingInspector}</span>
+                  <span className="text-sm print:!text-black">{formData.welding_inspector}</span>
                 ) : (
                   <Input
-                    value={formData.weldingInspector}
-                    onChange={(e) => handleInputChange('weldingInspector', e.target.value)}
+                    value={formData.welding_inspector}
+                    onChange={(e) => handleInputChange('welding_inspector', e.target.value)}
                     placeholder="Enter Welding Inspector"
-                    className="border-0 p-0 h-auto text-sm text-right"
+                    className="border-0 py-0 h-auto text-sm text-right"
                   />
                 )}
               </div>
-              <div className="p-3 font-semibold text-sm text-right">Welding Inspector</div>
+              <div className="p-3 font-semibold text-sm text-right print:!text-black">Welding Inspector</div>
             </div>
           </div>
 
           {/* Certification Statement */}
-            <div className="border bg-background dark:bg-sidebar p-4">
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                We, the undersigned, certify that the statements in the record are correct and that the test coupons were welded and tested in accordance with the requirements of{" "}
-                {readOnly ? (
-                  <span className="font-bold text-blue-600">{formData.certificationStatement}</span>
-                ) : (
-                  <Input
-                    value={formData.certificationStatement}
-                    onChange={(e) => handleInputChange('certificationStatement', e.target.value)}
-                    placeholder="ASME SEC IX Ed(2023)"
-                    className="border-0 p-0 h-auto text-sm inline-block w-48 text-center font-bold text-blue-600 bg-transparent"
-                  />
-                )}
-              </p>
-            </div>
+          <div className="border bg-background dark:bg-sidebar p-4 print:!bg-gray-200">
+            <p className="text-sm text-gray-700 dark:text-gray-300 print:!text-black ">
+              This is to certify that this person has been tested in accordance with requirements of{" "}
+              {readOnly ? (
+                <span className="font-bold text-blue-600 print:text-black">{formData.law_name}</span>
+              ) : (
+                <Input
+                  value={formData.law_name}
+                  onChange={(e) => handleInputChange('law_name', e.target.value)}
+                  placeholder="ASME SEC IX Ed(2023)"
+                  className="border-0 py-0 h-auto text-xs inline-block w-32 text-center font- placeholder:text-blue-300 text-blue-600 bg-transparent"
+                />
+              )}
+            </p>
+          </div>
         </div>
 
         {/* Certificate Information */}
@@ -350,26 +370,26 @@ export function WelderCardForm({
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Card No</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.cardNo}</span>
+                <span className="text-sm print:text-black">{formData.card_no}</span>
               ) : (
                 <Input
-                  value={formData.cardNo}
-                  onChange={(e) => handleInputChange('cardNo', e.target.value)}
+                  value={formData.card_no}
+                  onChange={(e) => handleInputChange('card_no', e.target.value)}
                   placeholder="Enter Card No"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">WPS/PQR No.</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.wpsNo}</span>
+                <span className="text-sm print:text-black">{formData.wpsNo}</span>
               ) : (
                 <Input
                   value={formData.wpsNo}
                   onChange={(e) => handleInputChange('wpsNo', e.target.value)}
                   placeholder="Enter WPS/PQR No"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
@@ -380,26 +400,26 @@ export function WelderCardForm({
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Process</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.process}</span>
+                <span className="text-sm print:text-black">{formData.process}</span>
               ) : (
                 <Input
                   value={formData.process}
                   onChange={(e) => handleInputChange('process', e.target.value)}
                   placeholder="Enter Process"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Joint Type</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.jointType}</span>
+                <span className="text-sm print:text-black">{formData.jointType}</span>
               ) : (
                 <Input
                   value={formData.jointType}
                   onChange={(e) => handleInputChange('jointType', e.target.value)}
                   placeholder="Enter Joint Type"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
@@ -410,26 +430,26 @@ export function WelderCardForm({
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Test Position</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.positionQualified}</span>
+                <span className="text-sm print:text-black">{formData.positionQualified}</span>
               ) : (
                 <Input
-                  type="date"
                   value={formData.positionQualified}
+                  placeholder="Enter Test Position"
                   onChange={(e) => handleInputChange('positionQualified', e.target.value)}
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Position Qualified</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.positionQualified}</span>
+                <span className="text-sm print:text-black">{formData.positionQualified}</span>
               ) : (
                 <Input
                   value={formData.positionQualified}
                   onChange={(e) => handleInputChange('positionQualified', e.target.value)}
                   placeholder="Enter Position Qualified"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
@@ -440,26 +460,26 @@ export function WelderCardForm({
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Test Dia</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.testDia}</span>
+                <span className="text-sm print:text-black">{formData.testDia}</span>
               ) : (
                 <Input
                   value={formData.testDia}
                   onChange={(e) => handleInputChange('testDia', e.target.value)}
                   placeholder="Enter Test Dia"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Thickness Qualified</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.thicknessQualified}</span>
+                <span className="text-sm print:text-black">{formData.thicknessQualified}</span>
               ) : (
                 <Input
                   value={formData.thicknessQualified}
                   onChange={(e) => handleInputChange('thicknessQualified', e.target.value)}
                   placeholder="Enter Thickness Qualified"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
@@ -470,26 +490,26 @@ export function WelderCardForm({
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Vertical Progression</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.verticalProgression}</span>
+                <span className="text-sm print:text-black">{formData.verticalProgression}</span>
               ) : (
                 <Input
                   value={formData.verticalProgression}
                   onChange={(e) => handleInputChange('verticalProgression', e.target.value)}
                   placeholder="Enter Vertical Progression"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Test Thickness</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.testThickness}</span>
+                <span className="text-sm print:text-black">{formData.testThickness}</span>
               ) : (
                 <Input
                   value={formData.testThickness}
                   onChange={(e) => handleInputChange('testThickness', e.target.value)}
                   placeholder="Enter Test Thickness"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
@@ -500,26 +520,26 @@ export function WelderCardForm({
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">P No Qualified</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.pNoQualified}</span>
+                <span className="text-sm print:text-black">{formData.pNoQualified}</span>
               ) : (
                 <Input
                   value={formData.pNoQualified}
                   onChange={(e) => handleInputChange('pNoQualified', e.target.value)}
                   placeholder="Enter P No Qualified"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Diameter Qualified</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.diameterQualified}</span>
+                <span className="text-sm print:text-black">{formData.diameterQualified}</span>
               ) : (
                 <Input
                   value={formData.diameterQualified}
                   onChange={(e) => handleInputChange('diameterQualified', e.target.value)}
                   placeholder="Enter Diameter Qualified"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
@@ -530,26 +550,26 @@ export function WelderCardForm({
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">F No Qualified</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.fNoQualified}</span>
+                <span className="text-sm print:text-black">{formData.fNoQualified}</span>
               ) : (
                 <Input
                   value={formData.fNoQualified}
                   onChange={(e) => handleInputChange('fNoQualified', e.target.value)}
                   placeholder="Enter F No Qualified"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Filler Metal/Electrode Class Used</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.fillerMetalElectrodeClassUsed}</span>
+                <span className="text-sm print:text-black">{formData.fillerMetalElectrodeClassUsed}</span>
               ) : (
                 <Input
                   value={formData.fillerMetalElectrodeClassUsed}
                   onChange={(e) => handleInputChange('fillerMetalElectrodeClassUsed', e.target.value)}
                   placeholder="Enter Filler Metal/Electrode Class Used"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
@@ -560,26 +580,26 @@ export function WelderCardForm({
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Place of Issue</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.placeOfIssue}</span>
+                <span className="text-sm print:text-black">{formData.placeOfIssue}</span>
               ) : (
                 <Input
                   value={formData.placeOfIssue}
                   onChange={(e) => handleInputChange('placeOfIssue', e.target.value)}
                   placeholder="Enter Place of Issue"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Test Method</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.testMethod}</span>
+                <span className="text-sm print:text-black">{formData.testMethod}</span>
               ) : (
                 <Input
                   value={formData.testMethod}
                   onChange={(e) => handleInputChange('testMethod', e.target.value)}
                   placeholder="Enter Test Method"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
@@ -590,26 +610,28 @@ export function WelderCardForm({
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Date of Test</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.dateOfTest}</span>
+                <span className="text-sm print:text-black">{formData.dateOfTest}</span>
               ) : (
                 <Input
+                  type="date"
                   value={formData.dateOfTest}
                   onChange={(e) => handleInputChange('dateOfTest', e.target.value)}
                   placeholder="Enter Date of Test"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
             <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Date of Exp	</div>
             <div className="p-3 border">
               {readOnly ? (
-                <span className="text-sm">{formData.dateOfExp}</span>
+                <span className="text-sm print:text-black">{formData.dateOfExp}</span>
               ) : (
                 <Input
+                  type="date"
                   value={formData.dateOfExp}
                   onChange={(e) => handleInputChange('dateOfExp', e.target.value)}
                   placeholder="Enter Date of Exp"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
@@ -617,8 +639,8 @@ export function WelderCardForm({
         </div>
         {/* Statement */}
         <div className="mb-6">
-          <div className="border  bg-background dark:bg-sidebar p-4">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
+          <div className="border  bg-background dark:bg-sidebar print:!bg-gray-200 p-4">
+            <p className="text-sm text-gray-700 dark:text-gray-300 print:!text-black ">
               This card, on its own qualifies the welder for 6 months from the Date of test. Beyond this date, welding continuity records shall be consulted to ensure the welder's qualification has been maintained.
             </p>
           </div>
@@ -642,4 +664,4 @@ export function WelderCardForm({
   )
 }
 
-export type { WelderCardData, WelderVariable }
+export type { WelderCard, WelderVariable }

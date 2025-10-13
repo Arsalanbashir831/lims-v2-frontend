@@ -1,14 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useParams, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { WelderCardForm, type WelderCardData } from "@/components/welders/welder-card-form"
+import { WelderCardForm } from "@/components/welders/welder-card-form"
 import { Printer } from "lucide-react"
 import QRCode from "qrcode"
 import { ROUTES } from "@/constants/routes"
-import { generatePdf } from "@/lib/pdf-utils"
 import { BackButton } from "@/components/ui/back-button"
+import { useWelderCard } from "@/hooks/use-welder-cards"
 
 interface WelderCardPreviewProps {
   showButton?: boolean
@@ -20,74 +20,26 @@ export default function WelderCardPreview({
   isPublic = false
 }: WelderCardPreviewProps) {
   const params = useParams()
-  const [welderCardData, setWelderCardData] = useState<WelderCardData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const searchParams = useSearchParams()
+  const id = params.id as string
+  const isPrint = searchParams.get("print") === "1"
   const [qrSrc, setQrSrc] = useState<string | null>(null)
+  
+  // Use React Query hook to fetch welder card data
+  const { data: welderCard, isLoading, error } = useWelderCard(id)
 
+  // Send ready message for PDF generation when in print mode
   useEffect(() => {
-    // In a real application, you would fetch the welder qualification data from your API
-    // For now, we'll use mock data
-    const fetchWelderCardData = async () => {
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        // Mock data - replace with actual API call
-        const mockData: WelderCardData = {
-          id: "1",
-          company: "GULF HEAVY INDUSTRIES COMPANY",
-          welderImage: null,
-          welderName: "NASIR MAHMOOD",
-          wpsNo: "GHI-259-01 Rev.00",
-          iqamaId: "2542297615",
-          welderId: "ASME SEC IX(2023)",
-          cardNo: "SA-516 Gr.70NN to SA-334 Gr.6",
-          process: "GROOVE + SEAL WELD",
-          jointType: "W-533",
-          verticalProgression: "UPHILL",
-          testPosition: "SP(5F)",
-          positionQualified: "Seal Weld(Fillet)-All",
-          testThickness: "2.11 mm",
-          testDia: "19.05mm (OD)",
-          thicknessQualified: "Upto 4.22 mm",
-          pNoQualified: "P-No.1 through P-No.15F, P-No.34, and P-No.41 through P-No.49",
-          diameterQualified: "-",
-          fNoQualified: "All F No.6",
-          fillerMetalElectrodeClassUsed: "ER70S-3",
-          placeOfIssue: "DAMMAM,KSA",
-          testMethod: "Mechanical Test & Penetrant Test",
-          dateOfTest: "2025-08-18",
-          dateOfExp: "2026-02-17",
-          authorisedBy: "MUHAMMED IRSHAD ALI",
-          weldingInspector: "MOHAMMED INAYAT",
-          certificationStatement: "ASME SEC IX Ed(2023).",
-        }
-
-        setWelderCardData(mockData)
-      } catch (error) {
-        console.error("Error fetching welder card data:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (params.id) {
-      fetchWelderCardData()
-    }
-  }, [params.id])
-
-  // Send ready message for PDF generation
-  useEffect(() => {
-    if (welderCardData && !loading) {
+    if (isPrint && welderCard && !isLoading) {
       // Send message that the document is ready for printing
       if (typeof window !== "undefined") {
         window.parent.postMessage({
           type: 'DOCUMENT_READY',
-          id: params.id
+          id: id
         }, '*');
       }
     }
-  }, [welderCardData, loading, params.id]);
+  }, [isPrint, welderCard, isLoading, id]);
 
   // Generate QR code for public view
   useEffect(() => {
@@ -108,24 +60,71 @@ export default function WelderCardPreview({
   }, [isPublic, params.id])
 
   const handlePrint = async () => {
-    if (!params.id) return;
-
+    if (!id) return;
     try {
       const frontendBase = typeof window !== "undefined" ? window.location.origin : ""
-      const publicUrl = `${frontendBase}${ROUTES.PUBLIC?.WELDER_CARDS_PREVIEW(params.id as string)}`
+      const publicUrl = `${frontendBase}${ROUTES.PUBLIC?.WELDER_CARDS_PREVIEW(id)}`
+      
+      const url = new URL(publicUrl);
+      url.searchParams.set("print", "1");
+      const printUrl = url.toString();
 
-      const success = await generatePdf(publicUrl, params.id as string);
-      if (success) {
-        // The utility function will handle the print dialog
-      } else {
-        console.error('Failed to generate PDF');
-      }
-    } catch (error) {
-      console.error('PDF generation failed:', error);
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "absolute";
+      iframe.style.left = "-9999px";
+      iframe.style.top = "-9999px";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      iframe.setAttribute("aria-hidden", "true");
+
+      let printed = false;
+      const cleanup = () => {
+        try {
+          window.removeEventListener("message", onMessage as any);
+        } catch {}
+        try {
+          if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+        } catch {}
+      };
+
+      const tryPrint = () => {
+        if (printed) return;
+        printed = true;
+        try {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        } catch {}
+        setTimeout(cleanup, 500);
+      };
+
+      const onMessage = (event: MessageEvent) => {
+        try {
+          const dataMsg = event.data as any;
+          if (dataMsg && dataMsg.type === "DOCUMENT_READY" && dataMsg.id === id) {
+            tryPrint();
+          }
+        } catch {}
+      };
+
+      window.addEventListener("message", onMessage as any);
+
+      const fallbackTimer = setTimeout(() => {
+        tryPrint();
+      }, 5000);
+
+      iframe.onload = () => {
+        clearTimeout(fallbackTimer);
+      };
+
+      iframe.src = printUrl;
+      document.body.appendChild(iframe);
+    } catch (e) {
+      // no-op
     }
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -136,7 +135,7 @@ export default function WelderCardPreview({
     )
   }
 
-  if (!welderCardData) {
+  if (error || !welderCard) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -167,7 +166,7 @@ export default function WelderCardPreview({
       {/* Certificate Content */}
 
       <WelderCardForm
-        initialData={welderCardData}
+        initialData={welderCard}
         onSubmit={() => { }} // No-op for readonly mode
         onCancel={() => { }} // No-op for readonly mode
         readOnly={true}
