@@ -6,13 +6,17 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Upload, Plus, QrCode, Trash2 } from "lucide-react"
+import { Upload, Plus, QrCode, Trash2, Check, ChevronsUpDown } from "lucide-react"
 import Image from "next/image"
 import { ROUTES } from "@/constants/routes"
 import QRCode from "qrcode"
 import { Checkbox } from "../ui/checkbox"
 import { ConfirmPopover } from "../ui/confirm-popover"
-import { WelderSelector } from "@/components/common/welder-selector"
+import { useWelderCards } from "@/hooks/use-welder-cards"
+import { CreateWelderCertificateData, WelderCertificateTest } from "@/lib/schemas/welder"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
 
 interface WelderVariable {
   id: string
@@ -31,6 +35,7 @@ interface TestConducted {
 
 interface WelderQualificationData {
   id?: string
+  welderCardId: string
   clientName: string
   welderImage: string | null
   welderName: string
@@ -51,10 +56,11 @@ interface WelderQualificationData {
 }
 
 interface WelderQualificationFormProps {
-  initialData?: WelderQualificationData
-  onSubmit: (data: WelderQualificationData) => void
+  initialData?: WelderQualificationData | any // Allow API data structure
+  onSubmit: (data: CreateWelderCertificateData) => void
   onCancel: () => void
   readOnly?: boolean
+  onImageLoad?: () => void
 }
 
 const defaultWelderVariables: WelderVariable[] = [
@@ -88,9 +94,56 @@ export function WelderQualificationForm({
   initialData,
   onSubmit,
   onCancel,
-  readOnly = false
+  readOnly = false,
+  onImageLoad
 }: WelderQualificationFormProps) {
+  // Get welder cards for the selector
+  const { data: welderCardsData } = useWelderCards(1, "", 100)
+  const mapApiDataToFormData = (apiData: any): WelderQualificationData => {
+    if (!apiData) return createInitialFormData()
+    
+    // Map testing variables from API to form structure
+    const welderVariables = (apiData.testing_variables_and_qualification_limits || []).map((item: any, index: number) => ({
+      id: (index + 1).toString(),
+      name: item.name || "",
+      actualValue: item.actual_values || "",
+      rangeQualified: item.range_values || ""
+    }))
+
+    // Map tests from API to form structure
+    const testsConducted = (apiData.tests || []).map((test: any, index: number) => ({
+      id: (index + 1).toString(),
+      testType: test.type || "",
+      reportNo: test.report_no || "",
+      results: test.results || "",
+      isReportChecked: test.test_performed || false
+    }))
+
+    return {
+      id: apiData.id,
+      welderCardId: apiData.welder_card_id || "", // Set from API
+      clientName: apiData.welder_card_info?.company || "", // Get from welder_card_info
+      welderImage: apiData.welder_card_info?.welder_info?.profile_image || null, // Get from nested welder_info
+      welderName: apiData.welder_card_info?.welder_info?.operator_name || "", // Get from nested welder_info
+      wpsIdentification: apiData.identification_of_wps_pqr || "",
+      iqamaId: apiData.welder_card_info?.welder_info?.iqama || "", // Get from nested welder_info
+      qualificationStandard: apiData.qualification_standard || "",
+      baseMetalSpec: apiData.base_metal_specification || "",
+      weldType: apiData.weld_type || "",
+      welderIdNo: apiData.welder_card_info?.welder_info?.operator_id || "", // Get from nested welder_info
+      jointType: apiData.joint_type || "",
+      dateOfTest: apiData.date_of_test || "",
+      certificateRefNo: apiData.welder_card_info?.card_no || "", // Get from welder_card_info
+      welderVariables: welderVariables.length > 0 ? welderVariables : JSON.parse(JSON.stringify(defaultWelderVariables)),
+      testsConducted: testsConducted.length > 0 ? testsConducted : JSON.parse(JSON.stringify(defaultTestsConducted)),
+      certificationStatement: apiData.law_name || "",
+      testingWitnessed: apiData.witnessed_by || "",
+      testSupervisor: apiData.tested_by || ""
+    }
+  }
+
   const createInitialFormData = (): WelderQualificationData => ({
+    welderCardId: "",
     clientName: "",
     welderImage: null,
     welderName: "",
@@ -111,21 +164,32 @@ export function WelderQualificationForm({
     ...initialData
   })
 
-  const [formData, setFormData] = useState<WelderQualificationData>(createInitialFormData())
-  const [originalFormData, setOriginalFormData] = useState<WelderQualificationData>(createInitialFormData())
+  const [formData, setFormData] = useState<WelderQualificationData>(() => 
+    initialData ? mapApiDataToFormData(initialData) : createInitialFormData()
+  )
+  const [originalFormData, setOriginalFormData] = useState<WelderQualificationData>(() => 
+    initialData ? mapApiDataToFormData(initialData) : createInitialFormData()
+  )
   const [qrSrc, setQrSrc] = useState<string | null>(null)
-  const [selectedWelderId, setSelectedWelderId] = useState<string | undefined>(undefined)
+  const [selectedWelderCardId, setSelectedWelderCardId] = useState<string | undefined>(undefined)
+  const [open, setOpen] = useState(false)
 
   useEffect(() => {
     // Update both form data and original data when initialData changes
-    const updatedData = createInitialFormData()
-    setFormData(updatedData)
-    setOriginalFormData(updatedData)
+    if (initialData) {
+      const mappedData = mapApiDataToFormData(initialData)
+      setFormData(mappedData)
+      setOriginalFormData(mappedData)
+    } else {
+      const updatedData = createInitialFormData()
+      setFormData(updatedData)
+      setOriginalFormData(updatedData)
+    }
   }, [initialData])
 
   useEffect(() => {
     // Generate QR code for existing forms (when we have an ID)
-    if (formData.id && !readOnly) {
+    if (formData.id) {
       const generateQR = async () => {
         try {
           const frontendBase = typeof window !== "undefined" ? window.location.origin : ""
@@ -139,21 +203,10 @@ export function WelderQualificationForm({
       }
       generateQR()
     }
-  }, [formData.id, readOnly])
+  }, [formData.id])
 
   const handleInputChange = (field: keyof WelderQualificationData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-  }
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        handleInputChange('welderImage', e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
   }
 
   const addWelderVariable = () => {
@@ -186,7 +239,33 @@ export function WelderQualificationForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
+    
+    // Map form data to API schema
+    const apiData: CreateWelderCertificateData = {
+      welder_card_id: formData.welderCardId,
+      date_of_test: formData.dateOfTest,
+      identification_of_wps_pqr: formData.wpsIdentification,
+      qualification_standard: formData.qualificationStandard,
+      base_metal_specification: formData.baseMetalSpec,
+      joint_type: formData.jointType,
+      weld_type: formData.weldType,
+      testing_variables_and_qualification_limits: formData.welderVariables.map(variable => ({
+        name: variable.name,
+        actual_values: variable.actualValue,
+        range_values: variable.rangeQualified
+      })),
+      tests: formData.testsConducted.map(test => ({
+        type: test.testType,
+        test_performed: test.isReportChecked,
+        results: test.results,
+        report_no: test.reportNo
+      })),
+      law_name: formData.certificationStatement,
+      tested_by: formData.testSupervisor,
+      witnessed_by: formData.testingWitnessed
+    }
+    
+    onSubmit(apiData)
   }
 
   const handleCancel = () => {
@@ -219,7 +298,7 @@ export function WelderQualificationForm({
                 value={formData.clientName}
                 onChange={(e) => handleInputChange('clientName', e.target.value)}
                 placeholder="Enter client name"
-                className="border-0 p-0 h-auto text-sm text-center !text-lg font-bold"
+                className="border-0 py-0 h-auto text-center !text-lg font-bold"
               />
             )}
           </div>
@@ -229,11 +308,12 @@ export function WelderQualificationForm({
             <div className="w-40 h-24 border-2  overflow-hidden bg-gray-100 dark:bg-sidebar">
               {formData.welderImage ? (
                 <Image
-                  src={formData.welderImage}
+                  src={`${process.env.NEXT_PUBLIC_BACKEND_URL}${formData.welderImage.replace(/\\/g, '/')}`}
                   alt="Welder"
                   width={128}
                   height={160}
                   className="w-full h-full object-cover"
+                  onLoad={onImageLoad}
                 />
               ) : (
                 <p className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
@@ -247,57 +327,83 @@ export function WelderQualificationForm({
         {/* Basic Information Table */}
         <div className="border mb-6">
           {/* Row 1 */}
-          <div className="grid grid-cols-4 border-b ">
+          <div className="grid grid-cols-4 border-b">
             <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Welder's/Welder Operator's Name</div>
             <div className="p-1 border-x">
               {readOnly ? (
                 <span className="text-sm">{formData.welderName}</span>
               ) : (
-                <Input
-                  value={formData.welderName}
-                  onChange={(e) => handleInputChange('welderName', e.target.value)}
-                  placeholder="Enter welder name"
-                  className="border-0 p-0 h-auto text-sm"
-                />
+                <Popover open={open} onOpenChange={setOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={open}
+                      className="w-full justify-between text-sm"
+                    >
+                      {selectedWelderCardId
+                        ? welderCardsData?.results?.find((card) => card.id === selectedWelderCardId)?.welder_info?.operator_name || "Select welder..."
+                        : "Select welder..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput placeholder="Search welders..." />
+                      <CommandList>
+                        <CommandEmpty>No welder found.</CommandEmpty>
+                        <CommandGroup>
+                          {welderCardsData?.results?.map((card) => (
+                            <CommandItem
+                              key={card.id}
+                              value={`${card.welder_info?.operator_name} ${card.welder_info?.operator_id} ${card.card_no}`}
+                              onSelect={() => {
+                                setSelectedWelderCardId(card.id === selectedWelderCardId ? undefined : card.id)
+                                if (card.id !== selectedWelderCardId) {
+                                  // Auto-fill based on selected welder card
+                                  handleInputChange('welderCardId', card.id || "")
+                                  handleInputChange('welderIdNo', card.welder_info?.operator_id || "")
+                                  handleInputChange('welderName', card.welder_info?.operator_name || "")
+                                  handleInputChange('iqamaId', card.welder_info?.iqama || "")
+                                  handleInputChange('welderImage', card.welder_info?.profile_image || null)
+                                  handleInputChange('certificateRefNo', card.card_no || "")
+                                  handleInputChange('clientName', card.company || "")
+                                }
+                                setOpen(false)
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedWelderCardId === card.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex flex-col">
+                                <span className="font-medium">{card.welder_info?.operator_name}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  ID: {card.welder_info?.operator_id} | Card: {card.card_no}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               )}
             </div>
-            <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Iqama / ID No</div>
+            <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Welder ID No</div>
             <div className="p-1 border-x">
-              {readOnly ? (
-                <span className="text-sm">{formData.iqamaId}</span>
-              ) : (
-                <Input
-                  value={formData.iqamaId}
-                  onChange={(e) => handleInputChange('iqamaId', e.target.value)}
-                  placeholder="Enter Iqama/ID number"
-                  className="border-0 p-0 h-auto text-sm"
-                />
-              )}
+              <span className="text-sm">{formData.welderIdNo}</span>
             </div>
           </div>
 
-          {/* Row 2 */}
+          {/* Row 3 */}
           <div className="grid grid-cols-4 border-b">
-            <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Welder ID No</div>
+            <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Iqama / ID No</div>
             <div className="p-1 border-x">
-              {readOnly ? (
-                <span className="text-sm">{formData.welderIdNo}</span>
-              ) : (
-                <WelderSelector
-                  value={selectedWelderId}
-                  onValueChange={(welderId, welder) => {
-                    if (welder) {
-                      // Auto-fill based on selected welder
-                      setSelectedWelderId(welderId)
-                      handleInputChange('welderIdNo', welder.operator_id || "")
-                      handleInputChange('welderName', welder.operator_name || "")
-                      handleInputChange('iqamaId', welder.iqama || "")
-                      handleInputChange('welderImage', welder.profile_image || null)
-                    }
-                  }}
-                  placeholder="Select welder by ID / name..."
-                />
-              )}
+              <span className="text-sm">{formData.iqamaId}</span>
             </div>
             <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Certificate Ref No</div>
             <div className="p-1 border-x">
@@ -305,7 +411,7 @@ export function WelderQualificationForm({
             </div>
           </div>
 
-          {/* Row 3 */}
+          {/* Row 4 */}
           <div className="grid grid-cols-4 border-b ">
             <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Date of Test</div>
             <div className="p-1 border-x">
@@ -316,7 +422,7 @@ export function WelderQualificationForm({
                   type="date"
                   value={formData.dateOfTest}
                   onChange={(e) => handleInputChange('dateOfTest', e.target.value)}
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
@@ -329,13 +435,13 @@ export function WelderQualificationForm({
                   value={formData.wpsIdentification}
                   onChange={(e) => handleInputChange('wpsIdentification', e.target.value)}
                   placeholder="Enter WPS/PQR identification"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
           </div>
 
-          {/* Row 4 */}
+          {/* Row 5 */}
           <div className="grid grid-cols-4">
             <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Qualification Standard</div>
             <div className="p-1 border-x">
@@ -346,7 +452,7 @@ export function WelderQualificationForm({
                   value={formData.qualificationStandard}
                   onChange={(e) => handleInputChange('qualificationStandard', e.target.value)}
                   placeholder="Enter qualification standard"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
@@ -359,13 +465,13 @@ export function WelderQualificationForm({
                   value={formData.baseMetalSpec}
                   onChange={(e) => handleInputChange('baseMetalSpec', e.target.value)}
                   placeholder="Enter base metal specification"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
           </div>
 
-          {/* Row 5 */}
+          {/* Row 6 */}
           <div className="grid grid-cols-4 border-t ">
             <div className="p-1 bg-background dark:bg-sidebar font-medium text-sm border-x">Joint Type</div>
             <div className="p-1 border-x">
@@ -376,7 +482,7 @@ export function WelderQualificationForm({
                   value={formData.jointType}
                   onChange={(e) => handleInputChange('jointType', e.target.value)}
                   placeholder="Enter joint type"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
@@ -389,7 +495,7 @@ export function WelderQualificationForm({
                   value={formData.weldType}
                   onChange={(e) => handleInputChange('weldType', e.target.value)}
                   placeholder="Enter weld type"
-                  className="border-0 p-0 h-auto text-sm"
+                  className="border-0 py-0 h-auto text-sm"
                 />
               )}
             </div>
@@ -414,7 +520,7 @@ export function WelderQualificationForm({
                     value={variable.name}
                     onChange={(e) => updateWelderVariable(variable.id, 'name', e.target.value)}
                     placeholder="Enter variable name"
-                    className="border-0 p-0 h-auto text-sm"
+                    className="border-0 py-0 h-auto text-sm"
                   />
                 )}
               </div>
@@ -426,7 +532,7 @@ export function WelderQualificationForm({
                     value={variable.actualValue}
                     onChange={(e) => updateWelderVariable(variable.id, 'actualValue', e.target.value)}
                     placeholder="Actual value"
-                    className="border-0 p-0 h-auto text-sm"
+                    className="border-0 py-0 h-auto text-sm"
                   />
                 )}
               </div>
@@ -439,7 +545,7 @@ export function WelderQualificationForm({
                       value={variable.rangeQualified}
                       onChange={(e) => updateWelderVariable(variable.id, 'rangeQualified', e.target.value)}
                       placeholder="Range qualified"
-                      className="border-0 p-0 h-auto text-sm flex-1"
+                      className="border-0 py-0 h-auto text-sm flex-1"
                     />
                     {!readOnly && (
                       <ConfirmPopover
@@ -513,7 +619,7 @@ export function WelderQualificationForm({
                     value={test.reportNo}
                     onChange={(e) => updateTestConducted(test.id, 'reportNo', e.target.value)}
                     placeholder="Enter report number"
-                    className="border-0 p-0 h-auto text-sm flex-1 text-center"
+                    className="border-0 py-0 h-auto text-sm flex-1 text-center"
                   />
                 )}
               </div>
@@ -525,7 +631,7 @@ export function WelderQualificationForm({
                     value={test.results}
                     onChange={(e) => updateTestConducted(test.id, 'results', e.target.value)}
                     placeholder="Enter results"
-                    className="border-0 p-0 h-auto text-sm text-center"
+                    className="border-0 py-0 h-auto text-sm text-center"
                   />
                 )}
               </div>
@@ -545,7 +651,7 @@ export function WelderQualificationForm({
                   value={formData.certificationStatement}
                   onChange={(e) => handleInputChange('certificationStatement', e.target.value)}
                   placeholder="ASME SEC IX Ed(2023)"
-                  className="border-0 p-0 h-auto text-sm inline-block w-48 text-center font-bold text-blue-600 bg-transparent"
+                  className="border-0 py-0 h-auto text-sm inline-block w-48 text-center font-bold text-blue-600 bg-transparent"
                 />
               )}
             </p>
@@ -568,7 +674,7 @@ export function WelderQualificationForm({
                       value={formData.testingWitnessed}
                       onChange={(e) => handleInputChange('testingWitnessed', e.target.value)}
                       placeholder="Enter inspector name"
-                      className="border-0 p-0 h-auto text-sm font-medium text-right"
+                      className="border-0 py-0 h-auto text-sm font-medium text-right"
                     />
                   )}
                 </div>
@@ -583,7 +689,7 @@ export function WelderQualificationForm({
                       value={formData.testSupervisor}
                       onChange={(e) => handleInputChange('testSupervisor', e.target.value)}
                       placeholder="Enter supervisor name"
-                      className="border-0 p-0 h-auto text-sm font-medium text-right"
+                      className="border-0 py-0 h-auto text-sm font-medium text-right"
                     />
                   )}
                 </div>
@@ -594,11 +700,11 @@ export function WelderQualificationForm({
           {/* Right Side - Client Details and QR Code */}
           <div>
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-sm mb-2 text-sm">Client Name:</p>
+              <p className="text-sm mb-2">Client Name:</p>
               <p className="text-sm font-medium underline">{formData.clientName}</p>
             </div>
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-sm mb-2 text-sm">Client Signature:</p>
+              <p className="text-sm mb-2">Client Signature:</p>
               <div className="border-b-2 border-gray-400 pb-1 min-w-32"></div>
             </div>
 

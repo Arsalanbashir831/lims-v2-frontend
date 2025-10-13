@@ -1,22 +1,26 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
 import { ROUTES } from "@/constants/routes"
-import { WelderQualificationForm, type WelderQualificationData } from "@/components/welders/welder-qualification-form"
+import { WelderQualificationForm } from "@/components/welders/welder-qualification-form"
 import { BackButton } from "@/components/ui/back-button"
+import { useCreateWelderCertificate } from "@/hooks/use-welder-certificates"
+import { CreateWelderCertificateData } from "@/lib/schemas/welder"
+import { toast } from "sonner"
 
 export default function NewWelderQualificationPage() {
   const router = useRouter()
+  const createWelderCertificate = useCreateWelderCertificate()
 
-  const handleSubmit = (data: WelderQualificationData) => {
-    // TODO: Save to localStorage or API
-    console.log('Submitting welder qualification data:', data)
-    
-    // For now, just navigate back to the list
-    router.push(ROUTES.APP.WELDERS.WELDER_QUALIFICATION.ROOT)
+  const handleSubmit = async (data: CreateWelderCertificateData) => {
+    try {
+      await createWelderCertificate.mutateAsync(data)
+      toast.success("Welder qualification certificate created successfully!")
+      router.push(ROUTES.APP.WELDERS.WELDER_QUALIFICATION.ROOT)
+    } catch (error) {
+      console.error("Failed to create welder qualification certificate:", error)
+      toast.error("Failed to create welder qualification certificate. Please try again.")
+    }
   }
 
   const handleCancel = () => {

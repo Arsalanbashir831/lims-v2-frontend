@@ -1,82 +1,36 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { PencilIcon, XIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
-import { WelderQualificationForm, type WelderQualificationData } from "@/components/welders/welder-qualification-form"
+import { WelderQualificationForm } from "@/components/welders/welder-qualification-form"
 import { FormHeader } from "@/components/common/form-header"
-
-interface EditWelderQualificationPageProps {
-  params: {
-    id: string
-  }
-}
-
-// Mock data - replace with actual data fetching
-const mockData: WelderQualificationData = {
-  id: "1",
-  clientName: "GULF HEAVY INDUSTRIES COMPANY",
-  welderImage: null,
-  welderName: "NASIR MAHMOOD",
-  wpsIdentification: "GHI-259-01 Rev.00",
-  iqamaId: "2542297615",
-  qualificationStandard: "ASME SEC IX(2023)",
-  baseMetalSpec: "SA-516 Gr.70NN to SA-334 Gr.6",
-  weldType: "GROOVE + SEAL WELD",
-  welderIdNo: "W-533",
-  jointType: "GROOVE",
-  dateOfTest: "2025-08-18",
-  certificateRefNo: "certificate 119",
-  welderVariables: [
-    { id: "1", name: "Welder Process(es)", actualValue: "GTAW", rangeQualified: "GTAW" },
-    { id: "2", name: "Types of Welder (manual/semi auto)", actualValue: "manual", rangeQualified: "Manual" },
-    { id: "3", name: "Backing (With/without)", actualValue: "With", rangeQualified: "With/Without" },
-    { id: "4", name: "Types of weld", actualValue: "Seal Weld", rangeQualified: "Seal Weld" },
-    { id: "5", name: "Product Types(Plate or Pipe)", actualValue: "Pipe", rangeQualified: "Pipe/Plate" },
-    { id: "6", name: "Diameter of Pipe", actualValue: "19.05mm (OD)", rangeQualified: "Unlimited" },
-    { id: "7", name: "Base Metal P Number to P Number", actualValue: "P1 - P1", rangeQualified: "P1 Thru P15F, P34 & P41 Thru P49 TO Same" },
-    { id: "8", name: "Filler Metal or electrode specification", actualValue: "A5.18", rangeQualified: "-" },
-    { id: "9", name: "Filler Meta F-Number(S)", actualValue: "F6", rangeQualified: "All F-6 Classification" },
-    { id: "10", name: "Filer Metal addition/Deletion (GTAW/PAW)", actualValue: "N/A", rangeQualified: "N/A" },
-    { id: "11", name: "Consumable Insert (GTAW or PAW)", actualValue: "N/A", rangeQualified: "N/A" },
-    { id: "12", name: "Deposit thickness for each process", actualValue: "2.11mm", rangeQualified: "Upto 4.22 mm" },
-    { id: "13", name: "Welder position", actualValue: "SP", rangeQualified: "SP, F" },
-    { id: "14", name: "Vertical Progression", actualValue: "UPHILL", rangeQualified: "UPHILL" },
-    { id: "15", name: "Type of Fuel Gas(OFW)", actualValue: "N/A", rangeQualified: "N/A" },
-    { id: "16", name: "Insert gas backing(GTAW,PAW,GMAW)", actualValue: "ARGON", rangeQualified: "ARGON" },
-    { id: "17", name: "Transfer Mode( spary, globular, SHORT)", actualValue: "N/A", rangeQualified: "N/A" },
-    { id: "18", name: "Current Type/Polarity(AC,DCEP,DCEN)", actualValue: "DCEN", rangeQualified: "DCEN" },
-  ],
-  testsConducted: [
-    { id: "1", testType: "Visual Inspection", reportNo: "N/A", results: "ACC", isReportChecked: false },
-    { id: "2", testType: "NDT", reportNo: "G020/160825/001", results: "ACC", isReportChecked: false },
-    { id: "3", testType: "Mechanical Test", reportNo: "CERT-2025-0154", results: "ACC", isReportChecked: false },
-  ],
-  certificationStatement: "ASME SEC IX Ed(2023).",
-  testingWitnessed: "MOHAMMED INAYAT",
-  testSupervisor: "MUHAMMED IRSHAD ALI"
-}
+import { useWelderCertificate, useUpdateWelderCertificate } from "@/hooks/use-welder-certificates"
+import { UpdateWelderCertificateData } from "@/lib/schemas/welder"
+import { toast } from "sonner"
 
 export default function EditWelderQualificationPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
-  const [data, setData] = useState<WelderQualificationData | null>(null)
+  
+  // Use React Query hooks
+  const { data: welderCertificateResponse, isLoading, error } = useWelderCertificate(params.id)
+  const welderCertificate = welderCertificateResponse?.data
+  const updateWelderCertificate = useUpdateWelderCertificate()
 
-  useEffect(() => {
-    // TODO: Fetch actual data based on params.id
-    setData(mockData)
-  }, [params.id])
-
-  const handleSubmit = (formData: WelderQualificationData) => {
-    // TODO: Save to localStorage or API
-    console.log('Updating welder qualification data:', formData)
-    
-    setIsEditing(false)
-    // Optionally update local state or refetch data
-    setData(formData)
+  const handleSubmit = async (formData: UpdateWelderCertificateData) => {
+    try {
+      await updateWelderCertificate.mutateAsync({ id: params.id, data: formData })
+      toast.success("Welder qualification certificate updated successfully!")
+      setIsEditing(false)
+      router.push(ROUTES.APP.WELDERS.WELDER_QUALIFICATION.ROOT)
+    } catch (error) {
+      console.error("Failed to update welder qualification certificate:", error)
+      toast.error("Failed to update welder qualification certificate. Please try again.")
+    }
   }
 
   const handleCancel = () => {
@@ -87,8 +41,30 @@ export default function EditWelderQualificationPage() {
     }
   }
 
-  if (!data) {
-    return <div>Loading...</div>
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+          <span className="ml-2">Loading welder qualification certificate...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !welderCertificate) {
+    return (
+      <div className="container mx-auto p-6 text-center">
+        <h1 className="text-2xl font-bold text-red-600">Welder qualification certificate not found</h1>
+        <p className="text-muted-foreground">The welder qualification certificate you're looking for doesn't exist.</p>
+        <button
+          onClick={() => router.push(ROUTES.APP.WELDERS.WELDER_QUALIFICATION.ROOT)}
+          className="mt-4 text-blue-600 hover:underline"
+        >
+          Back to Welder Qualification Certificates
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -101,7 +77,7 @@ export default function EditWelderQualificationPage() {
         )}
       </FormHeader>
       <WelderQualificationForm
-        initialData={data}
+        initialData={welderCertificate}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         readOnly={!isEditing}

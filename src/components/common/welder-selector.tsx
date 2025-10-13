@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useWelders } from "@/hooks/use-welders"
+import { useWelderCards } from "@/hooks/use-welder-cards"
 import { Welder } from "@/lib/schemas/welder"
 
 interface WelderSelectorProps {
@@ -39,9 +40,13 @@ export function WelderSelector({
 
   // Use the welders hook with debounced search
   const { data: weldersData, isLoading, error } = useWelders(1, debouncedSearchQuery, 50)
+  
+  // Get welder cards data to show card information
+  const { data: welderCardsData } = useWelderCards(1, "", 100)
 
   // Extract welders from the response
   const welders = weldersData?.results || []
+  const welderCards = welderCardsData?.results || []
 
   // Find selected welder
   const selectedWelder = useMemo(() => {
@@ -75,7 +80,7 @@ export function WelderSelector({
           {selectedWelder ? (
             <div className="flex flex-col items-start">
               <p className="font-medium">{selectedWelder.operator_name}</p>
-              {/* <p className="text-sm text-muted-foreground">{selectedWelder.operator_id}</p> */}
+              {/* <p className="text-sm text-muted-foreground">ID: {selectedWelder.operator_id} | IQAMA: {selectedWelder.iqama}</p> */}
             </div>
           ) : (
             <span className="text-muted-foreground">{placeholder}</span>
@@ -108,28 +113,37 @@ export function WelderSelector({
               </CommandEmpty>
             ) : (
               <CommandGroup>
-                {welders.map((welder) => (
-                  <CommandItem
-                    key={welder.id}
-                    value={welder.id}
-                    onSelect={() => handleSelect(welder.id!)}
-                    className="flex flex-col items-start py-3"
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex flex-col items-start">
-                        <p className="font-medium">{welder.operator_name}</p>
-                        <p className="text-sm text-muted-foreground">{welder.operator_id}</p>
-                        <p className="text-xs text-muted-foreground">IQAMA: {welder.iqama}</p>
+                {welders.map((welder) => {
+                  // Find welder cards for this welder
+                  const welderCardsForWelder = welderCards.filter(card => card.welder_id === welder.id)
+                  
+                  return (
+                    <CommandItem
+                      key={welder.id}
+                      value={welder.id}
+                      onSelect={() => handleSelect(welder.id!)}
+                      className="flex flex-col items-start py-3"
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex flex-col items-start">
+                          <p className="font-medium">{welder.operator_name}</p>
+                          <p className="text-sm text-muted-foreground">ID: {welder.operator_id} | IQAMA: {welder.iqama}</p>
+                          {welderCardsForWelder.length > 0 && (
+                            <p className="text-xs text-blue-600">
+                              Cards: {welderCardsForWelder.map(card => card.card_no).join(", ")}
+                            </p>
+                          )}
+                        </div>
+                        <Check
+                          className={cn(
+                            "ml-auto h-4 w-4",
+                            value === welder.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
                       </div>
-                      <Check
-                        className={cn(
-                          "ml-auto h-4 w-4",
-                          value === welder.id ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                    </div>
-                  </CommandItem>
-                ))}
+                    </CommandItem>
+                  )
+                })}
               </CommandGroup>
             )}
           </CommandList>
