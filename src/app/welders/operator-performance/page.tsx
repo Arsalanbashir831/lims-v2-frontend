@@ -16,6 +16,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ColumnDef } from "@tanstack/react-table"
 import { ROUTES } from "@/constants/routes"
 import Link from "next/link"
+import { useOperatorCertificates, useDeleteOperatorCertificate } from "@/hooks/user-operator-certificates"
+import { toast } from "sonner"
 
 interface OperatorPerformance {
   id: string
@@ -26,71 +28,31 @@ interface OperatorPerformance {
   clientName: string
 }
 
-const mockData: OperatorPerformance[] = [
-  {
-    id: "op-001",
-    issuedIn: "2024",
-    certificateNumber: "OPQ-2024-002",
-    operatorId: "OP-2024-002",
-    operatorName: "Sarah Johnson",
-    clientName: "ACME Corporation",
-  },
-  {
-    id: "op-002",
-    issuedIn: "2024",
-    certificateNumber: "OPQ-2024-010",
-    operatorId: "OP-001",
-    operatorName: "Omar Al-Hassan",
-    clientName: "Global Industries",
-  },
-  {
-    id: "op-003",
-    issuedIn: "2023",
-    certificateNumber: "OPQ-2023-118",
-    operatorId: "OP-2023-118",
-    operatorName: "Mohammed Al-Salem",
-    clientName: "Steel Works Ltd",
-  },
-]
-
-const listOperatorPerformances = (): OperatorPerformance[] => {
-  if (typeof window === "undefined") return mockData
-  try {
-    const stored = localStorage.getItem("operator-performance")
-    return stored ? JSON.parse(stored) : mockData
-  } catch {
-    return mockData
-  }
-}
-
-const deleteOperatorPerformance = (id: string): boolean => {
-  try {
-    const stored = localStorage.getItem("operator-performance")
-    const data = stored ? JSON.parse(stored) : mockData
-    const filtered = data.filter((item: OperatorPerformance) => item.id !== id)
-    localStorage.setItem("operator-performance", JSON.stringify(filtered))
-    return true
-  } catch {
-    return false
-  }
-}
-
-const deleteMultipleOperatorPerformances = (ids: string[]): boolean => {
-  try {
-    const stored = localStorage.getItem("operator-performance")
-    const data = stored ? JSON.parse(stored) : mockData
-    const filtered = data.filter((item: OperatorPerformance) => !ids.includes(item.id))
-    localStorage.setItem("operator-performance", JSON.stringify(filtered))
-    return true
-  } catch {
-    return false
-  }
+// Transform API data to table format
+const transformApiDataToTable = (apiData: any[]): OperatorPerformance[] => {
+  return apiData.map(item => ({
+    id: item.id,
+    issuedIn: new Date(item.date_of_issue || Date.now()).getFullYear().toString(),
+    certificateNumber: item.welder_card_info?.card_no || "N/A",
+    operatorId: item.welder_card_info?.welder_info?.operator_id || "N/A",
+    operatorName: item.welder_card_info?.welder_info?.operator_name || "N/A",
+    clientName: item.welder_card_info?.company || "N/A"
+  }))
 }
 
 export default function OperatorPerformancePage() {
   const router = useRouter()
-  const [data] = useState(() => listOperatorPerformances())
   const [globalFilter, setGlobalFilter] = useState("")
+  
+  // Use API hooks
+  const { data: apiData, isLoading, error } = useOperatorCertificates(1, globalFilter, 10)
+  const deleteOperatorCertificate = useDeleteOperatorCertificate()
+  
+  // Transform API data for table
+  const data = useMemo(() => {
+    if (!apiData?.results) return []
+    return transformApiDataToTable(apiData.results)
+  }, [apiData])
 
   const columns: ColumnDef<OperatorPerformance>[] = [
     {
@@ -183,7 +145,15 @@ export default function OperatorPerformancePage() {
             <ConfirmPopover
               title="Delete this certificate?"
               confirmText="Delete"
-              onConfirm={() => deleteOperatorPerformance(row.original.id)}
+              onConfirm={async () => {
+                try {
+                  await deleteOperatorCertificate.mutateAsync(row.original.id)
+                  toast.success("Operator performance certificate deleted successfully")
+                } catch (error) {
+                  console.error('Failed to delete certificate:', error)
+                  toast.error("Failed to delete operator performance certificate")
+                }
+              }}
               trigger={
                 <Button variant="destructive" size="sm">
                   <TrashIcon className="w-4 h-4" />
@@ -220,11 +190,16 @@ export default function OperatorPerformancePage() {
       toolbar={(table) => {
         const selected = table.getSelectedRowModel().rows
         const hasSelected = selected.length > 0
-        const onBulkDelete = () => {
+        const onBulkDelete = async () => {
           const ids = selected.map((r: any) => r.original.id)
-          if (deleteMultipleOperatorPerformances(ids)) {
+          try {
+            // Delete each certificate via API
+            await Promise.all(ids.map(id => deleteOperatorCertificate.mutateAsync(id)))
             table.resetRowSelection()
-            window.location.reload()
+            toast.success(`${ids.length} operator performance certificate(s) deleted successfully`)
+          } catch (error) {
+            console.error('Failed to delete certificates:', error)
+            toast.error("Failed to delete operator performance certificates")
           }
         }
         return (
