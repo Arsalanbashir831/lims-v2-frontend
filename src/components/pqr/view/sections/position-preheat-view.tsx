@@ -1,10 +1,9 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 
 export const PositionsPreheatView = ({
   positionsData,
   preheatData,
   isAsme,
-}: { positionsData: any; preheatData: any; isAsme: boolean }) => {
+}: { positionsData: DynamicRow; preheatData: DynamicRow; isAsme: boolean }) => {
   const posCols = positionsData?.columns || [];
   const preCols = preheatData?.columns || [];
 
@@ -24,16 +23,16 @@ export const PositionsPreheatView = ({
           </thead>
           <tbody>
             {posCols.length > 0
-              ? (positionsData?.data || []).map((row: any) => (
+              ? (positionsData?.data || []).map((row: DynamicRow) => (
                   <tr key={row.id} className="border-b">
-                    {posCols.map((col: any) => (
+                    {posCols.map((col: DynamicColumn) => (
                       <td key={col.id} className="border-r p-2 last:border-r-0">
                         {String(row[col.accessorKey] ?? 'N/A')}
                       </td>
                     ))}
                   </tr>
                 ))
-              : (positionsData?.data || []).map((item: any) => (
+              : (positionsData?.data || []).map((item: DynamicRow) => (
                   <tr key={item.id} className="border-b">
                     <td className="w-1/2 border-r p-2 font-medium text-gray-600">
                       {item.label}
@@ -68,16 +67,16 @@ export const PositionsPreheatView = ({
           </thead>
           <tbody>
             {preCols.length > 0
-              ? (preheatData?.data || []).map((row: any) => (
+              ? (preheatData?.data || []).map((row: DynamicRow) => (
                   <tr key={row.id} className="border-b">
-                    {preCols.map((col: any) => (
+                    {preCols.map((col: DynamicColumn) => (
                       <td key={col.id} className="border-r p-2 last:border-r-0">
                         {String(row[col.accessorKey] ?? 'N/A')}
                       </td>
                     ))}
                   </tr>
                 ))
-              : (preheatData?.data || []).map((item: any) => (
+              : (preheatData?.data || []).map((item: DynamicRow) => (
                   <tr key={item.id} className="border-b">
                     <td className="w-1/2 border-r p-2 font-medium text-gray-600">
                       {item.label}

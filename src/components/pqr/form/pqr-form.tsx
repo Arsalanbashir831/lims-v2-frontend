@@ -1,12 +1,11 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
-
-
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardFooter } from "@/components/ui/card"
 import { toast } from "sonner"
+import { useCreatePQR, useUpdatePQR } from "@/hooks/use-pqr"
+import { useRouter } from "next/navigation"
 import { DynamicColumn, DynamicRow } from "./dynamic-table"
 import { HeaderInfoSection } from "./sections/header-info-section"
 import { JointsSection } from "./sections/joints-section"
@@ -27,7 +26,7 @@ import { SignatureSection } from "./sections/signature-section"
 
 export interface PQRFormData {
     headerInfo?: { columns: DynamicColumn[]; data: DynamicRow[] }
-    joints?: { columns: DynamicColumn[]; data: DynamicRow[]; designPhotoUrl?: string }
+    joints?: { columns: DynamicColumn[]; data: DynamicRow[]; designPhotoUrl?: string; designFiles?: File[] }
     baseMetals?: { columns: DynamicColumn[]; data: DynamicRow[] }
     fillerMetals?: { columns: DynamicColumn[]; data: DynamicRow[] }
     positions?: { columns: DynamicColumn[]; data: DynamicRow[] }
@@ -43,7 +42,7 @@ export interface PQRFormData {
     filletWeldTest?: { columns: DynamicColumn[]; data: DynamicRow[] }
     otherTests?: { columns: DynamicColumn[]; data: DynamicRow[] }
     welderTestingInfo?: { columns: DynamicColumn[]; data: DynamicRow[] }
-    certification?: { columns: DynamicColumn[]; data: DynamicRow[] }
+    certification?: { columns?: DynamicColumn[]; data?: { id: string; reference: string }[] }
     signatures?: { columns: DynamicColumn[]; data: DynamicRow[] }
 }
 
@@ -63,23 +62,43 @@ export function PQRForm({
     const [formData, setFormData] = useState<PQRFormData>(initialPqrData)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const didInitFromProps = useRef(false)
+    const hasInitialData = useRef(false)
+    
+    // Hooks for backend integration
+    const createPQRMutation = useCreatePQR()
+    const updatePQRMutation = useUpdatePQR()
+    const router = useRouter()
 
-    // Initialize from props only once to avoid loops when children call onUpdate
+    // Helper function to convert boolean to PQR type
+    const getPQRType = (isAsme: boolean): 'API_1104' | 'ASME_SEC_IX' => {
+        return isAsme ? 'ASME_SEC_IX' : 'API_1104'
+    }
+
+    // Initialize from props - handle both initial load and updates
     useEffect(() => {
-        if (didInitFromProps.current) return
         const hasAny = initialPqrData && Object.keys(initialPqrData).length > 0
         if (hasAny) {
             setFormData(initialPqrData)
+            didInitFromProps.current = true
+            hasInitialData.current = true
         }
-        didInitFromProps.current = true
     }, [initialPqrData])
 
-    // When the form type changes, reset the form so sections reinitialize with correct templates
+    // Reset form when switching between ASME/API modes for new forms only
+    // This only runs once when the component mounts or when explicitly switching form types
     useEffect(() => {
-        setFormData({})
-    }, [isAsme])
+        // Skip if we're in edit mode or have loaded initial data
+        if (pqrId || hasInitialData.current) {
+            return
+        }
+        
+        // Only reset if this is not the first render
+        if (didInitFromProps.current) {
+            setFormData({})
+        }
+    }, [isAsme, pqrId])
 
-    const handleSectionUpdate = useCallback((sectionId: keyof PQRFormData, sectionData: any) => {
+    const handleSectionUpdate = useCallback((sectionId: keyof PQRFormData, sectionData: PQRFormData[typeof sectionId]) => {
         setFormData((prevData) => ({
             ...prevData,
             [sectionId]: sectionData,
@@ -97,13 +116,146 @@ export function PQRForm({
         }
 
         try {
+            // Helper function to transform dynamic table data to flat object
+            const transformDynamicData = (sectionData: { columns?: DynamicColumn[]; data?: DynamicRow[] } | undefined): Record<string, string | number | boolean> => {
+                if (!sectionData?.data || !Array.isArray(sectionData.data)) return {}
+                
+                const result: Record<string, string | number | boolean> = {}
+                sectionData.data.forEach((row: DynamicRow) => {
+                    // Support both 'label' and 'description' fields
+                    const label = row.label || row.description
+                    const value = row.value
+                    if (label && value !== undefined && value !== null && value !== '') {
+                        // Convert label to snake_case key
+                        const key = String(label).toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+                        result[key] = value
+                    }
+                })
+                return result
+            }
+
+            // Extract welder_card_id and other welder testing info
+            let welderCardId = ""
+            let mechanicalTestingConductedBy = ""
+            let labTestNo = ""
+            
+            if (formData.welderTestingInfo?.data) {
+                const welderCardIdRow = formData.welderTestingInfo.data.find(row => row.label === "Welder Card ID")
+                const mechanicalTestingRow = formData.welderTestingInfo.data.find(row => row.label === "Mechanical Testing Conducted by")
+                const labTestRow = formData.welderTestingInfo.data.find(row => row.label === "Lab Test No.")
+                
+                if (welderCardIdRow) {
+                    welderCardId = welderCardIdRow.value as string || ""
+                }
+                if (mechanicalTestingRow) {
+                    mechanicalTestingConductedBy = mechanicalTestingRow.value as string || ""
+                }
+                if (labTestRow) {
+                    labTestNo = labTestRow.value as string || ""
+                }
+            }
+
+            // Transform header info to basic_info structure
+            const headerData = transformDynamicData(formData.headerInfo)
+            const basicInfo = {
+                pqr_number: String(headerData.pqr_no || ""),
+                date_qualified: String(headerData.date_of_issue || ""),
+                qualified_by: String(headerData.contractor_name || ""),
+                approved_by: String(headerData.client_end_user || "")
+            }
+
+            // Transform form data to backend format
+            const backendData = {
+                // Transform header info to basic_info format
+                basic_info: {
+                    ...basicInfo,
+                    ...transformDynamicData(formData.headerInfo)
+                },
+                
+                // Transform dynamic sections to flat objects with correct field names
+                joints: transformDynamicData(formData.joints),
+                base_metals: transformDynamicData(formData.baseMetals),
+                filler_metals: transformDynamicData(formData.fillerMetals),
+                positions: transformDynamicData(formData.positions),
+                preheat: transformDynamicData(formData.preheat),
+                post_weld_heat_treatment: transformDynamicData(formData.pwht),
+                gas: transformDynamicData(formData.gas),
+                electrical_characteristics: transformDynamicData(formData.electrical),
+                techniques: transformDynamicData(formData.techniques),
+                welding_parameters: transformDynamicData(formData.weldingParameters),
+                tensile_test: transformDynamicData(formData.tensileTest),
+                guided_bend_test: transformDynamicData(formData.guidedBendTest),
+                toughness_test: transformDynamicData(formData.toughnessTest),
+                fillet_weld_test: transformDynamicData(formData.filletWeldTest),
+                other_tests: transformDynamicData(formData.otherTests),
+                signatures: transformDynamicData(formData.signatures),
+                
+                // Add specific fields at top level
+                welder_card_id: String(welderCardId),
+                mechanical_testing_conducted_by: String(mechanicalTestingConductedBy),
+                lab_test_no: String(labTestNo),
+                
+                // Add certification data if available
+                ...(formData.certification?.data?.[0] && {
+                    law_name: String(formData.certification.data[0].reference || "")
+                }),
+                
+                type: getPQRType(isAsme)
+            }
+
+            // Debug: Log the data being sent
+            console.log("PQR Data being sent:", JSON.stringify(backendData, null, 2))
+            console.log("Type field value:", backendData.type)
+            console.log("isAsme value:", isAsme)
+            console.log("getPQRType result:", getPQRType(isAsme))
+            console.log("Type field in backendData:", backendData.type)
+
+            // Validate that we have at least some data to send
+            const hasData = Object.values(backendData).some(value => {
+                if (typeof value === 'object' && value !== null) {
+                    return Object.keys(value).length > 0
+                }
+                return value !== undefined && value !== null && value !== ''
+            })
+
+            if (!hasData) {
+                toast.error("Please fill in at least some data before submitting.")
+                setIsSubmitting(false)
+                return
+            }
+
+            // Extract files from joints section
+            const files = formData.joints?.designFiles || []
+
+            if (pqrId) {
+                // Update existing PQR
+                await updatePQRMutation.mutateAsync({
+                    id: pqrId,
+                    data: backendData,
+                    files: files
+                })
+                toast.success("PQR updated successfully!")
+            } else {
+                // Create new PQR
+                console.log("Calling createPQRMutation with data:", backendData)
+                console.log("Type in mutation data:", backendData.type)
+                await createPQRMutation.mutateAsync({
+                    data: backendData,
+                    files: files
+                })
+                toast.success("PQR created successfully!")
+            }
+
+            // Redirect to PQRs list page
+            router.push('/welders/pqr')
+
+            // Call custom onSubmit if provided
             if (onSubmit) {
                 onSubmit(formData)
-            } else {
-                toast.success(pqrId ? "Updated!" : "Saved!")
             }
         } catch (error) {
-            toast.error("Failed to save PQR Form data.")
+            console.error("Failed to save PQR:", error)
+            toast.error("Failed to save PQR. Please try again.")
         } finally {
             setIsSubmitting(false)
         }
@@ -111,79 +263,79 @@ export function PQRForm({
 
     // Create memoized update handlers for each section
     const updateHeaderInfo = useCallback(
-        (sectionData: any) => handleSectionUpdate("headerInfo", sectionData),
+        (sectionData: NonNullable<PQRFormData["headerInfo"]>) => handleSectionUpdate("headerInfo", sectionData),
         [handleSectionUpdate]
     )
     const updateJoints = useCallback(
-        (sectionData: any) => handleSectionUpdate("joints", sectionData),
+        (sectionData: NonNullable<PQRFormData["joints"]>) => handleSectionUpdate("joints", sectionData),
         [handleSectionUpdate]
     )
     const updateBaseMetals = useCallback(
-        (sectionData: any) => handleSectionUpdate("baseMetals", sectionData),
+        (sectionData: NonNullable<PQRFormData["baseMetals"]>) => handleSectionUpdate("baseMetals", sectionData),
         [handleSectionUpdate]
     )
     const updateFillerMetals = useCallback(
-        (sectionData: any) => handleSectionUpdate("fillerMetals", sectionData),
+        (sectionData: NonNullable<PQRFormData["fillerMetals"]>) => handleSectionUpdate("fillerMetals", sectionData),
         [handleSectionUpdate]
     )
     const updatePositions = useCallback(
-        (sectionData: any) => handleSectionUpdate("positions", sectionData),
+        (sectionData: NonNullable<PQRFormData["positions"]>) => handleSectionUpdate("positions", sectionData),
         [handleSectionUpdate]
     )
     const updatePreheat = useCallback(
-        (sectionData: any) => handleSectionUpdate("preheat", sectionData),
+        (sectionData: NonNullable<PQRFormData["preheat"]>) => handleSectionUpdate("preheat", sectionData),
         [handleSectionUpdate]
     )
     const updatePwht = useCallback(
-        (sectionData: any) => handleSectionUpdate("pwht", sectionData),
+        (sectionData: NonNullable<PQRFormData["pwht"]>) => handleSectionUpdate("pwht", sectionData),
         [handleSectionUpdate]
     )
     const updateGas = useCallback(
-        (sectionData: any) => handleSectionUpdate("gas", sectionData),
+        (sectionData: NonNullable<PQRFormData["gas"]>) => handleSectionUpdate("gas", sectionData),
         [handleSectionUpdate]
     )
     const updateElectrical = useCallback(
-        (sectionData: any) => handleSectionUpdate("electrical", sectionData),
+        (sectionData: NonNullable<PQRFormData["electrical"]>) => handleSectionUpdate("electrical", sectionData),
         [handleSectionUpdate]
     )
     const updateTechniques = useCallback(
-        (sectionData: any) => handleSectionUpdate("techniques", sectionData),
+        (sectionData: NonNullable<PQRFormData["techniques"]>) => handleSectionUpdate("techniques", sectionData),
         [handleSectionUpdate]
     )
     const updateWeldingParameters = useCallback(
-        (sectionData: any) => handleSectionUpdate("weldingParameters", sectionData),
+        (sectionData: NonNullable<PQRFormData["weldingParameters"]>) => handleSectionUpdate("weldingParameters", sectionData),
         [handleSectionUpdate]
     )
     const updateTensileTest = useCallback(
-        (sectionData: any) => handleSectionUpdate("tensileTest", sectionData),
+        (sectionData: NonNullable<PQRFormData["tensileTest"]>) => handleSectionUpdate("tensileTest", sectionData),
         [handleSectionUpdate]
     )
     const updateGuidedBendTest = useCallback(
-        (sectionData: any) => handleSectionUpdate("guidedBendTest", sectionData),
+        (sectionData: NonNullable<PQRFormData["guidedBendTest"]>) => handleSectionUpdate("guidedBendTest", sectionData),
         [handleSectionUpdate]
     )
     const updateToughnessTest = useCallback(
-        (sectionData: any) => handleSectionUpdate("toughnessTest", sectionData),
+        (sectionData: NonNullable<PQRFormData["toughnessTest"]>) => handleSectionUpdate("toughnessTest", sectionData),
         [handleSectionUpdate]
     )
     const updateFilletWeldTest = useCallback(
-        (sectionData: any) => handleSectionUpdate("filletWeldTest", sectionData),
+        (sectionData: NonNullable<PQRFormData["filletWeldTest"]>) => handleSectionUpdate("filletWeldTest", sectionData),
         [handleSectionUpdate]
     )
     const updateOtherTests = useCallback(
-        (sectionData: any) => handleSectionUpdate("otherTests", sectionData),
+        (sectionData: NonNullable<PQRFormData["otherTests"]>) => handleSectionUpdate("otherTests", sectionData),
         [handleSectionUpdate]
     )
     const updateWelderTestingInfo = useCallback(
-        (sectionData: any) => handleSectionUpdate("welderTestingInfo", sectionData),
+        (sectionData: NonNullable<PQRFormData["welderTestingInfo"]>) => handleSectionUpdate("welderTestingInfo", sectionData),
         [handleSectionUpdate]
     )
     const updateCertification = useCallback(
-        (sectionData: any) => handleSectionUpdate("certification", sectionData),
+        (sectionData: NonNullable<PQRFormData["certification"]>) => handleSectionUpdate("certification", sectionData),
         [handleSectionUpdate]
     )
     const updateSignatures = useCallback(
-        (sectionData: any) => handleSectionUpdate("signatures", sectionData),
+        (sectionData: NonNullable<PQRFormData["signatures"]>) => handleSectionUpdate("signatures", sectionData),
         [handleSectionUpdate]
     )
 
@@ -282,6 +434,7 @@ export function PQRForm({
             <CertificationSection
                 key={`cert-${isAsme}`}
                 onUpdate={updateCertification}
+                initialSectionData={formData.certification}
             />
             <SignatureSection
                 key={`sig-${isAsme}`}
@@ -291,8 +444,12 @@ export function PQRForm({
 
 <div className="flex justify-end">
 
-            <Button type="submit" size="lg" disabled={isSubmitting}>
-                {isSubmitting
+            <Button 
+                type="submit" 
+                size="lg" 
+                disabled={isSubmitting || createPQRMutation.isPending || updatePQRMutation.isPending}
+            >
+                {isSubmitting || createPQRMutation.isPending || updatePQRMutation.isPending
                     ? pqrId
                     ? "Updating..."
                     : "Submitting..."

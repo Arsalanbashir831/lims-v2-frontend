@@ -1,8 +1,10 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 
 import { getSectionDataByAccessor } from '@/lib/pqr-utils';
+import { SectionData } from '../types';
+import { DynamicColumn, DynamicRow } from '../../form/dynamic-table';
 
-export const FillerMetalsView = ({ fillerMetalsData, isAsme }: { fillerMetalsData: any; isAsme: boolean }) => {
+
+export const FillerMetalsView = ({ fillerMetalsData, isAsme }: { fillerMetalsData: SectionData; isAsme: boolean }) => {
   if (!fillerMetalsData || !fillerMetalsData.data) {
     return (
       <p className="text-muted-foreground p-4 text-sm">
@@ -27,11 +29,11 @@ export const FillerMetalsView = ({ fillerMetalsData, isAsme }: { fillerMetalsDat
             </tr>
           </thead>
           <tbody>
-            {(fillerMetalsData.data || []).map((row: any) => (
+            {(fillerMetalsData.data || []).map((row: DynamicRow) => (
               <tr key={row.id} className="border-b">
-                {columns.map((col: any) => (
+                {columns.map((col: DynamicColumn) => (
                   <td key={col.id} className="border-r p-2 last:border-r-0">
-                    {getSectionDataByAccessor(row, col.accessorKey) as any}
+                    {getSectionDataByAccessor(row, col.accessorKey)}
                   </td>
                 ))}
               </tr>
@@ -59,7 +61,7 @@ export const FillerMetalsView = ({ fillerMetalsData, isAsme }: { fillerMetalsDat
         <thead>
           <tr className="border-y dark:bg-sidebar">
             <th
-              colSpan={2 as any}
+              colSpan={2}
               className="p-2 text-left font-semibold"
             >
               FILLER METALS {isAsme && '(QW-404)'}
@@ -67,7 +69,7 @@ export const FillerMetalsView = ({ fillerMetalsData, isAsme }: { fillerMetalsDat
           </tr>
         </thead>
         <tbody>
-          {(fillerMetalsData.data || []).map((item: any) => (
+          {(fillerMetalsData.data || []).map((item: DynamicRow) => (
             <tr key={item.id} className="border-b">
               <td className="w-1/3 border-r p-2 font-medium text-gray-600 dark:text-gray-300">
                 {item.label || item.description || 'N/A'}

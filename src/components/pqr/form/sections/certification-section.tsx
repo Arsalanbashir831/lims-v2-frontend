@@ -1,12 +1,12 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { useEffect, useState } from "react"
 
+import { DynamicColumn } from "../dynamic-table"
+
 interface CertificationSectionProps {
-  onUpdate: (sectionData: { columns: any[]; data: { id: string; reference: string }[] }) => void
-  initialSectionData?: { columns?: any[]; data?: { id: string; reference: string }[] }
+  onUpdate: (sectionData: { columns: DynamicColumn[]; data: { id: string; reference: string }[] }) => void
+  initialSectionData?: { columns?: DynamicColumn[]; data?: { id: string; reference: string }[] }
 }
 
 export function CertificationSection({ onUpdate, initialSectionData }: CertificationSectionProps) {

@@ -1,6 +1,5 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 
-export const SignatureView = ({ signatureData }: { signatureData: any }) => {
+export const SignatureView = ({ signatureData }: { signatureData: SectionData }) => {
   if (
     !signatureData ||
     !signatureData.data ||

@@ -1,8 +1,8 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
-
 import { getSectionDataByAccessor } from '@/lib/pqr-utils';
+import { SectionData } from '../types';
+import { DynamicColumn, DynamicRow } from '../../form/dynamic-table';
 
-export const PWHTGasView = ({ pwhtData, gasData, isAsme }: { pwhtData: any; gasData: any; isAsme: boolean }) => {
+export const PWHTGasView = ({ pwhtData, gasData, isAsme }: { pwhtData: SectionData; gasData: SectionData; isAsme: boolean }) => {
   const pwhtCols = pwhtData?.columns || [];
   const gasCols = gasData?.columns || [];
 
@@ -22,16 +22,16 @@ export const PWHTGasView = ({ pwhtData, gasData, isAsme }: { pwhtData: any; gasD
           </thead>
           <tbody>
             {pwhtCols.length > 0
-              ? (pwhtData?.data || []).map((row: any) => (
+              ? (pwhtData?.data || []).map((row: DynamicRow) => (
                   <tr key={row.id} className="border-b">
-                    {pwhtCols.map((col: any) => (
+                    {pwhtCols.map((col: DynamicColumn) => (
                       <td key={col.id} className="border-r p-2 last:border-r-0">
-                        {getSectionDataByAccessor(row, col.accessorKey) as any}
+                        {getSectionDataByAccessor(row, col.accessorKey)}
                       </td>
                     ))}
                   </tr>
                 ))
-              : (pwhtData?.data || []).map((item: any) => (
+              : (pwhtData?.data || []).map((item: DynamicRow) => (
                   <tr key={item.id} className="border-b">
                     <td className="w-1/2 border-r p-2 font-medium text-gray-600">
                       {item.label}
@@ -65,7 +65,7 @@ export const PWHTGasView = ({ pwhtData, gasData, isAsme }: { pwhtData: any; gasD
             </tr>
             {gasCols.length > 0 && (
               <tr className="border-y dark:bg-sidebar">
-                {gasCols.map((col: any) => (
+                {gasCols.map((col: DynamicColumn) => (
                   <th
                     key={col.id}
                     className="border-r p-2 font-medium text-gray-600 dark:text-gray-300 last:border-r-0"
@@ -77,11 +77,11 @@ export const PWHTGasView = ({ pwhtData, gasData, isAsme }: { pwhtData: any; gasD
             )}
           </thead>
           <tbody>
-            {(gasData?.data || []).map((row: any) => (
+            {(gasData?.data || []).map((row: DynamicRow) => (
               <tr key={row.id} className="border-b">
-                {gasCols.map((col: any) => (
+                {gasCols.map((col: DynamicColumn) => (
                   <td key={col.id} className="border-r p-2 last:border-r-0">
-                    {getSectionDataByAccessor(row, col.accessorKey) as any}
+                    {getSectionDataByAccessor(row, col.accessorKey)}
                   </td>
                 ))}
               </tr>

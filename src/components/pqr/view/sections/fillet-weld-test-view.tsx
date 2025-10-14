@@ -1,9 +1,11 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 
 import React from 'react';
 import { getSectionDataByAccessor } from '@/lib/pqr-utils';
+import { SectionData } from '../types';
+import { DynamicColumn, DynamicRow } from '../../form/dynamic-table';
 
-export const FilletWeldTestView = ({ filletWeldTestData, isAsme }: { filletWeldTestData: any; isAsme: boolean }) => {
+
+export const FilletWeldTestView = ({ filletWeldTestData, isAsme }: { filletWeldTestData: SectionData; isAsme: boolean }) => {
   const cols = filletWeldTestData?.columns || [];
   const rows = filletWeldTestData?.data || [];
 
@@ -28,7 +30,7 @@ export const FilletWeldTestView = ({ filletWeldTestData, isAsme }: { filletWeldT
             </th>
           </tr>
           <tr className="border-y dark:bg-sidebar">
-            {cols.map((col: any, i: number) => (
+            {cols.map((col: DynamicColumn, i: number) => (
               <th
                 key={col.id}
                 className={
@@ -42,14 +44,14 @@ export const FilletWeldTestView = ({ filletWeldTestData, isAsme }: { filletWeldT
           </tr>
         </thead>
         <tbody>
-          {rows.map((row: any) => (
+          {rows.map((row: DynamicRow) => (
             <tr key={row.id} className="border-b">
-              {cols.map((col: any, i: number) => (
+              {cols.map((col: DynamicColumn, i: number) => (
                 <td
                   key={col.id}
                   className={'p-2' + (i < cols.length - 1 ? ' border-r' : '')}
                 >
-                  {getSectionDataByAccessor(row, col.accessorKey) as any}
+                  {getSectionDataByAccessor(row, col.accessorKey)}
                 </td>
               ))}
             </tr>

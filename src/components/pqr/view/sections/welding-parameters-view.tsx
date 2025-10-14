@@ -1,8 +1,12 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
-
 import { getSectionDataByAccessor } from '@/lib/pqr-utils';
+import { DynamicColumn, DynamicRow } from '../../form/dynamic-table';
 
-export const WeldingParametersView = ({ weldingParamsData }: { weldingParamsData: any }) => {
+interface SectionData {
+  columns: DynamicColumn[];
+  data: DynamicRow[];
+}
+
+export const WeldingParametersView = ({ weldingParamsData }: { weldingParamsData: SectionData }) => {
   if (!weldingParamsData || !weldingParamsData.data)
     return (
       <p className="text-muted-foreground p-4 text-sm">
@@ -23,7 +27,7 @@ export const WeldingParametersView = ({ weldingParamsData }: { weldingParamsData
             </th>
           </tr>
           <tr className="border-y dark:bg-sidebar">
-            {columns.map((col: any) => (
+            {columns.map((col: DynamicColumn) => (
               <th
                 key={col.id}
                 className="border-r p-2 font-medium text-gray-600 dark:text-gray-300 last:border-r-0"
@@ -34,11 +38,11 @@ export const WeldingParametersView = ({ weldingParamsData }: { weldingParamsData
           </tr>
         </thead>
         <tbody>
-          {weldingParamsData.data.map((row: any) => (
+          {weldingParamsData.data.map((row: DynamicRow) => (
             <tr key={row.id} className="border-b">
-              {columns.map((col: any) => (
+              {columns.map((col: DynamicColumn) => (
                 <td key={col.id} className="border-r p-2 last:border-r-0">
-                  {getSectionDataByAccessor(row, col.accessorKey) as any}
+                  {getSectionDataByAccessor(row, col.accessorKey)}
                 </td>
               ))}
             </tr>

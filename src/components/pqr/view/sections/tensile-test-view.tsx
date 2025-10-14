@@ -1,8 +1,10 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 
 import { getSectionDataByAccessor } from '@/lib/pqr-utils';
+import { SectionData } from '../types';
+import { DynamicColumn, DynamicRow } from '../../form/dynamic-table';
 
-export const TensileTestView = ({ tensileTestData, isAsme }: { tensileTestData: any; isAsme: boolean }) => {
+
+export const TensileTestView = ({ tensileTestData, isAsme }: { tensileTestData: SectionData; isAsme: boolean }) => {
   if (!tensileTestData || !tensileTestData.data)
     return (
       <p className="text-muted-foreground p-4 text-sm">
@@ -23,7 +25,7 @@ export const TensileTestView = ({ tensileTestData, isAsme }: { tensileTestData: 
             </th>
           </tr>
           <tr className="border-y dark:bg-sidebar">
-            {columns.map((col: any) => (
+            {columns.map((col: DynamicColumn) => (
               <th
                 key={col.id}
                 className="border-r p-2 font-medium text-gray-600 dark:text-gray-300 last:border-r-0"
@@ -34,11 +36,11 @@ export const TensileTestView = ({ tensileTestData, isAsme }: { tensileTestData: 
           </tr>
         </thead>
         <tbody>
-          {tensileTestData.data.map((row: any) => (
+          {tensileTestData.data.map((row: DynamicRow) => (
             <tr key={row.id} className="border-b">
-              {columns.map((col: any) => (
+              {columns.map((col: DynamicColumn) => (
                 <td key={col.id} className="border-r p-2 last:border-r-0">
-                  {getSectionDataByAccessor(row, col.accessorKey) as any}
+                  {getSectionDataByAccessor(row, col.accessorKey)}
                 </td>
               ))}
             </tr>

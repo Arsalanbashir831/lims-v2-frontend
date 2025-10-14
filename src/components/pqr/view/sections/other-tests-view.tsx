@@ -1,8 +1,7 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 
 import React from 'react';
 
-export const OtherTestsView = ({ otherTestsData }: { otherTestsData: any }) => {
+export const OtherTestsView = ({ otherTestsData }: { otherTestsData: SectionData }) => {
   const cols = otherTestsData?.columns || [];
   const rows = otherTestsData?.data || [];
 
@@ -27,7 +26,7 @@ export const OtherTestsView = ({ otherTestsData }: { otherTestsData: any }) => {
             </th>
           </tr>
           <tr className="border-y dark:bg-sidebar">
-            {cols.map((col: any) => (
+            {cols.map((col: DynamicColumn) => (
               <th
                 key={col.id}
                 className={'p-2 font-medium text-gray-600 dark:text-gray-300' + (cols.indexOf(col) < cols.length - 1 ? ' border-r' : '')}
@@ -38,9 +37,9 @@ export const OtherTestsView = ({ otherTestsData }: { otherTestsData: any }) => {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row: any) => (
+          {rows.map((row: DynamicRow) => (
             <tr key={row.id} className="border-b">
-              {cols.map((col: any, i: number) => (
+              {cols.map((col: DynamicColumn, i: number) => (
                 <td
                   key={col.id}
                   className={'p-2' + (i < cols.length - 1 ? ' border-r' : '')}

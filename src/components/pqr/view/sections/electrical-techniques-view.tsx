@@ -1,10 +1,9 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 
 export const ElectricalTechniquesView = ({
   electricalData,
   techniquesData,
   isAsme,
-}: { electricalData: any; techniquesData: any; isAsme: boolean }) => {
+}: { electricalData: DynamicRow; techniquesData: DynamicRow; isAsme: boolean }) => {
   const eCols = electricalData?.columns || [];
   const tCols = techniquesData?.columns || [];
 
@@ -24,16 +23,16 @@ export const ElectricalTechniquesView = ({
           </thead>
           <tbody>
             {eCols.length > 0
-              ? (electricalData?.data || []).map((row: any) => (
+              ? (electricalData?.data || []).map((row: DynamicRow) => (
                   <tr key={row.id} className="border-b">
-                    {eCols.map((col: any) => (
+                    {eCols.map((col: DynamicColumn) => (
                       <td key={col.id} className="border-r p-2 last:border-r-0">
                         {String(row[col.accessorKey] ?? 'N/A')}
                       </td>
                     ))}
                   </tr>
                 ))
-              : (electricalData?.data || []).map((item: any) => (
+              : (electricalData?.data || []).map((item: DynamicRow) => (
                   <tr key={item.id} className="border-b">
                     <td className="w-1/2 border-r p-2 font-medium text-gray-600">
                       {item.label}
@@ -69,16 +68,16 @@ export const ElectricalTechniquesView = ({
           </thead>
           <tbody>
             {tCols.length > 0
-              ? (techniquesData?.data || []).map((row: any) => (
+              ? (techniquesData?.data || []).map((row: DynamicRow) => (
                   <tr key={row.id} className="border-b">
-                    {tCols.map((col: any) => (
+                    {tCols.map((col: DynamicColumn) => (
                       <td key={col.id} className="border-r p-2 last:border-r-0">
                         {String(row[col.accessorKey] ?? 'N/A')}
                       </td>
                     ))}
                   </tr>
                 ))
-              : (techniquesData?.data || []).map((item: any) => (
+              : (techniquesData?.data || []).map((item: DynamicRow) => (
                   <tr key={item.id} className="border-b">
                     <td className="w-1/2 border-r p-2 font-medium text-gray-600">
                       {item.label}

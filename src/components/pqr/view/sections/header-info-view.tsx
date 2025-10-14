@@ -1,8 +1,12 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
-
 import { getSectionDataByAccessor } from '@/lib/pqr-utils';
+import { DynamicColumn, DynamicRow } from '../../form/dynamic-table';
 
-export const HeaderInfoView = ({ headerInfoData }: { headerInfoData: any }) => {
+interface SectionData {
+  columns: DynamicColumn[];
+  data: DynamicRow[];
+}
+
+export const HeaderInfoView = ({ headerInfoData }: { headerInfoData: SectionData }) => {
   if (!headerInfoData || !headerInfoData.data) {
     return (
       <p className="text-muted-foreground p-4 text-sm">
@@ -28,11 +32,11 @@ export const HeaderInfoView = ({ headerInfoData }: { headerInfoData: any }) => {
             </tr>
           </thead>
           <tbody>
-            {(headerInfoData.data || []).map((row: any) => (
+            {(headerInfoData.data || []).map((row) => (
               <tr key={row.id} className="border-b">
-                {columns.map((col: any) => (
+                {columns.map((col) => (
                   <td key={col.id} className="border-r p-2 last:border-r-0">
-                    {getSectionDataByAccessor(row, col.accessorKey) as any}
+                    {getSectionDataByAccessor(row, col.accessorKey)}
                   </td>
                 ))}
               </tr>
@@ -54,7 +58,7 @@ export const HeaderInfoView = ({ headerInfoData }: { headerInfoData: any }) => {
   }
 
   // Fallback to 2xN paired layout when columns are not defined
-  const pairedData: any[] = [];
+  const pairedData: (DynamicRow | undefined)[][] = [];
   for (let i = 0; i < (headerInfoData.data || []).length; i += 2) {
     pairedData.push([
       headerInfoData.data[i],
@@ -68,7 +72,7 @@ export const HeaderInfoView = ({ headerInfoData }: { headerInfoData: any }) => {
         <thead>
           <tr className="bg-gray-100">
             <th
-              colSpan={4 as any}
+              colSpan={4}
               className="p-2 text-center font-semibold text-gray-700"
             >
               WELDING PROCEDURE QUALIFICATION RECORD (PQR)
@@ -76,7 +80,7 @@ export const HeaderInfoView = ({ headerInfoData }: { headerInfoData: any }) => {
           </tr>
         </thead>
         <tbody>
-          {pairedData.map((rowPair: any[], rowIndex: number) => (
+          {pairedData.map((rowPair, rowIndex: number) => (
             <tr key={rowIndex} className="border-b">
               <td className="w-1/4 border-r p-2 font-medium text-gray-600">
                 {rowPair[0]?.description || 'N/A'}

@@ -10,166 +10,150 @@ import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { DataTablePagination } from "@/components/ui/data-table-pagination"
 import { FilterSearch } from "@/components/ui/filter-search"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
-// import { pqrService } from "@/services/pqr.service"
-// Define PqrRecord locally for now
-interface PqrRecord {
-  id: string
-  contractorName?: string
-  pqrNo?: string
-  supportingPwpsNo?: string
-  dateOfIssue?: string
-  dateOfWelding?: string
-  biNumber?: string
-  clientEndUser?: string
-  dateOfTesting?: string
-}
 import { toast } from "sonner"
 import { EyeIcon, PencilIcon, TrashIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
-  import { savePqrForm } from "@/lib/pqr-form-store"
-  import { useRouter } from "next/navigation"
+import { savePqrForm } from "@/lib/pqr-form-store"
+import { useRouter } from "next/navigation"
+import { usePQRs, useDeletePQR } from "@/hooks/use-pqr"
+import { PQR } from "@/services/pqr.service"
 
 export default function PQRPage() {
   const router = useRouter()
-
-  const [items, setItems] = useState<PqrRecord[]>([])
   const [query, setQuery] = useState("")
-  const reload = useCallback(async () => {
-    try {
-      // const data = await pqrService.getAll()
-      setItems([])
-    } catch (error) {
-      console.error("Failed to load PQRs:", error)
-    }
-  }, [])
-  useEffect(() => { reload() }, [])
+  const [page, setPage] = useState(1)
+  const limit = 10
+
+  // Use the PQR hooks
+  const { data: pqrResponse, isLoading, error } = usePQRs(page, query, limit)
+  const deletePQRMutation = useDeletePQR()
+
+  const items = pqrResponse?.data || []
 
   const filtered = useMemo(() => {
     if (!query.trim()) return items
     const q = query.toLowerCase()
     return items.filter((r) =>
-      (r.contractorName ?? "").toLowerCase().includes(q) ||
-      (r.pqrNo ?? "").toLowerCase().includes(q) ||
-      (r.supportingPwpsNo ?? "").toLowerCase().includes(q) ||
-      (r.biNumber ?? "").toLowerCase().includes(q) ||
-      (r.clientEndUser ?? "").toLowerCase().includes(q)
+      (r.basic_info?.qualified_by ?? "").toLowerCase().includes(q) ||
+      (r.basic_info?.pqr_number ?? "").toLowerCase().includes(q) ||
+      (r.welder_card_info?.card_no ?? "").toLowerCase().includes(q) ||
+      (r.basic_info?.approved_by ?? "").toLowerCase().includes(q)
     )
   }, [items, query])
 
   const doDelete = useCallback(async (id: string) => {
     try {
-      // await pqrService.delete(id)
-      toast.success("Deleted")
-      reload()
+      await deletePQRMutation.mutateAsync(id)
+      toast.success("PQR deleted successfully")
     } catch (error) {
       console.error("Failed to delete PQR:", error)
       toast.error("Failed to delete PQR")
     }
-  }, [reload])
+  }, [deletePQRMutation])
 
-  const seedDummy = useCallback((id: string) => {
-    // minimal dummy full form data just to render preview
-    savePqrForm(id, {
-      headerInfo: {
-        columns: [],
-        data: [
-          { id: "s1r1", description: "Contractor Name", value: "ACME Corp" },
-          { id: "s1r3", description: "PQR No.", value: "PQR-001" },
-          { id: "s1r5", description: "Supporting PWPS No.", value: "PWPS-42" },
-          { id: "s1r6", description: "Date of Issue", value: "2025-01-15" },
-          { id: "s1r8", description: "Date of Welding", value: "2025-01-20" },
-          { id: "s1r11", description: "BI #", value: "BI-7788" },
-          { id: "s1r13", description: "Client/End User", value: "Globex" },
-          { id: "s1r14", description: "Date of Testing", value: "2025-01-25" },
-        ],
-      },
-      baseMetals: { columns: [], data: [] },
-      fillerMetals: { columns: [], data: [] },
-      positions: { columns: [], data: [] },
-      preheat: { columns: [], data: [] },
-      pwht: { columns: [], data: [] },
-      gas: { columns: [], data: [] },
-      electrical: { columns: [], data: [] },
-      techniques: { columns: [], data: [] },
-      weldingParameters: { columns: [], data: [] },
-      tensileTest: { columns: [], data: [] },
-      guidedBendTest: { columns: [], data: [] },
-      toughnessTest: { columns: [], data: [] },
-      filletWeldTest: { columns: [], data: [] },
-      otherTests: { columns: [], data: [] },
-      welderTestingInfo: { columns: [], data: [] },
-      certification: { columns: [], data: [{ id: "cert-ref", reference: "ASME SEC IX" }] },
-      signatures: { columns: [], data: [] },
-    })
-  }, [])
-
-  const columns: ColumnDef<PqrRecord>[] = useMemo(() => [
+  const columns: ColumnDef<PQR>[] = useMemo(() => [
     { id: "select", header: ({ table }) => (<Checkbox className="size-4" checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")} onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)} aria-label="Select all" />), cell: ({ row }) => (<Checkbox className="size-4" checked={row.getIsSelected()} onCheckedChange={(v) => row.toggleSelected(!!v)} aria-label="Select row" />), meta: { className: "w-fit min-w-fit px-4" }, enableSorting: false, enableHiding: false },
     { id: "rowNumber", header: "S.No", cell: ({ row }) => row.index + 1, meta: { className: "w-fit min-w-fit px-4" }, enableSorting: false, enableHiding: false },
-    { accessorKey: "contractorName", header: ({ column }) => <DataTableColumnHeader column={column} title="Contractor Name" /> },
-    { accessorKey: "pqrNo", header: ({ column }) => <DataTableColumnHeader column={column} title="PQR No." /> },
-    { accessorKey: "supportingPwpsNo", header: ({ column }) => <DataTableColumnHeader column={column} title="Supporting PWPS No." /> },
-    { accessorKey: "dateOfIssue", header: ({ column }) => <DataTableColumnHeader column={column} title="Date of Issue" /> },
-    { accessorKey: "dateOfWelding", header: ({ column }) => <DataTableColumnHeader column={column} title="Date of Welding" /> },
-    { accessorKey: "biNumber", header: ({ column }) => <DataTableColumnHeader column={column} title="BI #" /> },
-    { accessorKey: "clientEndUser", header: ({ column }) => <DataTableColumnHeader column={column} title="Client/End User" /> },
-    { accessorKey: "dateOfTesting", header: ({ column }) => <DataTableColumnHeader column={column} title="Date of Testing" /> },
+    { 
+      id: "pqr_number", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="PQR No." />,
+      cell: ({ row }) => row.original.basic_info?.pqr_number || "-"
+    },
+    { 
+      id: "qualified_by", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Qualified By" />,
+      cell: ({ row }) => row.original.basic_info?.qualified_by || "-"
+    },
+    { 
+      id: "approved_by", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Approved By" />,
+      cell: ({ row }) => row.original.basic_info?.approved_by || "-"
+    },
+    { 
+      id: "date_qualified", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Date Qualified" />,
+      cell: ({ row }) => row.original.basic_info?.date_qualified || "-"
+    },
+    { 
+      id: "welder_card", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Welder Card" />,
+      cell: ({ row }) => row.original.welder_card_info?.card_no || "-"
+    },
+    { 
+      id: "type", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
+      cell: ({ row }) => row.original.type || "-"
+    },
     {
       id: "actions",
       header: () => "Actions",
       cell: ({ row }) => (
         <div className="text-right space-x-2 inline-flex">
           <Button variant="secondary" size="sm" asChild>
+            <Link href={ROUTES.APP.WELDERS.PQR.VIEW(row.original.id)}><EyeIcon className="w-4 h-4" /></Link>
+          </Button>
+          <Button variant="secondary" size="sm" asChild>
             <Link href={ROUTES.APP.WELDERS.PQR.EDIT(row.original.id)}><PencilIcon className="w-4 h-4" /></Link>
           </Button>
-          <ConfirmPopover title="Delete this record?" confirmText="Delete" onConfirm={() => doDelete(row.original.id)} trigger={<Button variant="destructive" size="sm"><TrashIcon className="w-4 h-4" /></Button>} />
+          <ConfirmPopover title="Delete this PQR?" confirmText="Delete" onConfirm={() => doDelete(row.original.id)} trigger={<Button variant="destructive" size="sm"><TrashIcon className="w-4 h-4" /></Button>} />
         </div>
       ),
     },
-  ], [doDelete, seedDummy])
+  ], [doDelete])
+
+  const toolbarCallback = useCallback((table: TanstackTable<PQR>) => {
+    const selected = table.getSelectedRowModel().rows
+    const hasSelected = selected.length > 0
+    const onBulkDelete = () => {
+      const ids = selected.map(r => r.original.id)
+      ids.forEach(id => doDelete(id))
+      table.resetRowSelection()
+    }
+    return (
+      <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
+        <FilterSearch
+          placeholder="Search PQRs..."
+          value={query}
+          onChange={setQuery}
+          className="w-full"
+          inputClassName="max-w-md"
+        />
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <DataTableViewOptions table={table} />
+          {hasSelected && (
+            <ConfirmPopover title={`Delete ${selected.length} selected PQR(s)?`} confirmText="Delete" onConfirm={onBulkDelete} trigger={<Button variant="destructive" size="sm">Delete selected ({selected.length})</Button>} />
+          )}
+          <Button asChild size="sm">
+            <Link href={ROUTES.APP.WELDERS.PQR.NEW}>New PQR</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }, [doDelete, query])
+
+  const footerCallback = useCallback((table: TanstackTable<PQR>) => <DataTablePagination table={table} />, [])
+
+  // Handle loading and error states after all hooks
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-8">Loading PQRs...</div>
+  }
+
+  if (error) {
+    return <div className="flex items-center justify-center p-8 text-red-500">Error loading PQRs: {error.message}</div>
+  }
 
   return (
-
     <DataTable
       columns={columns}
       data={filtered}
-      empty={<span className="text-muted-foreground">No PQRs yet</span>}
-      pageSize={10}
+      empty={<span className="text-muted-foreground">No PQRs found</span>}
+      pageSize={limit}
       tableKey="pqr"
       onRowClick={(row) => router.push(ROUTES.APP.WELDERS.PQR.VIEW(row.original.id))}
-      toolbar={useCallback((table: TanstackTable<PqrRecord>) => {
-        const selected = table.getSelectedRowModel().rows
-        const hasSelected = selected.length > 0
-        const onBulkDelete = () => {
-          const ids = selected.map(r => r.original.id)
-          ids.forEach(id => doDelete(id))
-          table.resetRowSelection()
-        }
-        return (
-          <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
-            <FilterSearch
-              placeholder="Search PQRs..."
-              value={(table.getColumn("contractorName")?.getFilterValue() as string) ?? ""}
-              onChange={(value) => table.getColumn("contractorName")?.setFilterValue(value)}
-              className="w-full"
-              inputClassName="max-w-md"
-            />
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              <DataTableViewOptions table={table} />
-              {hasSelected && (
-                <ConfirmPopover title={`Delete ${selected.length} selected item(s)?`} confirmText="Delete" onConfirm={onBulkDelete} trigger={<Button variant="destructive" size="sm">Delete selected ({selected.length})</Button>} />
-              )}
-              <Button asChild size="sm">
-                <Link href={ROUTES.APP.WELDERS.PQR.NEW}>New PQR</Link>
-              </Button>
-            </div>
-          </div>
-        )
-      }, [doDelete])}
-      footer={useCallback((table: TanstackTable<PqrRecord>) => <DataTablePagination table={table} />, [])}
+      toolbar={toolbarCallback}
+      footer={footerCallback}
     />
-
   )
 }

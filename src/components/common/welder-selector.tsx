@@ -38,15 +38,20 @@ export function WelderSelector({
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  // Use the welders hook with debounced search
-  const { data: weldersData, isLoading, error } = useWelders(1, debouncedSearchQuery, 50)
-  
-  // Get welder cards data to show card information
-  const { data: welderCardsData } = useWelderCards(1, "", 100)
+  // Use only welder cards API which has all the information
+  const { data: welderCardsData, isLoading, error } = useWelderCards(1, debouncedSearchQuery, 100)
 
-  // Extract welders from the response
-  const welders = weldersData?.results || []
-  const welderCards = welderCardsData?.results || []
+  // Extract welders from the welder cards response
+  const welders = welderCardsData?.results?.map(card => ({
+    id: card.welder_id,
+    operator_name: card.welder_info?.operator_name || "",
+    operator_id: card.welder_info?.operator_id || "",
+    iqama: card.welder_info?.iqama || "",
+    profile_image: card.welder_info?.profile_image,
+    is_active: true, // Default value
+    created_at: new Date(), // Default value
+    updated_at: new Date(), // Default value
+  })) || []
 
   // Find selected welder
   const selectedWelder = useMemo(() => {
@@ -56,11 +61,22 @@ export function WelderSelector({
   const handleSelect = useCallback((welderId: string) => {
     const welder = welders.find(w => w.id === welderId)
     if (welder) {
-      onValueChange(welderId, welder)
+      // Find the welder card for this welder to get complete data
+      const welderCard = welderCardsData?.results?.find(card => card.welder_id === welderId)
+      
+      // Merge welder data with card data
+      const completeWelderData = {
+        ...welder,
+        card_id: welderCard?.id,
+        card_no: welderCard?.card_no,
+        company: welderCard?.company,
+      }
+      
+      onValueChange(welderId, completeWelderData)
       setOpen(false)
       setSearchQuery("")
     }
-  }, [welders, onValueChange])
+  }, [welders, welderCardsData, onValueChange])
 
   const handleClear = useCallback(() => {
     onValueChange(undefined, undefined)
@@ -114,9 +130,6 @@ export function WelderSelector({
             ) : (
               <CommandGroup>
                 {welders.map((welder) => {
-                  // Find welder cards for this welder
-                  const welderCardsForWelder = welderCards.filter(card => card.welder_id === welder.id)
-                  
                   return (
                     <CommandItem
                       key={welder.id}
@@ -128,11 +141,6 @@ export function WelderSelector({
                         <div className="flex flex-col items-start">
                           <p className="font-medium">{welder.operator_name}</p>
                           <p className="text-sm text-muted-foreground">ID: {welder.operator_id} | IQAMA: {welder.iqama}</p>
-                          {welderCardsForWelder.length > 0 && (
-                            <p className="text-xs text-blue-600">
-                              Cards: {welderCardsForWelder.map(card => card.card_no).join(", ")}
-                            </p>
-                          )}
                         </div>
                         <Check
                           className={cn(

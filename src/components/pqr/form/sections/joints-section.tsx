@@ -14,13 +14,13 @@ interface JointsSectionState {
   columns: DynamicColumn[]
   data: DynamicRow[]
   designPhotoUrl?: string
-  designPhotoFile: File | null
+  designFiles: File[]
 }
 
 interface JointsSectionProps {
   isAsme: boolean
-  onUpdate: (sectionData: { columns: DynamicColumn[]; data: DynamicRow[]; designPhotoUrl?: string }) => void
-  initialSectionData?: { columns: DynamicColumn[]; data: DynamicRow[]; designPhotoUrl?: string }
+  onUpdate: (sectionData: { columns: DynamicColumn[]; data: DynamicRow[]; designPhotoUrl?: string; designFiles?: File[] }) => void
+  initialSectionData?: { columns: DynamicColumn[]; data: DynamicRow[]; designPhotoUrl?: string; designFiles?: File[] }
   pqrId?: string
 }
 
@@ -52,7 +52,7 @@ export function JointsSection({
     columns: initialSectionData?.columns || initialCols,
     data: initialSectionData?.data || defaultData,
     designPhotoUrl: initialSectionData?.designPhotoUrl || "",
-    designPhotoFile: null,
+    designFiles: initialSectionData?.designFiles || [],
   }
 
   // Local state for entire section
@@ -60,7 +60,12 @@ export function JointsSection({
 
   // Propagate to formData.joints on any change
   useEffect(() => {
-    onUpdate({ columns: sectionState.columns, data: sectionState.data, designPhotoUrl: sectionState.designPhotoUrl })
+    onUpdate({ 
+      columns: sectionState.columns, 
+      data: sectionState.data, 
+      designPhotoUrl: sectionState.designPhotoUrl,
+      designFiles: sectionState.designFiles
+    })
   }, [sectionState, onUpdate])
 
   // Helper: when the table itself changes, update state.columns/data
@@ -71,25 +76,41 @@ export function JointsSection({
     []
   )
 
-  // File input handler
+  // File input handler for multiple files
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
 
-    const localUrl = URL.createObjectURL(file)
+    // Create preview URL for the first file
+    const firstFile = files[0]
+    const localUrl = URL.createObjectURL(firstFile)
+    
     setSectionState((prev) => ({
       ...prev,
-      designPhotoFile: file,
-      designPhotoUrl: localUrl,
+      designFiles: [...prev.designFiles, ...files],
+      designPhotoUrl: localUrl, // Show first file as preview
     }))
   }
 
-  // Delete handler
-  const handleDeletePhoto = () => {
+  // Delete specific file
+  const handleDeleteFile = (index: number) => {
+    setSectionState((prev) => {
+      const newFiles = prev.designFiles.filter((_, i) => i !== index)
+      const newUrl = newFiles.length > 0 ? URL.createObjectURL(newFiles[0]) : ""
+      return {
+        ...prev,
+        designFiles: newFiles,
+        designPhotoUrl: newUrl,
+      }
+    })
+  }
+
+  // Delete all files
+  const handleDeleteAllFiles = () => {
     setSectionState((prev) => ({
       ...prev,
+      designFiles: [],
       designPhotoUrl: "",
-      designPhotoFile: null,
     }))
   }
 
@@ -107,41 +128,71 @@ export function JointsSection({
       />
 
       <Card className="p-4">
-        <h4 className="mb-2 font-semibold">Joint Design Sketch / Photo</h4>
+        <h4 className="mb-2 font-semibold">Joint Design Sketch / Photos</h4>
 
-        {sectionState.designPhotoUrl ? (
-          <div className="flex items-center gap-4">
-            <img
-              src={sectionState.designPhotoUrl}
-              alt="Joint Design Photo"
-              className="h-32 w-32 border object-cover rounded"
-            />
-            <ConfirmPopover
-              title="Delete this photo?"
-              confirmText="Delete"
-              onConfirm={handleDeletePhoto}
-              trigger={
-                <Button type="button" variant="destructive">
-                  <TrashIcon className="w-4 h-4 mr-1" />
-                  Delete Photo
-                </Button>
-              }
-            />
+        {sectionState.designFiles.length > 0 ? (
+          <div className="space-y-4">
+            {/* Preview of first file */}
+            {sectionState.designPhotoUrl && (
+              <div className="flex items-center gap-4">
+                <img
+                  src={sectionState.designPhotoUrl}
+                  alt="Joint Design Photo Preview"
+                  className="h-32 w-32 border object-cover rounded"
+                />
+                <div className="text-sm text-muted-foreground">
+                  Preview of first file
+                </div>
+              </div>
+            )}
+            
+            {/* File list */}
+            <div className="space-y-2">
+              <h5 className="text-sm font-medium">Uploaded Files ({sectionState.designFiles.length})</h5>
+              <div className="space-y-1">
+                {sectionState.designFiles.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <span className="text-sm">{file.name}</span>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteFile(index)}
+                    >
+                      <TrashIcon className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              
+              <ConfirmPopover
+                title="Delete all files?"
+                confirmText="Delete All"
+                onConfirm={handleDeleteAllFiles}
+                trigger={
+                  <Button type="button" variant="destructive" size="sm">
+                    <TrashIcon className="w-4 h-4 mr-1" />
+                    Delete All Files
+                  </Button>
+                }
+              />
+            </div>
           </div>
         ) : (
           <div className="space-y-2">
             <Label htmlFor="design-photo" className="text-sm font-medium">
-              Upload Joint Design Photo
+              Upload Joint Design Photos
             </Label>
             <Input
               id="design-photo"
               type="file"
               accept="image/*"
+              multiple
               onChange={handleFileSelect}
               className="block w-full rounded-md border-2 border-dashed border-gray-300 p-2"
             />
             <p className="text-xs text-muted-foreground">
-              Supported formats: JPG, PNG, GIF. Max size: 5MB
+              Supported formats: JPG, PNG, GIF. You can select multiple files. Max size: 5MB per file
             </p>
           </div>
         )}

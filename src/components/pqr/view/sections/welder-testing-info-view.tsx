@@ -1,18 +1,17 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 
 import { cn } from '@/lib/utils';
 import React from 'react';
 
 // utility to split array into chunks of size N
-function chunkArray(arr: any[], size: number) {
-  const chunks: any[][] = [];
+function chunkArray(arr: DynamicRow[], size: number) {
+  const chunks: DynamicRow[][] = [];
   for (let i = 0; i < arr.length; i += size) {
     chunks.push(arr.slice(i, i + size));
   }
   return chunks;
 }
 
-export const WelderTestingInfoView = ({ welderTestingInfoData }: { welderTestingInfoData: any }) => {
+export const WelderTestingInfoView = ({ welderTestingInfoData }: { welderTestingInfoData: SectionData }) => {
   const items = welderTestingInfoData?.data || [];
 
   if (items.length === 0) {
@@ -30,9 +29,9 @@ export const WelderTestingInfoView = ({ welderTestingInfoData }: { welderTesting
     <div className="mt-4 overflow-hidden border">
       <table className="w-full text-sm">
         <tbody>
-          {rows.map((pair: any[], rowIndex: number) => (
+          {rows.map((pair: DynamicRow[], rowIndex: number) => (
             <tr key={rowIndex} className="border-b">
-              {pair.map((item: any, colIndex: number) => (
+              {pair.map((item: DynamicRow, colIndex: number) => (
                 <React.Fragment key={item.id}>
                   <td className={cn("w-1/4 border-r p-2 font-medium text-gray-600 dark:text-gray-300 dark:bg-sidebar")}>
                     {item.label}

@@ -1,8 +1,10 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 
 import { getSectionDataByAccessor } from '@/lib/pqr-utils';
+import { SectionData } from '../types';
+import { DynamicColumn, DynamicRow } from '../../form/dynamic-table';
 
-export const BaseMetalsView = ({ baseMetalsData, isAsme }: { baseMetalsData: any; isAsme: boolean }) => {
+
+export const BaseMetalsView = ({ baseMetalsData, isAsme }: { baseMetalsData: SectionData; isAsme: boolean }) => {
   if (!baseMetalsData || !baseMetalsData.data) {
     return (
       <p className="text-muted-foreground p-4 text-sm">
@@ -27,11 +29,11 @@ export const BaseMetalsView = ({ baseMetalsData, isAsme }: { baseMetalsData: any
             </tr>
           </thead>
           <tbody>
-            {(baseMetalsData.data || []).map((row: any) => (
+            {(baseMetalsData.data || []).map((row: DynamicRow) => (
               <tr key={row.id} className="border-b">
-                {columns.map((col: any) => (
+                {columns.map((col: DynamicColumn) => (
                   <td key={col.id} className="border-r p-2 last:border-r-0">
-                    {getSectionDataByAccessor(row, col.accessorKey) as any}
+                    {getSectionDataByAccessor(row, col.accessorKey)}
                   </td>
                 ))}
               </tr>
@@ -54,7 +56,7 @@ export const BaseMetalsView = ({ baseMetalsData, isAsme }: { baseMetalsData: any
 
   // Fallback to simple label/value rendering
   const otherRows = (baseMetalsData.data || []).filter(
-    (d: any) => d.parameter !== 'P-No. & Group No. (1)'
+    (d: DynamicRow) => d.parameter !== 'P-No. & Group No. (1)'
   );
 
   return (
@@ -63,7 +65,7 @@ export const BaseMetalsView = ({ baseMetalsData, isAsme }: { baseMetalsData: any
         <thead>
           <tr className="bg-gray-100">
             <th
-              colSpan={5 as any}
+              colSpan={5}
               className="p-2 text-left font-semibold text-gray-700"
             >
               BASE METALS {isAsme && '(QW-403)'}
@@ -71,15 +73,15 @@ export const BaseMetalsView = ({ baseMetalsData, isAsme }: { baseMetalsData: any
           </tr>
         </thead>
         <tbody>
-          {otherRows.map((item: any) => (
+          {otherRows.map((item: DynamicRow) => (
             <tr key={item.id} className="border-b">
               <td
                 className="border-r p-2 font-medium text-gray-600"
-                colSpan={1 as any}
+                colSpan={1}
               >
                 {item.parameter || item.label || 'N/A'}
               </td>
-              <td className="p-2" colSpan={4 as any}>
+              <td className="p-2" colSpan={4}>
                 {item.value1 !== undefined
                   ? String(item.value1)
                   : item.value !== undefined

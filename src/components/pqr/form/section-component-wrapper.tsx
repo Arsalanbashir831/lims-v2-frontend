@@ -3,6 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DynamicTable, DynamicColumn, DynamicRow } from "./dynamic-table"
+import { WelderSelector } from "@/components/common/welder-selector"
+import { Welder } from "@/lib/schemas/welder"
+
+interface WelderSelectorProps {
+    selectedWelder?: Welder
+    onWelderSelection: (welderId: string | undefined, welder: Welder | undefined) => void
+    welderNameValue: string
+    onWelderNameChange: (value: string) => void
+    welderIdValue: string
+    onWelderIdChange: (value: string) => void
+}
 
 interface SectionComponentWrapperProps {
     sectionId: string
@@ -14,6 +25,7 @@ interface SectionComponentWrapperProps {
     onUpdate: (sectionData: { columns: DynamicColumn[]; data: DynamicRow[] }) => void
     isSectionTable?: boolean
     children?: React.ReactNode
+    welderSelector?: WelderSelectorProps
 }
 
 export function SectionComponentWrapper({
@@ -26,12 +38,26 @@ export function SectionComponentWrapper({
     onUpdate,
     isSectionTable = true,
     children,
+    welderSelector,
 }: SectionComponentWrapperProps) {
     const [columns, setColumns] = useState<DynamicColumn[]>(initialCols)
     const [data, setData] = useState<DynamicRow[]>(initialDataRows)
 
     const didInitRef = useRef(false)
     const lastSnapshotRef = useRef<string>("")
+    const lastPropsSnapshotRef = useRef<string>("")
+
+    // Sync state with props when they change (e.g., when loading PQR data)
+    useEffect(() => {
+        const newPropsSnapshot = JSON.stringify({ columns: initialCols, data: initialDataRows })
+        
+        // Only update if the incoming props have changed
+        if (newPropsSnapshot !== lastPropsSnapshotRef.current) {
+            lastPropsSnapshotRef.current = newPropsSnapshot
+            setColumns(initialCols)
+            setData(initialDataRows)
+        }
+    }, [initialCols, initialDataRows])
 
     // Update parent when local state changes, but avoid initial echo and repeated identical emissions
     useEffect(() => {
@@ -90,6 +116,7 @@ export function SectionComponentWrapper({
                     allowAddRow={isSectionTable}
                     allowAddColumn={isSectionTable}
                     allowDeleteColumn={isSectionTable}
+                    welderSelector={welderSelector}
                 />
             </CardContent>
         </Card>

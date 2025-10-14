@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { WelderSelector } from "@/components/common/welder-selector"
+import { Welder } from "@/lib/schemas/welder"
 
 export type ColumnType = "input" | "label" | "date" | "numeric" | "textarea"
 
@@ -27,6 +29,15 @@ export interface DynamicRow {
   [key: string]: string | number | boolean | undefined
 }
 
+interface WelderSelectorProps {
+  selectedWelder?: Welder
+  onWelderSelection: (welderId: string | undefined, welder: Welder | undefined) => void
+  welderNameValue: string
+  onWelderNameChange: (value: string) => void
+  welderIdValue: string
+  onWelderIdChange: (value: string) => void
+}
+
 interface DynamicTableProps {
   initialColumns: DynamicColumn[]
   initialData: DynamicRow[]
@@ -37,6 +48,7 @@ interface DynamicTableProps {
   allowDeleteColumn?: boolean
   readOnly?: boolean
   className?: string
+  welderSelector?: WelderSelectorProps
 }
 
 export function DynamicTable({
@@ -49,9 +61,24 @@ export function DynamicTable({
   allowDeleteColumn = true,
   readOnly = false,
   className,
+  welderSelector,
 }: DynamicTableProps) {
   const [columns, setColumns] = useState<DynamicColumn[]>(initialColumns)
   const [data, setData] = useState<DynamicRow[]>(initialData)
+  
+  const lastPropsSnapshotRef = useRef<string>("")
+
+  // Sync state with props when they change (e.g., when loading PQR data)
+  useEffect(() => {
+    const newPropsSnapshot = JSON.stringify({ columns: initialColumns, data: initialData })
+    
+    // Only update if the incoming props have changed
+    if (newPropsSnapshot !== lastPropsSnapshotRef.current) {
+      lastPropsSnapshotRef.current = newPropsSnapshot
+      setColumns(initialColumns)
+      setData(initialData)
+    }
+  }, [initialColumns, initialData])
 
   // inline editing state
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null)
@@ -245,9 +272,15 @@ export function DynamicTable({
               </tr>
             </thead>
             <tbody>
-              {data.map((row) => (
-                <tr key={row.id} className="border-b hover:bg-muted/30">
-                  {columns.map((column) => (
+              {data.map((row) => {
+                // Skip rendering hidden rows
+                if ((row as any).hidden) {
+                  return null
+                }
+                
+                return (
+                  <tr key={row.id} className="border-b hover:bg-muted/30">
+                    {columns.map((column) => (
                     <td key={column.id} className="border-r p-0">
                       {column.type === "label" ? (
                         editingCell && editingCell.rowId === row.id && editingCell.accessorKey === column.accessorKey ? (
@@ -288,6 +321,34 @@ export function DynamicTable({
                           className="border-0 px-2 py-0.5 rounded-none h-auto text-sm"
                           placeholder={column.placeholder}
                           disabled={readOnly}
+                        />
+                      ) : row.label === "Welder Name" && welderSelector ? (
+                        <div className="px-2 py-0.5">
+                          <WelderSelector
+                            value={welderSelector.selectedWelder?.id}
+                            onValueChange={(welderId, welder) => {
+                              welderSelector.onWelderSelection(welderId, welder)
+                              if (welder) {
+                                handleCellChange(row.id, column.accessorKey, welder.operator_name)
+                              }
+                            }}
+                            placeholder="Select welder..."
+                            disabled={readOnly}
+                            className="h-auto text-sm"
+                          />
+                        </div>
+                      ) : row.label === "Welder ID" && welderSelector ? (
+                        <Input
+                          type="text"
+                          value={welderSelector.welderIdValue}
+                          onChange={(e) => {
+                            welderSelector.onWelderIdChange(e.target.value)
+                            handleCellChange(row.id, column.accessorKey, e.target.value)
+                          }}
+                          className="border-0 px-2 py-0.5 rounded-none h-auto text-sm bg-muted"
+                          placeholder="Auto-filled from welder selection"
+                          disabled={true}
+                          readOnly
                         />
                       ) : (
                         <Input
@@ -334,7 +395,8 @@ export function DynamicTable({
                     </td>
                   )}
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>
