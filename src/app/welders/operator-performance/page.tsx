@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ColumnDef } from "@tanstack/react-table"
 import { ROUTES } from "@/constants/routes"
 import Link from "next/link"
-import { useOperatorCertificates, useDeleteOperatorCertificate } from "@/hooks/user-operator-certificates"
+import { useOperatorCertificates, useDeleteOperatorCertificate } from "@/hooks/use-operator-certificates"
 import { toast } from "sonner"
 
 interface OperatorPerformance {

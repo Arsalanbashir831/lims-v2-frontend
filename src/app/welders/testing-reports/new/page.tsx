@@ -7,7 +7,6 @@ import { FormHeader } from "@/components/common/form-header"
 export default function NewTestingReportPage() {
   const handleSubmit = (data: TestingReportFormData) => {
     // TODO: persist data when backend/storage is ready
-    console.debug("Testing report saved", data)
   }
 
   return (

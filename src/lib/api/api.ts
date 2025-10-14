@@ -2,7 +2,7 @@ import { ROUTES } from "@/constants/routes"
 import ky from "ky"
 import { TokenStorage } from "@/lib/auth/token-storage"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://192.168.1.2:8000/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 
 // Create a base API client
 const baseApi = ky.create({
@@ -78,7 +78,7 @@ export async function uploadWithFormData<T>(
 ): Promise<T> {
   try {
     // Create a new request without the base API client to avoid JSON parsing issues
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://192.168.1.2:8000/api"
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
     const fullUrl = `${API_BASE_URL}/${endpoint}`
     
     // Get the access token

@@ -115,7 +115,7 @@ export default function DashboardPage() {
           discardedMaterials: 0, // TODO: Add backend endpoint
           totalClients: dashboardStats?.clients?.total_clients ?? 0,
         }}
-        onMetricClick={(metricKey) => console.log(`Clicked on ${metricKey}`)}
+        onMetricClick={(metricKey) => {}}
         isLoading={isLoadingStats}
       />
 

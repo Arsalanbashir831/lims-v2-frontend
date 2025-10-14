@@ -68,21 +68,12 @@ export const welderService = {
     }
 
     try {
-      console.log('Sending FormData with fields:', {
-        operator_name: data.operator_name,
-        operator_id: data.operator_id,
-        iqama: data.iqama,
-        has_image: !!data.profile_image,
-        image_type: data.profile_image?.type,
-        image_size: data.profile_image?.size
-      })
 
       const response = await uploadWithFormData<{
         status: string
         data: WelderResponse
       }>(API_ROUTES.WELDERS_API.CREATE_WELDER, formData, "POST")
 
-      console.log('Response received:', response)
 
       if (response.status === "success" && response.data) {
         return response.data

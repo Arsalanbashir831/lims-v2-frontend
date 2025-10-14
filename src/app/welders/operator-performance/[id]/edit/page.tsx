@@ -7,8 +7,8 @@ import { ROUTES } from "@/constants/routes"
 import { FormHeader } from "@/components/common/form-header"
 import { Button } from "@/components/ui/button"
 import { PencilIcon, XIcon } from "lucide-react"
-import { useOperatorCertificate, useUpdateOperatorCertificate } from "@/hooks/user-operator-certificates"
-import { CreateOperatorCertificateData } from "@/services/operator-certificates.service"
+import { useOperatorCertificate, useUpdateOperatorCertificate } from "@/hooks/use-operator-certificates"
+import { CreateOperatorCertificateData } from "@/services/welder-operator-certificates.service"
 import { toast } from "sonner"
 
 export default function EditOperatorPerformancePage() {

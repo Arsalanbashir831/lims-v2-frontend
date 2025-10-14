@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { operatorCertificateService, CreateOperatorCertificateData, UpdateOperatorCertificateData } from '@/services/operator-certificates.service'
+import { operatorCertificateService, CreateOperatorCertificateData, UpdateOperatorCertificateData } from '@/services/welder-operator-certificates.service'
 
 // Query keys for consistent caching
 export const OPERATOR_CERTIFICATES_QUERY_KEYS = {

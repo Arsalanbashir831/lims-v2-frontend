@@ -261,10 +261,6 @@ export function OperatorPerformanceForm({
 
   useEffect(() => {
     // Generate QR code for existing forms (when we have an ID)
-    console.log("QR Code generation check:", {
-      formDataId: formData.id,
-      readOnly,
-    });
     if (formData.id) {
       const generateQR = async () => {
         try {
@@ -273,13 +269,11 @@ export function OperatorPerformanceForm({
           const publicUrl = `${frontendBase}${ROUTES.PUBLIC?.WELDER_OPERATOR_PERFORMANCE_PREVIEW(
             formData.id!
           )}`;
-          console.log("Generating QR code for URL:", publicUrl);
           const dataUrl = await QRCode.toDataURL(publicUrl, {
             margin: 1,
             width: 120,
           });
           setQrSrc(dataUrl);
-          console.log("QR code generated successfully");
         } catch (error) {
           console.error("Failed to generate QR code:", error);
           setQrSrc(null);

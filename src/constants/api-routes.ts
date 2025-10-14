@@ -156,12 +156,12 @@ export const API_ROUTES = {
     SEARCH_WELDER_OPERATOR_PERFORMANCE: "welder-performance-records/search/",
 
     // Testing Reports
-    GET_ALL_WELDER_TESTING_REPORTS: "welder-testing-reports/",
-    GET_WELDER_TESTING_REPORT_BY_ID: (id: string) => `welder-testing-reports/${id}/`,
-    CREATE_WELDER_TESTING_REPORT: "welder-testing-reports/",
-    UPDATE_WELDER_TESTING_REPORT: (id: string) => `welder-testing-reports/${id}/`,
-    DELETE_WELDER_TESTING_REPORT: (id: string) => `welder-testing-reports/${id}/`,
-    SEARCH_WELDER_TESTING_REPORTS: "welder-testing-reports/search/",
+    GET_ALL_WELDER_TESTING_REPORTS: "testing-reports/",
+    GET_WELDER_TESTING_REPORT_BY_ID: (id: string) => `testing-reports/${id}/`,
+    CREATE_WELDER_TESTING_REPORT: "testing-reports/",
+    UPDATE_WELDER_TESTING_REPORT: (id: string) => `testing-reports/${id}/`,
+    DELETE_WELDER_TESTING_REPORT: (id: string) => `testing-reports/${id}/`,
+    SEARCH_WELDER_TESTING_REPORTS: "testing-reports/search/",
 
     // Welder PQR
     GET_ALL_WELDER_PQRS: "pqrs/",

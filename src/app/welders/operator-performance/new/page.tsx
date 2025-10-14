@@ -6,8 +6,8 @@ import { ROUTES } from "@/constants/routes"
 import { FormHeader } from "@/components/common/form-header"
 import { useState } from "react"
 import { toast } from "sonner"
-import { useCreateOperatorCertificate } from "@/hooks/user-operator-certificates"
-import { CreateOperatorCertificateData } from "@/services/operator-certificates.service"
+import { useCreateOperatorCertificate } from "@/hooks/use-operator-certificates"
+import { CreateOperatorCertificateData } from "@/services/welder-operator-certificates.service"
 
 export default function NewOperatorPerformancePage() {
   const router = useRouter()

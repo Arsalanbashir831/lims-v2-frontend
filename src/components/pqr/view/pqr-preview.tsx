@@ -316,7 +316,6 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
   
   const publicPreviewBase = `${frontendBase}${ROUTES.PUBLIC?.PQR_PREVIEW(pqrId ?? "")}`;
 
-  console.log("publicPreviewBase", publicPreviewBase);
 
   // ref to the entire printable area
   const contentRef = useRef<HTMLDivElement | null>(null);

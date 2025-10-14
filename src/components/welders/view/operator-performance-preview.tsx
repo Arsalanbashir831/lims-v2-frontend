@@ -8,7 +8,7 @@ import { ArrowLeft, Printer } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { generatePdf } from "@/lib/pdf-utils"
 import { BackButton } from "@/components/ui/back-button"
-import { useOperatorCertificate } from "@/hooks/user-operator-certificates"
+import { useOperatorCertificate } from "@/hooks/use-operator-certificates"
 import { toast } from "sonner"
 
 interface OperatorPerformancePreviewProps {
@@ -24,14 +24,12 @@ export default function OperatorPerformancePreview({ showButton = true, isPublic
   const { data: apiData, isLoading, error } = useOperatorCertificate(params.id as string)
   
   // Debug: Log the API response to see the structure
-  console.log('API Response:', apiData?.data)
   
   // Transform API data to form data
   const data = apiData?.data ? {
     id: apiData.data.id,
     operatorImage: (() => {
       const imagePath = apiData.data.welder_card_info?.welder_info?.profile_image
-      console.log('Profile image path:', imagePath)
       return imagePath || null
     })(),
     operatorName: apiData.data.welder_card_info?.welder_info?.operator_name || "",
@@ -73,7 +71,6 @@ export default function OperatorPerformancePreview({ showButton = true, isPublic
   } : null
 
   // Debug: Log the transformed data being passed to the form
-  console.log('Transformed data for form:', data)
 
   // Send ready message for PDF generation
   useEffect(() => {
