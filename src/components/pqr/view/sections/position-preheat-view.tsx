@@ -1,9 +1,16 @@
 
+import { DynamicRow, DynamicColumn } from "../../form";
+
+interface PqrSection {
+  columns: DynamicColumn[];
+  data: DynamicRow[];
+}
+
 export const PositionsPreheatView = ({
   positionsData,
   preheatData,
   isAsme,
-}: { positionsData: DynamicRow; preheatData: DynamicRow; isAsme: boolean }) => {
+}: { positionsData: PqrSection; preheatData: PqrSection; isAsme: boolean }) => {
   const posCols = positionsData?.columns || [];
   const preCols = preheatData?.columns || [];
 

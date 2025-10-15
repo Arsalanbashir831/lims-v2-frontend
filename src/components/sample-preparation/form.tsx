@@ -197,8 +197,8 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
           material_storage_location: lot.storage_location,
           condition: lot.condition,
           status: lot.is_active ? "active" : "inactive",
-          test_methods: (lot.test_methods || []).map((tm: { id: string; test_name: string }) => tm.id),
-          test_method_names: (lot.test_methods || []).map((tm: { id: string; test_name: string }) => tm.test_name),
+          test_methods: Array.isArray(lot.test_methods) ? lot.test_methods.map((tm: { id: string; test_name: string }) => tm.id) : [],
+          test_method_names: Array.isArray(lot.test_methods) ? lot.test_methods.map((tm: { id: string; test_name: string }) => tm.test_name) : [],
           is_active: lot.is_active,
         }))
 

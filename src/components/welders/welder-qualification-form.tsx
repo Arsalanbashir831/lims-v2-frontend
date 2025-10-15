@@ -5,9 +5,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-  Upload,
   Plus,
   QrCode,
   Trash2,
@@ -22,7 +20,6 @@ import { ConfirmPopover } from "../ui/confirm-popover";
 import { useWelderCards } from "@/hooks/use-welder-cards";
 import {
   CreateWelderCertificateData,
-  WelderCertificateTest,
 } from "@/lib/schemas/welder";
 import {
   Command,

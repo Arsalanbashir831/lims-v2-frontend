@@ -1,6 +1,8 @@
 
 import { cn } from '@/lib/utils';
 import React from 'react';
+import { DynamicRow } from '../../form';
+import { SectionData } from '../types';
 
 // utility to split array into chunks of size N
 function chunkArray(arr: DynamicRow[], size: number) {

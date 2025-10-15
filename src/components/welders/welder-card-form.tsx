@@ -92,23 +92,23 @@ export function WelderCardForm({
       operator_id: initialData?.welder_info?.operator_id || "",
       welder_image: initialData?.welder_info?.profile_image || "",
       // Map attributes fields
-      wpsNo: attributes.wps_no || "",
-      process: attributes.process || "",
-      jointType: attributes.joint_type || "",
-      testPosition: attributes.test_position || "",
-      positionQualified: attributes.position_qualified || "",
-      verticalProgression: attributes.vertical_progression || "",
-      testThickness: attributes.test_thickness || "",
-      testDia: attributes.test_dia || "",
-      thicknessQualified: attributes.thickness_qualified || "",
-      pNoQualified: attributes.p_no_qualified || "",
-      diameterQualified: attributes.diameter_qualified || "",
-      fNoQualified: attributes.f_no_qualified || "",
-      fillerMetalElectrodeClassUsed: attributes.filler_metal_electrode_class_used || "",
-      placeOfIssue: attributes.place_of_issue || "",
-      testMethod: attributes.test_method || "",
-      dateOfTest: attributes.date_of_test || "",
-      dateOfExp: attributes.date_of_exp || "",
+      wpsNo: String(attributes.wps_no || ""),
+      process: String(attributes.process || ""),
+      jointType: String(attributes.joint_type || ""),
+      testPosition: String(attributes.test_position || ""),
+      positionQualified: String(attributes.position_qualified || ""),
+      verticalProgression: String(attributes.vertical_progression || ""),
+      testThickness: String(attributes.test_thickness || ""),
+      testDia: String(attributes.test_dia || ""),
+      thicknessQualified: String(attributes.thickness_qualified || ""),
+      pNoQualified: String(attributes.p_no_qualified || ""),
+      diameterQualified: String(attributes.diameter_qualified || ""),
+      fNoQualified: String(attributes.f_no_qualified || ""),
+      fillerMetalElectrodeClassUsed: String(attributes.filler_metal_electrode_class_used || ""),
+      placeOfIssue: String(attributes.place_of_issue || ""),
+      testMethod: String(attributes.test_method || ""),
+      dateOfTest: String(attributes.date_of_test || ""),
+      dateOfExp: String(attributes.date_of_exp || ""),
     }
   }
 
@@ -144,14 +144,14 @@ export function WelderCardForm({
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleWelderSelect = (welderId: string | undefined, welder: Record<string, unknown>) => {
+  const handleWelderSelect = (welderId: string | undefined, welder: any) => {
     setFormData(prev => ({
       ...prev,
       welder_id: welderId || "",
-      welder_name: welder?.operator_name || "",
-      iqama_no: welder?.iqama || "",
-      operator_id: welder?.operator_id || "",
-      welder_image: welder?.profile_image_url || ""
+      welder_name: String(welder?.operator_name || ""),
+      iqama_no: String(welder?.iqama || ""),
+      operator_id: String(welder?.operator_id || ""),
+      welder_image: String(welder?.profile_image_url || "")
     }))
   }
 

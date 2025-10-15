@@ -213,10 +213,16 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                           <div className="space-y-1">
                             {preparation.sample_lots.map((lot: Record<string, unknown>, index: number) => (
                               <div key={index} className="text-sm">
-                                <div className="font-medium">{lot.specimens_count} specimens</div>
+                                <div className="font-medium">{String(lot.specimens_count || 0)} specimens</div>
                                 <div className="text-xs text-muted-foreground">
-                                  {lot.specimens.slice(0, 2).map((spec: Specimen) => spec.specimen_id).join(', ')}
-                                  {lot.specimens.length > 2 && ` +${lot.specimens.length - 2} more`}
+                                  {Array.isArray(lot.specimens) ? (
+                                    <>
+                                      {lot.specimens.slice(0, 2).map((spec: Specimen) => spec.specimen_id).join(', ')}
+                                      {lot.specimens.length > 2 && ` +${lot.specimens.length - 2} more`}
+                                    </>
+                                  ) : (
+                                    'No specimens'
+                                  )}
                                 </div>
                               </div>
                             ))}

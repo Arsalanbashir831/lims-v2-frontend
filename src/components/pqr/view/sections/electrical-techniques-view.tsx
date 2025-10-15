@@ -1,9 +1,15 @@
+import { DynamicRow, DynamicColumn } from "../../form";
+
+interface PqrSection {
+  columns: DynamicColumn[];
+  data: DynamicRow[];
+}
 
 export const ElectricalTechniquesView = ({
   electricalData,
   techniquesData,
   isAsme,
-}: { electricalData: DynamicRow; techniquesData: DynamicRow; isAsme: boolean }) => {
+}: { electricalData: PqrSection; techniquesData: PqrSection; isAsme: boolean }) => {
   const eCols = electricalData?.columns || [];
   const tCols = techniquesData?.columns || [];
 
