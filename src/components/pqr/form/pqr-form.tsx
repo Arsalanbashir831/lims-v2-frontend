@@ -121,20 +121,45 @@ export function PQRForm({
                 if (!sectionData?.data || !Array.isArray(sectionData.data)) return {}
                 
                 const result: Record<string, string | number | boolean> = {}
-                sectionData.data.forEach((row: DynamicRow) => {
-                    // Support both 'label' and 'description' fields
-                    const label = row.label || row.description
-                    const value = row.value
-                    if (label && value !== undefined && value !== null && value !== '') {
-                        // Convert label to snake_case key
-                        // First replace special chars and spaces with underscores, then clean up multiple underscores
-                        const key = String(label)
-                            .toLowerCase()
-                            .replace(/[^a-z0-9]+/g, '_') // Replace any non-alphanumeric chars with underscore
-                            .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
-                        result[key] = value
-                    }
-                })
+                
+                // Check if this is a label-value table or a multi-column table
+                const hasLabelColumn = sectionData.columns?.some(col => 
+                    col.accessorKey === 'label' || col.accessorKey === 'description'
+                )
+                
+                if (hasLabelColumn) {
+                    // Handle label-value tables (e.g., PWHT, Preheat, etc.)
+                    sectionData.data.forEach((row: DynamicRow) => {
+                        // Support both 'label' and 'description' fields
+                        const label = row.label || row.description
+                        const value = row.value
+                        if (label && value !== undefined && value !== null && value !== '') {
+                            // Convert label to snake_case key
+                            const key = String(label)
+                                .toLowerCase()
+                                .replace(/[^a-z0-9]+/g, '_') // Replace any non-alphanumeric chars with underscore
+                                .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
+                            result[key] = value
+                        }
+                    })
+                } else {
+                    // Handle multi-column tables (e.g., GAS, Tensile Test, Signature, etc.)
+                    // For these tables, we need to serialize all rows with all their columns
+                    sectionData.data.forEach((row: DynamicRow, rowIndex: number) => {
+                        // Skip the 'id' field and any hidden rows
+                        if ((row as any).hidden) return
+                        
+                        // For each column in the row, create a key like "row_0_column_name"
+                        Object.entries(row).forEach(([key, value]) => {
+                            if (key !== 'id' && key !== 'hidden' && value !== undefined && value !== null && value !== '') {
+                                // Create a unique key for each cell
+                                const cellKey = `row_${rowIndex}_${key}`
+                                result[cellKey] = value
+                            }
+                        })
+                    })
+                }
+                
                 return result
             }
 
@@ -209,7 +234,18 @@ export function PQRForm({
             }
 
             // Debug: Log the data being sent
+            console.log(`===== ${pqrId ? 'UPDATING' : 'CREATING'} PQR =====`)
             console.log("PQR Data being sent:", backendData)
+            console.log("Form Data before transformation:", formData)
+            
+            // Additional debug for specific sections
+            console.log("GAS section:", formData.gas)
+            console.log("GAS transformed:", backendData.gas)
+            console.log("Tensile Test section:", formData.tensileTest)
+            console.log("Tensile Test transformed:", backendData.tensile_test)
+            console.log("Signature section:", formData.signatures)
+            console.log("Signature transformed:", backendData.signatures)
+            console.log("===================================")
 
             // Validate that we have at least some data to send
             const hasData = Object.values(backendData).some(value => {

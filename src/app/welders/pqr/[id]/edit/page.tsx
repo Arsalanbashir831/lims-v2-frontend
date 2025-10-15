@@ -53,28 +53,56 @@ export default function EditPQRPage() {
       // If no data, return undefined so sections use their default data
       if (!data || Object.keys(data).length === 0) return undefined
       
-      const columns = [
-        { 
-          id: 'label', 
-          header: 'Parameter',
-          accessorKey: 'label',
-          type: 'label' as const
-        },
-        { 
-          id: 'value', 
-          header: 'Value',
-          accessorKey: 'value',
-          type: 'input' as const
-        }
-      ]
+      // Check if this is multi-column table data (keys like "row_0_columnname")
+      const hasRowPrefix = Object.keys(data).some(key => key.startsWith('row_'))
       
-      const rows = Object.entries(data).map(([key, value]) => ({
-        id: key,
-        label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        value: value || ''
-      }))
-      
-      return { columns, data: rows }
+      if (hasRowPrefix) {
+        // This is multi-column table data
+        // Group by row index
+        const rowsMap = new Map<number, Record<string, any>>()
+        
+        Object.entries(data).forEach(([key, value]) => {
+          const match = key.match(/^row_(\d+)_(.+)$/)
+          if (match) {
+            const rowIndex = parseInt(match[1])
+            const columnName = match[2]
+            
+            if (!rowsMap.has(rowIndex)) {
+              rowsMap.set(rowIndex, { id: `row_${rowIndex}` })
+            }
+            
+            rowsMap.get(rowIndex)![columnName] = value
+          }
+        })
+        
+        // Convert map to array and return without columns (sections will use their default columns)
+        const rows = Array.from(rowsMap.values()) as any[]
+        return { columns: undefined as any, data: rows as any }
+      } else {
+        // This is label-value table data
+        const columns = [
+          { 
+            id: 'label', 
+            header: 'Parameter',
+            accessorKey: 'label',
+            type: 'label' as const
+          },
+          { 
+            id: 'value', 
+            header: 'Value',
+            accessorKey: 'value',
+            type: 'input' as const
+          }
+        ]
+        
+        const rows = Object.entries(data).map(([key, value]) => ({
+          id: key,
+          label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          value: value || ''
+        }))
+        
+        return { columns, data: rows }
+      }
     }
 
     // Transform basic_info with proper field mapping
