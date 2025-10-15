@@ -44,7 +44,7 @@ export default function SampleInformationPage() {
     }, [error])
 
     const sampleData = data as SampleInformationResponse | undefined
-    const items = sampleData?.results ?? []
+    const items = (sampleData?.results ?? []) as Record<string, unknown>[]
     const totalCount = sampleData?.count ?? 0
     const pageSize = 20
     const hasNext = sampleData?.next !== undefined ? Boolean(sampleData?.next) : totalCount > currentPage * pageSize
@@ -78,22 +78,22 @@ export default function SampleInformationPage() {
         {
             accessorKey: "job_id",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Job ID" />,
-            cell: ({ row }) => <span className="font-medium">{row.original.job_id}</span>,
+            cell: ({ row }) => <span className="font-medium">{String(row.original.job_id ?? '')}</span>,
         },
         {
             accessorKey: "project_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Project Name" />,
-            cell: ({ row }) => <div className="font-medium truncate max-w-[28ch]">{row.original.project_name}</div>,
+            cell: ({ row }) => <div className="font-medium truncate max-w-[28ch]">{String(row.original.project_name ?? '')}</div>,
         },
         {
             accessorKey: "client_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Client Name" />,
-            cell: ({ row }) => <div className="font-medium truncate max-w-[28ch]">{row.original.client_name}</div>,
+            cell: ({ row }) => <div className="font-medium truncate max-w-[28ch]">{String(row.original.client_name ?? '')}</div>,
         },
         {
             accessorKey: "end_user",
             header: ({ column }) => <DataTableColumnHeader column={column} title="End User" />,
-            cell: ({ row }) => <div className="font-medium truncate max-w-[28ch]">{row.original.end_user || "N/A"}</div>,
+            cell: ({ row }) => <div className="font-medium truncate max-w-[28ch]">{String(row.original.end_user ?? '') || "N/A"}</div>,
         },
         {
             accessorKey: "receive_date",
@@ -101,14 +101,14 @@ export default function SampleInformationPage() {
             cell: ({ row }) => {
                 const v = row.original.receive_date
                 if (!v) return <span className="text-muted-foreground">—</span>
-                const d = new Date(v)
+                const d = new Date(String(v))
                 return <span className="text-muted-foreground">{isNaN(d.getTime()) ? '—' : d.toLocaleDateString()}</span>
             },
         },
         {
             accessorKey: "sample_lots_count",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Sample Count" />,
-            cell: ({ row }) => <span className="text-center">{row.original.sample_lots_count}</span>,
+            cell: ({ row }) => <span className="text-center">{String(row.original.sample_lots_count ?? 0)}</span>,
         },
         {
             id: "actions",
@@ -116,14 +116,14 @@ export default function SampleInformationPage() {
             cell: ({ row }) => (
                 <div className="text-right space-x-2 inline-flex">
                     <Button variant="secondary" size="sm" asChild>
-                        <Link href={ROUTES.APP.SAMPLE_INFORMATION.EDIT(row.original.id)}>
+                        <Link href={ROUTES.APP.SAMPLE_INFORMATION.EDIT(String(row.original.id ?? ''))}>
                             <PencilIcon className="w-4 h-4" />
                         </Link>
                     </Button>
                     <ConfirmPopover
                         title="Delete this sample information?"
                         confirmText="Delete"
-                        onConfirm={() => doDelete(row.original.id)}
+                        onConfirm={() => doDelete(String(row.original.id ?? ''))}
                         trigger={
                             <Button variant="destructive" size="sm">
                                 <TrashIcon className="w-4 h-4" />

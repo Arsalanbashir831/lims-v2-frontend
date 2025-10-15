@@ -17,6 +17,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { ROUTES } from "@/constants/routes"
 import Link from "next/link"
 import { useOperatorCertificates, useDeleteOperatorCertificate } from "@/hooks/use-operator-certificates"
+import { OperatorCertificate } from "@/services/welder-operator-certificates.service"
 import { toast } from "sonner"
 
 interface OperatorPerformance {
@@ -29,18 +30,18 @@ interface OperatorPerformance {
 }
 
 // Transform API data to table format
-const transformApiDataToTable = (apiData: Array<Record<string, unknown>>): OperatorPerformance[] => {
+const transformApiDataToTable = (apiData: OperatorCertificate[]): OperatorPerformance[] => {
   return apiData.map(item => ({
-    id: item.id,
+    id: String(item.id ?? ''),
     issuedIn: item.date_of_issue 
-      ? new Date(item.date_of_issue).getFullYear().toString() 
+      ? new Date(String(item.date_of_issue)).getFullYear().toString() 
       : item.date_of_welding 
-        ? new Date(item.date_of_welding).getFullYear().toString()
-        : new Date(item.created_at).getFullYear().toString(),
-    certificateNumber: item.welder_card_info?.card_no || item.law_name || "N/A",
-    operatorId: item.welder_card_info?.welder_info?.operator_id || "N/A",
-    operatorName: item.welder_card_info?.welder_info?.operator_name || item.tested_by || "N/A",
-    clientName: item.welder_card_info?.company || item.witnessed_by || "N/A"
+        ? new Date(String(item.date_of_welding)).getFullYear().toString()
+        : new Date(String(item.created_at ?? new Date())).getFullYear().toString(),
+    certificateNumber: String(item.welder_card_info?.card_no ?? item.law_name ?? "N/A"),
+    operatorId: String(item.welder_card_info?.welder_info?.operator_id ?? "N/A"),
+    operatorName: String(item.welder_card_info?.welder_info?.operator_name ?? item.tested_by ?? "N/A"),
+    clientName: String(item.welder_card_info?.company ?? item.witnessed_by ?? "N/A")
   }))
 }
 

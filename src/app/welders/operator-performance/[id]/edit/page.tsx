@@ -39,19 +39,19 @@ export default function EditOperatorPerformancePage() {
     baseMetalPNumber: apiData.data.base_metal_p_no || "",
     fillerClass: apiData.data.filler_class_aws || "",
     positions: apiData.data.positions || "",
-    automaticWeldingEquipmentVariables: apiData.data.testing_variables_and_qualification_limits_automatic?.map((variable: Record<string, unknown>, index: number) => ({
+    automaticWeldingEquipmentVariables: apiData.data.testing_variables_and_qualification_limits_automatic?.map((variable, index: number) => ({
       id: (index + 1).toString(),
       name: (variable.name as string) || "",
       actualValue: (variable.actual_values as string) || "",
       rangeQualified: (variable.range_values as string) || ""
     })) || [],
-    machineWeldingEquipmentVariables: apiData.data.testing_variables_and_qualification_limits_machine?.map((variable: Record<string, unknown>, index: number) => ({
+    machineWeldingEquipmentVariables: apiData.data.testing_variables_and_qualification_limits_machine?.map((variable, index: number) => ({
       id: (index + 11).toString(),
       name: (variable.name as string) || "",
       actualValue: (variable.actual_values as string) || "",
       rangeQualified: (variable.range_values as string) || ""
     })) || [],
-    testsConducted: apiData.data.tests?.map((test: Record<string, unknown>, index: number) => ({
+    testsConducted: apiData.data.tests?.map((test, index: number) => ({
       id: (index + 1).toString(),
       testType: (test.type as string) || "",
       reportNo: (test.report_no as string) || "",
