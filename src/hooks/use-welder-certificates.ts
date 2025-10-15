@@ -16,12 +16,13 @@ export const useWelderCertificates = (page: number = 1, searchQuery: string = ""
   return useQuery({
     queryKey: WELDER_CERTIFICATES_QUERY_KEYS.list(page, searchQuery, limit),
     queryFn: () => {
-      if (searchQuery.trim()) {
-        return welderCertificateService.search(searchQuery, page, limit)
+      if (searchQuery && searchQuery.trim()) {
+        return welderCertificateService.search(searchQuery.trim(), page, limit)
       }
       return welderCertificateService.getAll(page, limit, false)
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    placeholderData: (previousData) => previousData,
   })
 }
 

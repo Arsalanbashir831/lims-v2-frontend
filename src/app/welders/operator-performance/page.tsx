@@ -32,11 +32,15 @@ interface OperatorPerformance {
 const transformApiDataToTable = (apiData: any[]): OperatorPerformance[] => {
   return apiData.map(item => ({
     id: item.id,
-    issuedIn: new Date(item.date_of_issue || Date.now()).getFullYear().toString(),
-    certificateNumber: item.welder_card_info?.card_no || "N/A",
+    issuedIn: item.date_of_issue 
+      ? new Date(item.date_of_issue).getFullYear().toString() 
+      : item.date_of_welding 
+        ? new Date(item.date_of_welding).getFullYear().toString()
+        : new Date(item.created_at).getFullYear().toString(),
+    certificateNumber: item.welder_card_info?.card_no || item.law_name || "N/A",
     operatorId: item.welder_card_info?.welder_info?.operator_id || "N/A",
-    operatorName: item.welder_card_info?.welder_info?.operator_name || "N/A",
-    clientName: item.welder_card_info?.company || "N/A"
+    operatorName: item.welder_card_info?.welder_info?.operator_name || item.tested_by || "N/A",
+    clientName: item.welder_card_info?.company || item.witnessed_by || "N/A"
   }))
 }
 

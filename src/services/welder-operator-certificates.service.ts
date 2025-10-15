@@ -145,20 +145,34 @@ export const operatorCertificateService = {
     await api.delete(API_ROUTES.WELDERS_API.DELETE_WELDER_OPERATOR_PERFORMANCE(id))
   },
 
-  async search(query: string, page: number = 1, limit: number = 10): Promise<OperatorCertificateListResponse> {
+  async search(welderId: string, page: number = 1, limit: number = 10): Promise<OperatorCertificateListResponse> {
     const response = await api.get(API_ROUTES.WELDERS_API.SEARCH_WELDER_OPERATOR_PERFORMANCE, {
       searchParams: {
-        q: query,
+        welder_id: welderId,
         page: page.toString(),
         limit: limit.toString(),
       }
     }).json<{
-      results: OperatorCertificate[]
-      count: number
-      next: string | null
-      previous: string | null
+      status: string
+      data: OperatorCertificate[]
+      total: number
+      filters_applied: {
+        law_name: string
+        tested_by: string
+        date_of_welding: string
+        welder_card_id: string
+      }
     }>()
 
-    return response
+    if (response.status === "success" && response.data) {
+      return {
+        results: response.data,
+        count: response.total,
+        next: null,
+        previous: null,
+      }
+    }
+    
+    throw new Error("Failed to search operator certificates")
   }
 }
