@@ -26,7 +26,7 @@ import { SignatureSection } from "./sections/signature-section"
 
 export interface PQRFormData {
     headerInfo?: { columns: DynamicColumn[]; data: DynamicRow[] }
-    joints?: { columns: DynamicColumn[]; data: DynamicRow[]; designPhotoUrl?: string; designFiles?: File[] }
+    joints?: { columns?: DynamicColumn[]; data?: DynamicRow[]; designPhotoUrl?: string; designFiles?: File[] }
     baseMetals?: { columns: DynamicColumn[]; data: DynamicRow[] }
     fillerMetals?: { columns: DynamicColumn[]; data: DynamicRow[] }
     positions?: { columns: DynamicColumn[]; data: DynamicRow[] }
@@ -127,7 +127,11 @@ export function PQRForm({
                     const value = row.value
                     if (label && value !== undefined && value !== null && value !== '') {
                         // Convert label to snake_case key
-                        const key = String(label).toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+                        // First replace special chars and spaces with underscores, then clean up multiple underscores
+                        const key = String(label)
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]+/g, '_') // Replace any non-alphanumeric chars with underscore
+                            .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
                         result[key] = value
                     }
                 })
@@ -157,6 +161,7 @@ export function PQRForm({
 
             // Transform header info to basic_info structure
             const headerData = transformDynamicData(formData.headerInfo)
+            
             const basicInfo = {
                 pqr_number: String(headerData.pqr_no || ""),
                 date_qualified: String(headerData.date_of_issue || ""),
@@ -191,24 +196,20 @@ export function PQRForm({
                 signatures: transformDynamicData(formData.signatures),
                 
                 // Add specific fields at top level
-                welder_card_id: String(welderCardId),
-                mechanical_testing_conducted_by: String(mechanicalTestingConductedBy),
-                lab_test_no: String(labTestNo),
+                ...(welderCardId && { welder_card_id: String(welderCardId) }),
+                ...(mechanicalTestingConductedBy && { mechanical_testing_conducted_by: String(mechanicalTestingConductedBy) }),
+                ...(labTestNo && { lab_test_no: String(labTestNo) }),
                 
                 // Add certification data if available
-                ...(formData.certification?.data?.[0] && {
-                    law_name: String(formData.certification.data[0].reference || "")
+                ...(formData.certification?.data?.[0]?.reference && {
+                    law_name: String(formData.certification.data[0].reference)
                 }),
                 
                 type: getPQRType(isAsme)
             }
 
             // Debug: Log the data being sent
-            console.log("PQR Data being sent:", JSON.stringify(backendData, null, 2))
-            console.log("Type field value:", backendData.type)
-            console.log("isAsme value:", isAsme)
-            console.log("getPQRType result:", getPQRType(isAsme))
-            console.log("Type field in backendData:", backendData.type)
+            console.log("PQR Data being sent:", backendData)
 
             // Validate that we have at least some data to send
             const hasData = Object.values(backendData).some(value => {
@@ -229,6 +230,7 @@ export function PQRForm({
 
             if (pqrId) {
                 // Update existing PQR
+                console.log(`Updating PQR ${pqrId}`)
                 await updatePQRMutation.mutateAsync({
                     id: pqrId,
                     data: backendData,
@@ -237,8 +239,7 @@ export function PQRForm({
                 toast.success("PQR updated successfully!")
             } else {
                 // Create new PQR
-                console.log("Calling createPQRMutation with data:", backendData)
-                console.log("Type in mutation data:", backendData.type)
+                console.log("Creating new PQR")
                 await createPQRMutation.mutateAsync({
                     data: backendData,
                     files: files

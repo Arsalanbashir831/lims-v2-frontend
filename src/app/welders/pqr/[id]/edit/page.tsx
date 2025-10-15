@@ -50,7 +50,8 @@ export default function EditPQRPage() {
   // Transform backend PQR data to form format
   function transformPQRToFormData(pqr: PQR): PQRFormData {
     const transformToDynamicData = (data: Record<string, string | number | boolean> | null | undefined) => {
-      if (!data || Object.keys(data).length === 0) return { columns: [], data: [] }
+      // If no data, return undefined so sections use their default data
+      if (!data || Object.keys(data).length === 0) return undefined
       
       const columns = [
         { 
@@ -78,8 +79,6 @@ export default function EditPQRPage() {
 
     // Transform basic_info with proper field mapping
     const transformBasicInfo = (basicInfo: Record<string, string | number | boolean> | null | undefined, pqr: PQR) => {
-      if (!basicInfo) return { columns: [], data: [] }
-      
       const columns = [
         { 
           id: 'fieldDesc', 
@@ -98,6 +97,7 @@ export default function EditPQRPage() {
       // Map backend fields to form fields - matching what HeaderInfoSection expects
       // Helper to get value from basicInfo using multiple possible keys
       const getValue = (...keys: string[]): string => {
+        if (!basicInfo) return ''
         for (const key of keys) {
           const value = basicInfo[key]
           if (value) return String(value)
@@ -111,15 +111,15 @@ export default function EditPQRPage() {
         { id: 's1r3', description: 'PQR No.', value: getValue('pqr_no', 'pqr_number') || pqr.id || '' },
         { id: 's1r4', description: 'Page No.', value: getValue('page_no') },
         { id: 's1r5', description: 'Supporting PWPS No.', value: getValue('supporting_pwps_no') },
-        { id: 's1r6', description: 'Date of Issue', value: getValue('date_of_issue', 'date_qualified'), type: 'date' },
+        { id: 's1r6', description: 'Date of Issue', value: getValue('date_of_issue', 'date_qualified'), type: 'date' as const },
         { id: 's1r7', description: 'Welding Process(es)', value: getValue('welding_processes') },
-        { id: 's1r8', description: 'Date of Welding', value: getValue('date_of_welding'), type: 'date' },
+        { id: 's1r8', description: 'Date of Welding', value: getValue('date_of_welding'), type: 'date' as const },
         { id: 's1r9', description: 'Type', value: getValue('type') },
         { id: 's1r10', description: 'Code Reference', value: getValue('code_reference') },
         { id: 's1r11', description: 'BI #', value: getValue('bi') },
         { id: 's1r12', description: 'Contract #', value: getValue('contract') },
         { id: 's1r13', description: 'Client/End User', value: getValue('client_end_user', 'approved_by') },
-        { id: 's1r14', description: 'Date of Testing', value: getValue('date_of_testing'), type: 'date' }
+        { id: 's1r14', description: 'Date of Testing', value: getValue('date_of_testing'), type: 'date' as const }
       ]
       
       return { columns, data: rows }
@@ -192,9 +192,17 @@ export default function EditPQRPage() {
         return `${backendUrl}${separator}${cleanPath}`
       }
       
+      // Return joint data with image URL - use undefined if no data so section uses defaults
+      if (!basicJointsData) {
+        return {
+          designPhotoUrl: getMediaUrl(pqr.joint_design_sketch?.[0]) || '',
+          designFiles: []
+        }
+      }
+      
       return {
         ...basicJointsData,
-        designPhotoUrl: getMediaUrl(pqr.joint_design_sketch?.[0]),
+        designPhotoUrl: getMediaUrl(pqr.joint_design_sketch?.[0]) || '',
         designFiles: []
       }
     }
@@ -255,21 +263,23 @@ export default function EditPQRPage() {
   return (
     <div className="grid gap-4">
       <FormHeader title="Edit PQR" description="Update the PQR details" label={null} href={ROUTES.APP.WELDERS.PQR.ROOT}>
-      <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Form Type</span>
-            <Select value={formType} onValueChange={(v: "asme" | "api") => setFormType(v)}>
-              <SelectTrigger className="w-44 h-9" disabled={true}>
-                <SelectValue placeholder="Select form type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="asme">ASME SEC IX</SelectItem>
-                <SelectItem value="api">API 1104</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Form Type</span>
+          <Select value={formType} onValueChange={(v: "asme" | "api") => setFormType(v)} disabled>
+            <SelectTrigger className="w-44 h-9">
+              <SelectValue placeholder="Select form type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="asme">ASME SEC IX</SelectItem>
+              <SelectItem value="api">API 1104</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </FormHeader>
+      
       <div>
         <PQRForm 
+          key={`pqr-edit-${id}-${Object.keys(initialFormData).length > 0 ? 'loaded' : 'empty'}`}
           isAsme={isAsme} 
           initialPqrData={initialFormData}
           pqrId={id}

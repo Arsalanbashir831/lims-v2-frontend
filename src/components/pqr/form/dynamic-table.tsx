@@ -65,20 +65,6 @@ export function DynamicTable({
 }: DynamicTableProps) {
   const [columns, setColumns] = useState<DynamicColumn[]>(initialColumns)
   const [data, setData] = useState<DynamicRow[]>(initialData)
-  
-  const lastPropsSnapshotRef = useRef<string>("")
-
-  // Sync state with props when they change (e.g., when loading PQR data)
-  useEffect(() => {
-    const newPropsSnapshot = JSON.stringify({ columns: initialColumns, data: initialData })
-    
-    // Only update if the incoming props have changed
-    if (newPropsSnapshot !== lastPropsSnapshotRef.current) {
-      lastPropsSnapshotRef.current = newPropsSnapshot
-      setColumns(initialColumns)
-      setData(initialData)
-    }
-  }, [initialColumns, initialData])
 
   // inline editing state
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null)
@@ -352,7 +338,7 @@ export function DynamicTable({
                         />
                       ) : (
                         <Input
-                          type="text"
+                          type={(row as any).type || "text"}
                           value={String(row[column.accessorKey] || "")}
                           onChange={(e) => handleCellChange(row.id, column.accessorKey, e.target.value)}
                           className="border-0 px-2 py-0.5 rounded-none h-auto text-sm"

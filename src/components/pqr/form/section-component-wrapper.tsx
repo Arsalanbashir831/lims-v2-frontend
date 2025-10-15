@@ -45,19 +45,6 @@ export function SectionComponentWrapper({
 
     const didInitRef = useRef(false)
     const lastSnapshotRef = useRef<string>("")
-    const lastPropsSnapshotRef = useRef<string>("")
-
-    // Sync state with props when they change (e.g., when loading PQR data)
-    useEffect(() => {
-        const newPropsSnapshot = JSON.stringify({ columns: initialCols, data: initialDataRows })
-        
-        // Only update if the incoming props have changed
-        if (newPropsSnapshot !== lastPropsSnapshotRef.current) {
-            lastPropsSnapshotRef.current = newPropsSnapshot
-            setColumns(initialCols)
-            setData(initialDataRows)
-        }
-    }, [initialCols, initialDataRows])
 
     // Update parent when local state changes, but avoid initial echo and repeated identical emissions
     useEffect(() => {

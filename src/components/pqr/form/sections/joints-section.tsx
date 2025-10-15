@@ -20,7 +20,7 @@ interface JointsSectionState {
 interface JointsSectionProps {
   isAsme: boolean
   onUpdate: (sectionData: { columns: DynamicColumn[]; data: DynamicRow[]; designPhotoUrl?: string; designFiles?: File[] }) => void
-  initialSectionData?: { columns: DynamicColumn[]; data: DynamicRow[]; designPhotoUrl?: string; designFiles?: File[] }
+  initialSectionData?: { columns?: DynamicColumn[]; data?: DynamicRow[]; designPhotoUrl?: string; designFiles?: File[] }
   pqrId?: string
 }
 
@@ -130,7 +130,41 @@ export function JointsSection({
       <Card className="p-4">
         <h4 className="mb-2 font-semibold">Joint Design Sketch / Photos</h4>
 
-        {sectionState.designFiles.length > 0 ? (
+        {/* Show existing image from backend or new uploaded files */}
+        {(sectionState.designPhotoUrl && sectionState.designFiles.length === 0) ? (
+          // Existing image from backend (edit mode)
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <img
+                src={sectionState.designPhotoUrl}
+                alt="Joint Design Photo"
+                className="h-32 w-32 border object-cover rounded"
+              />
+              <div className="text-sm text-muted-foreground">
+                Existing joint design sketch
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => document.getElementById('design-photo')?.click()}
+              >
+                Replace Image
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteAllFiles}
+              >
+                Remove Image
+              </Button>
+            </div>
+          </div>
+        ) : sectionState.designFiles.length > 0 ? (
+          // New files uploaded
           <div className="space-y-4">
             {/* Preview of first file */}
             {sectionState.designPhotoUrl && (
