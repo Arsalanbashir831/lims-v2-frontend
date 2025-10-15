@@ -129,6 +129,7 @@ export const WelderCertificateSchema = z.object({
     authorized_by: z.string(),
     welding_inspector: z.string(),
   }).optional(),
+  certificate_no: z.string().optional(),
   date_of_test: z.string(),
   identification_of_wps_pqr: z.string(),
   qualification_standard: z.string(),
@@ -159,6 +160,7 @@ export const WelderCertificateResponseSchema = z.object({
 
 export const CreateWelderCertificateSchema = z.object({
   welder_card_id: z.string().min(1, "Welder card is required"),
+  certificate_no: z.string().optional(),
   date_of_test: z.string().min(1, "Date of test is required"),
   identification_of_wps_pqr: z.string().min(1, "WPS/PQR identification is required"),
   qualification_standard: z.string().min(1, "Qualification standard is required"),
@@ -174,6 +176,7 @@ export const CreateWelderCertificateSchema = z.object({
 
 export const UpdateWelderCertificateSchema = z.object({
   welder_card_id: z.string().min(1, "Welder card is required"),
+  certificate_no: z.string().optional(),
   date_of_test: z.string().min(1, "Date of test is required"),
   identification_of_wps_pqr: z.string().min(1, "WPS/PQR identification is required"),
   qualification_standard: z.string().min(1, "Qualification standard is required"),

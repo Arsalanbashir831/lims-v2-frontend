@@ -17,6 +17,7 @@ export interface OperatorCertificate {
       profile_image?: string
     }
   }
+  certificate_no: string
   wps_followed_date: string
   date_of_issue: string
   date_of_welding: string
@@ -53,6 +54,7 @@ export interface TestResult {
 
 export interface CreateOperatorCertificateData {
   welder_card_id: string
+  certificate_no: string
   wps_followed_date: string
   date_of_issue: string
   date_of_welding: string
@@ -157,6 +159,9 @@ export const operatorCertificateService = {
       data: OperatorCertificate[]
       total: number
       filters_applied: {
+        certificate_no: string
+        company: string
+        card_no: string
         law_name: string
         tested_by: string
         date_of_welding: string

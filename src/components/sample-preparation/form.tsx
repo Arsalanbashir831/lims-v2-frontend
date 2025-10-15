@@ -105,7 +105,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
   const [jobId, setJobId] = useState(initialData && 'job' in initialData ? String(initialData.job) : "")
   const [requestId, setRequestId] = useState(initialData && 'request_id' in initialData ? String(initialData.request_id) : "")
   const [items, setItems] = useState<PreparationItem[]>(initialData && 'test_items' in initialData ? (initialData.test_items as PreparationItem[]) : [])
-
+  
   // For edit mode, ensure jobId and requestId are set from initial data
   useEffect(() => {
     if (initialData && 'job' in initialData && initialData.job) {
@@ -154,14 +154,14 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
     if (completeJob && items.length > 0) {
       // Collect all unique test method IDs to fetch names
       const allTestMethodIds = new Set<string>()
-
+      
       // Add test methods from current items
       items.forEach((item) => {
         if (item.test_method) {
           allTestMethodIds.add(item.test_method)
         }
       })
-
+      
       // Add test methods from available samples
       completeJob.samples.forEach(sample => {
         sample.test_methods.forEach((methodId: string) => allTestMethodIds.add(methodId))
@@ -266,7 +266,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
 
   const addItem = useCallback(() => {
     if (!completeJob || !requestId) return
-    const selectedSampleLot = completeJob.samples.find((s: SampleSummary) =>
+    const selectedSampleLot = completeJob.samples.find((s: SampleSummary) => 
       String(sampleIdMap[s.id] || s.id) === requestId
     )
     const newItem = createPreparationItem({
@@ -294,8 +294,8 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
     // Defer creation to submit; just add locally without id
     setItems(prev => {
       const updated = prev.map((item) => {
-        if (item.id !== rowId) return item
-        // prevent duplicates within row
+      if (item.id !== rowId) return item
+      // prevent duplicates within row
         if (item.specimens.some(s => s.specimen_id === token)) {
           return item
         }
@@ -449,7 +449,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
 
       // Clear deleted specimen IDs after successful submission
       setDeletedSpecimenOids([])
-
+      
       router.push(ROUTES.APP.SAMPLE_PREPARATION.ROOT)
     } catch (error) {
       console.error('Submit failed:', error)
@@ -480,8 +480,8 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
           {jobId && completeJob && (
             <div className="grid gap-2">
               <Label>Sample Lot</Label>
-              <Select
-                value={requestId}
+              <Select 
+                value={requestId} 
                 onValueChange={setRequestId}
                 disabled={readOnly || isEditing}
               >
@@ -509,134 +509,134 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
               <p className="text-sm text-muted-foreground mt-1">Add one row per distinct test setup.</p>
             </div>
             {!readOnly && (
-              <Button type="button" size="sm" onClick={addItem} className="max-w-[120px] justify-self-end" disabled={!completeJob}>
-                <PlusIcon className="w-4 h-4 mr-1" />Add Row
-              </Button>
+            <Button type="button" size="sm" onClick={addItem} className="max-w-[120px] justify-self-end" disabled={!completeJob}>
+              <PlusIcon className="w-4 h-4 mr-1" />Add Row
+            </Button>
             )}
           </CardHeader>
           <CardContent className="px-2">
-            {loading && !completeJob ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">Loading job details...</div>
-            ) : (
-              <ScrollArea className={cn("w-full max-w-screen", maxWidth)}>
-                <Table className="min-w-[1200px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[40px]">#</TableHead>
-                      <TableHead>Test Method</TableHead>
-                      <TableHead className="w-[200px]">Dimensions</TableHead>
-                      <TableHead className="w-[300px]">Item Description</TableHead>
-                      <TableHead>No. of Specimens</TableHead>
-                      <TableHead>Planned Test Date</TableHead>
-                      <TableHead>Requested By</TableHead>
-                      <TableHead>Specimen IDs</TableHead>
-                      <TableHead className="w-[200px]">Remarks</TableHead>
-                      <TableHead className="w-[80px] text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isEditing && !itemsInitialized ? (
+          {loading && !completeJob ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">Loading job details...</div>
+          ) : (
+          <ScrollArea className={cn("w-full max-w-screen", maxWidth)}>
+              <Table className="min-w-[1200px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[40px]">#</TableHead>
+                    <TableHead>Test Method</TableHead>
+                    <TableHead className="w-[200px]">Dimensions</TableHead>
+                    <TableHead className="w-[300px]">Item Description</TableHead>
+                    <TableHead>No. of Specimens</TableHead>
+                    <TableHead>Planned Test Date</TableHead>
+                    <TableHead>Requested By</TableHead>
+                    <TableHead>Specimen IDs</TableHead>
+                    <TableHead className="w-[200px]">Remarks</TableHead>
+                    <TableHead className="w-[80px] text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isEditing && !itemsInitialized ? (
                       <TableRow key="loading-test-items">
-                        <TableCell colSpan={10} className="text-center py-8">
-                          <div className="text-sm text-muted-foreground">Loading test items...</div>
-                        </TableCell>
-                      </TableRow>
-                    ) : items.length === 0 ? (
+                      <TableCell colSpan={10} className="text-center py-8">
+                        <div className="text-sm text-muted-foreground">Loading test items...</div>
+                      </TableCell>
+                    </TableRow>
+                  ) : items.length === 0 ? (
                       <TableRow key="no-test-items">
-                        <TableCell colSpan={10} className="text-center py-8">
-                          <div className="text-sm text-muted-foreground">No test items added yet</div>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      items.map((row, index) => {
+                      <TableCell colSpan={10} className="text-center py-8">
+                        <div className="text-sm text-muted-foreground">No test items added yet</div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    items.map((row, index) => {
                         // Ensure unique row ID - use row.id if available, otherwise use index-based fallback
                         const rowId = row.id || `row-${index}`
-                        // Get the selected sample lot from requestId
-                        const selectedSampleLot = completeJob?.samples.find((s: SampleSummary) =>
-                          String(sampleIdMap[s.id] || s.id) === requestId
-                        )
-                        const availableMethods = selectedSampleLot ?
-                          selectedSampleLot.test_methods.map((id: string, methodIndex: number) => ({
-                            id,
-                            name: selectedSampleLot.test_method_names[methodIndex] || `Method ${methodIndex + 1}`
-                          })) : []
+                    // Get the selected sample lot from requestId
+                    const selectedSampleLot = completeJob?.samples.find((s: SampleSummary) => 
+                      String(sampleIdMap[s.id] || s.id) === requestId
+                    )
+                    const availableMethods = selectedSampleLot ?
+                      selectedSampleLot.test_methods.map((id: string, methodIndex: number) => ({
+                        id,
+                        name: selectedSampleLot.test_method_names[methodIndex] || `Method ${methodIndex + 1}`
+                      })) : []
 
-                        return (
+                    return (
                           <TableRow key={rowId}>
-                            <TableCell className="font-medium">{index + 1}</TableCell>
-                            <TableCell>
-                              <Select
-                                value={row.test_method}
-                                onValueChange={(val) => {
+                        <TableCell className="font-medium">{index + 1}</TableCell>
+                        <TableCell>
+                          <Select
+                            value={row.test_method}
+                            onValueChange={(val) => {
                                   updateItemField(rowId, "test_method" as any, val)
-                                }}
-                                disabled={readOnly}
-                              >
-                                <SelectTrigger className="w-56 h-10" disabled={readOnly}>
-                                  <SelectValue placeholder={
-                                    loadingTestMethodNames
-                                      ? "Loading names..."
-                                      : availableMethods.length > 0
-                                        ? "Select method"
-                                        : "Loading methods..."
-                                  } />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {availableMethods.length > 0 ? (
-                                    availableMethods.map((method: { id: string; name: string }) => {
-                                      const methodName = testMethodNames[method.id] || method.name || method.id
-                                      return (
-                                        <SelectItem key={method.id} value={method.id}>{methodName}</SelectItem>
-                                      )
-                                    })
-                                  ) : (
-                                    <div className="px-2 py-1 text-sm text-muted-foreground">
-                                      {completeJob ? "No methods available" : "Loading methods..."}
-                                    </div>
-                                  )}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                placeholder="Dimensions"
-                                value={row.dimensions || ""}
+                            }}
+                            disabled={readOnly}
+                          >
+                            <SelectTrigger className="w-56 h-10" disabled={readOnly}>
+                              <SelectValue placeholder={
+                                loadingTestMethodNames 
+                                  ? "Loading names..." 
+                                  : availableMethods.length > 0 
+                                    ? "Select method" 
+                                    : "Loading methods..."
+                              } />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableMethods.length > 0 ? (
+                                availableMethods.map((method: { id: string; name: string }) => {
+                                  const methodName = testMethodNames[method.id] || method.name || method.id
+                                  return (
+                                    <SelectItem key={method.id} value={method.id}>{methodName}</SelectItem>
+                                  )
+                                })
+                                ) : (
+                                <div className="px-2 py-1 text-sm text-muted-foreground">
+                                  {completeJob ? "No methods available" : "Loading methods..."}
+                                </div>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Input 
+                            placeholder="Dimensions" 
+                            value={row.dimensions || ""} 
                                 onChange={(e) => updateItemField(rowId, "dimensions" as any, e.target.value)}
-                                disabled={readOnly}
-                                className="w-[180px]"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                placeholder="Item description"
-                                value={row.item_description || ""}
+                            disabled={readOnly}
+                            className="w-[180px]"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            placeholder="Item description"
+                            value={row.item_description || ""}
                                 onChange={(e) => updateItemField(rowId, "item_description" as any, e.target.value)}
-                                disabled={readOnly}
-                                className="w-[280px]"
-                              />
-                            </TableCell>
-
-                            <TableCell>
+                            disabled={readOnly}
+                            className="w-[280px]"
+                          />
+                        </TableCell>
+                        
+                        <TableCell>
                               <Input type="number" min={0} value={row.no_of_specimens} onChange={(e) => updateItemField(rowId, "no_of_specimens" as any, Number(e.target.value))} disabled={readOnly} />
-                            </TableCell>
-                            <TableCell>
+                        </TableCell>
+                        <TableCell>
                               <Input type="date" value={row.planned_test_date || ""} onChange={(e) => updateItemField(rowId, "planned_test_date" as any, e.target.value)} disabled={readOnly} />
-                            </TableCell>
-                            <TableCell>
+                        </TableCell>
+                        <TableCell>
                               <Input className="w-[120px]" placeholder="Requested by" value={row.requested_by || ""} onChange={(e) => updateItemField(rowId, "requested_by" as any, e.target.value)} disabled={readOnly} />
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1">
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
                                 {row.specimens.map((specimen: SpecimenDraft, specIndex: number) => {
                                   // Create a truly unique key that combines row ID, specimen index, and specimen ID
                                   const uniqueKey = `${rowId}-specimen-${specIndex}-${specimen.specimen_id}-${specimen.id || 'new'}`
                                   return (
-                                    <SpecimenBadge
+                              <SpecimenBadge
                                       key={uniqueKey}
-                                      specimen={specimen}
+                                specimen={specimen}
                                       onDelete={(identifier) => removeSpecimenId(rowId, identifier)}
-                                      onUpdate={async (specimenId, newSpecimenId) => {
-                                        try {
+                                onUpdate={async (specimenId, newSpecimenId) => {
+                                  try {
                                           // Real-time specimen update
                                           if (isEditing && specimenId && specimenId.length >= 12) {
                                             // This is an existing specimen - update it via API
@@ -650,32 +650,32 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                                             setItems(prev => prev.map((item) => {
                                               return item.id === rowId
                                                 ? {
-                                                  ...item,
+                                      ...item,
                                                   specimens: item.specimens.map((spec: SpecimenDraft) =>
                                                     spec.id === specimenId ? { ...spec, specimen_id: newSpecimenId } : spec
                                                   )
                                                 }
                                                 : item
                                             }))
-                                            toast.success("Specimen updated successfully")
+                                    toast.success("Specimen updated successfully")
                                           }
-                                        } catch (e) {
+                                  } catch (e) {
                                           console.error("Failed to update specimen:", e)
-                                          toast.error("Failed to update specimen")
-                                        }
-                                      }}
-                                      disabled={readOnly}
-                                    />
+                                    toast.error("Failed to update specimen")
+                                  }
+                                }}
+                                disabled={readOnly}
+                              />
                                   )
                                 })}
-                                <Input
-                                  className="h-8 w-56"
-                                  placeholder="Type ID, press comma/space/Enter"
+                            <Input
+                              className="h-8 w-56"
+                              placeholder="Type ID, press comma/space/Enter"
                                   value={specimenInputByRow[rowId] ?? ""}
                                   onChange={(e) => setSpecimenInputByRow(prev => ({ ...prev, [rowId]: e.target.value }))}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "," || e.key === " " || e.key === "Enter") {
-                                      e.preventDefault()
+                              onKeyDown={(e) => {
+                                if (e.key === "," || e.key === " " || e.key === "Enter") {
+                                  e.preventDefault()
                                       commitSpecimenToken(rowId)
                                     } else if (e.key === "Backspace" && (specimenInputByRow[rowId] ?? "") === "" && row.specimens.length > 0) {
                                       removeSpecimenId(rowId, row.specimens[row.specimens.length - 1]?.id || "")
@@ -684,44 +684,44 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                                   onBlur={() => {
                                     commitSpecimenToken(rowId)
                                   }}
-                                  onPaste={(e) => {
-                                    const txt = e.clipboardData.getData("text")
-                                    if (!txt) return
-                                    e.preventDefault()
-                                    const tokens = txt.split(/[\,\s]+/).map(s => s.trim()).filter(Boolean)
+                              onPaste={(e) => {
+                                const txt = e.clipboardData.getData("text")
+                                if (!txt) return
+                                e.preventDefault()
+                                const tokens = txt.split(/[\,\s]+/).map(s => s.trim()).filter(Boolean)
                                     for (const t of tokens) commitSpecimenToken(rowId, t)
-                                  }}
-                                  disabled={readOnly}
-                                />
-                              </div>
-                              <div className="text-xs text-muted-foreground mt-1">Max {row.no_of_specimens} unique IDs</div>
-                            </TableCell>
-                            <TableCell>
+                              }}
+                              disabled={readOnly}
+                            />
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">Max {row.no_of_specimens} unique IDs</div>
+                        </TableCell>
+                        <TableCell>
                               <Input className="w-[120px]" placeholder="Remarks" value={row.remarks || ""} onChange={(e) => updateItemField(rowId, "remarks" as any, e.target.value)} disabled={readOnly} />
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {!readOnly && (
-                                <ConfirmPopover
-                                  title="Delete this testing item?"
-                                  confirmText="Delete"
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {!readOnly && (
+                            <ConfirmPopover
+                              title="Delete this testing item?"
+                              confirmText="Delete"
                                   onConfirm={() => removeItem(rowId)}
-                                  trigger={<Button type="button" variant="ghost" size="sm"><TrashIcon className="w-4 h-4" /></Button>}
-                                />
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })
-                    )}
-                  </TableBody>
-                </Table>
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
-            )}
+                              trigger={<Button type="button" variant="ghost" size="sm"><TrashIcon className="w-4 h-4" /></Button>}
+                            />
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                  )}
+                </TableBody>
+              </Table>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          )}
           </CardContent>
         </Card>
       )}
-
+      
       {!readOnly && (
         <div className="sticky bottom-0 bg-background/80 dark:bg-background/10 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2">
           <div className="flex justify-end">

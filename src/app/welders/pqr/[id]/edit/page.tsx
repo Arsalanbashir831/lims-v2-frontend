@@ -290,18 +290,18 @@ export default function EditPQRPage() {
   return (
     <div className="grid gap-4">
       <FormHeader title="Edit PQR" description="Update the PQR details" label={null} href={ROUTES.APP.WELDERS.PQR.ROOT}>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Form Type</span>
+      <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Form Type</span>
           <Select value={formType} onValueChange={(v: "asme" | "api") => setFormType(v)} disabled>
             <SelectTrigger className="w-44 h-9">
-              <SelectValue placeholder="Select form type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="asme">ASME SEC IX</SelectItem>
-              <SelectItem value="api">API 1104</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+                <SelectValue placeholder="Select form type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="asme">ASME SEC IX</SelectItem>
+                <SelectItem value="api">API 1104</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
       </FormHeader>
       
       <div>

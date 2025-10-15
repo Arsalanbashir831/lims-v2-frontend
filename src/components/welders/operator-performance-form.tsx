@@ -20,6 +20,7 @@ import QRCode from "qrcode";
 import { Checkbox } from "../ui/checkbox";
 import { ConfirmPopover } from "../ui/confirm-popover";
 import { useWelderCards } from "@/hooks/use-welder-cards";
+import { CreateOperatorCertificateData } from "@/services/welder-operator-certificates.service";
 import {
   Command,
   CommandEmpty,
@@ -79,7 +80,7 @@ interface OperatorPerformanceData {
 
 interface OperatorPerformanceFormProps {
   initialData?: OperatorPerformanceData;
-  onSubmit: (data: OperatorPerformanceData) => void;
+  onSubmit: (data: CreateOperatorCertificateData) => void;
   onCancel: () => void;
   readOnly?: boolean;
 }
@@ -434,7 +435,46 @@ export function OperatorPerformanceForm({
     }
 
     try {
-      onSubmit(formData);
+      // Map form data to API schema
+      const apiData = {
+        welder_card_id: formData.welderCardId,
+        certificate_no: formData.certificateRefNo,
+        wps_followed_date: formData.wpsFollowed,
+        date_of_issue: formData.dateOfIssued,
+        date_of_welding: formData.dateOfWelding,
+        joint_weld_type: formData.jointWeldType,
+        base_metal_spec: formData.baseMetalSpec,
+        base_metal_p_no: formData.baseMetalPNumber,
+        filler_sfa_spec: formData.fillerSpec,
+        filler_class_aws: formData.fillerClass,
+        test_coupon_size: formData.testCouponSize,
+        positions: formData.positions,
+        testing_variables_and_qualification_limits_automatic: formData.automaticWeldingEquipmentVariables.map(
+          (variable) => ({
+            name: variable.name,
+            actual_values: variable.actualValue,
+            range_values: variable.rangeQualified,
+          })
+        ),
+        testing_variables_and_qualification_limits_machine: formData.machineWeldingEquipmentVariables.map(
+          (variable) => ({
+            name: variable.name,
+            actual_values: variable.actualValue,
+            range_values: variable.rangeQualified,
+          })
+        ),
+        tests: formData.testsConducted.map((test) => ({
+          type: test.testType,
+          test_performed: test.testPerformed,
+          results: test.results,
+          report_no: test.reportNo,
+        })),
+        law_name: formData.certificationStatement,
+        tested_by: formData.testSupervisor,
+        witnessed_by: formData.testingWitnessed,
+      };
+      
+      onSubmit(apiData as CreateOperatorCertificateData);
       toast.success("Operator performance certificate saved successfully");
     } catch (error) {
       console.error("Failed to save operator performance certificate:", error);
@@ -473,20 +513,11 @@ export function OperatorPerformanceForm({
             <h2 className="text-xl font-bold text-green-700 mb-2">
               Welder / Welder operator performance Qualification Record
             </h2>
-            {readOnly ? (
+            
               <h3 className="text-lg font-bold">
                 {formData.operatorName || "OPERATOR NAME"}
               </h3>
-            ) : (
-              <Input
-                value={formData.operatorName}
-                onChange={(e) =>
-                  handleInputChange("operatorName", e.target.value)
-                }
-                placeholder="Enter operator name"
-                className="border-0 p-0 h-auto text-center !text-lg font-bold"
-              />
-            )}
+            
           </div>
 
           {/* Right - Welder Photo */}
@@ -593,12 +624,15 @@ export function OperatorPerformanceForm({
                                   );
                                   handleInputChange(
                                     "operatorImage",
-                                    card.welder_info?.profile_image || null
+                                    card.welder_info?.profile_image || ""
                                   );
-                                  handleInputChange(
-                                    "certificateRefNo",
-                                    card.card_no || ""
-                                  );
+                                  // Only set certificateRefNo if it's empty, allowing user to edit
+                                  if (!formData.certificateRefNo) {
+                                    handleInputChange(
+                                      "certificateRefNo",
+                                      card.card_no || ""
+                                    );
+                                  }
                                   toast.success(
                                     `Welder ${card.welder_info?.operator_name} selected`
                                   );
@@ -636,7 +670,17 @@ export function OperatorPerformanceForm({
               Certificate No
             </div>
             <div className="p-1 border-x">
-              <span className="text-sm">{formData.certificateRefNo}</span>
+              {readOnly ? (
+                <span className="text-sm">{formData.certificateRefNo}</span>
+              ) : (
+                <Input
+                  type="text"
+                  value={formData.certificateRefNo}
+                  onChange={(e) => handleInputChange("certificateRefNo", e.target.value)}
+                  className="border-0 py-0 h-auto text-sm"
+                  placeholder="Enter certificate reference number"
+                />
+              )}
             </div>
           </div>
 

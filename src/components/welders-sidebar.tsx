@@ -24,11 +24,11 @@ import Image from "next/image"
 const navItems = [
   { href: ROUTES.APP.WELDERS.DASHBOARD, label: "Dashboard", icon: Home },
   { href: ROUTES.APP.WELDERS.WELDERS, label: "Welders", icon: UserPlus },
-  { href: ROUTES.APP.WELDERS.PQR.ROOT, label: "PQR Records", icon: BookOpenText },
+  { href: ROUTES.APP.WELDERS.WELDER_CARDS.ROOT, label: "Welder Card", icon: CreditCard },
   { href: ROUTES.APP.WELDERS.WELDER_QUALIFICATION.ROOT, label: "Welder Qualification Certificate", icon: Award },
   { href: ROUTES.APP.WELDERS.OPERATOR_PERFORMANCE.ROOT, label: "Operator Performance Certificate", icon: Users },
-  { href: ROUTES.APP.WELDERS.WELDER_CARDS.ROOT, label: "Welder Card", icon: CreditCard },
   { href: ROUTES.APP.WELDERS.TESTING_REPORTS.ROOT, label: "Testing Reports", icon: FileText },
+  { href: ROUTES.APP.WELDERS.PQR.ROOT, label: "PQR Records", icon: BookOpenText },
 ]
 
 export function WeldersSidebar() {

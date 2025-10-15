@@ -32,7 +32,7 @@ export default function EditOperatorPerformancePage() {
     baseMetalSpec: apiData.data.base_metal_spec || "",
     fillerSpec: apiData.data.filler_sfa_spec || "",
     testCouponSize: apiData.data.test_coupon_size || "",
-    certificateRefNo: apiData.data.welder_card_info?.card_no || "",
+    certificateRefNo: apiData.data.certificate_no || "",
     iqamaId: apiData.data.welder_card_info?.welder_info?.iqama || "",
     dateOfIssued: apiData.data.date_of_issue || "",
     dateOfWelding: apiData.data.date_of_welding || "",
@@ -63,44 +63,10 @@ export default function EditOperatorPerformancePage() {
     testSupervisor: apiData.data.tested_by || ""
   } : undefined
 
-  const handleSubmit = async (data: OperatorPerformanceData) => {
+  const handleSubmit = async (data: CreateOperatorCertificateData) => {
     try {
-      // Map form data to API structure
-      const apiData: CreateOperatorCertificateData = {
-        welder_card_id: data.welderCardId || "",
-        wps_followed_date: data.wpsFollowed || "",
-        date_of_issue: data.dateOfIssued || "",
-        date_of_welding: data.dateOfWelding || "",
-        joint_weld_type: data.jointWeldType || "",
-        base_metal_spec: data.baseMetalSpec || "",
-        base_metal_p_no: data.baseMetalPNumber || "",
-        filler_sfa_spec: data.fillerSpec || "",
-        filler_class_aws: data.fillerClass || "",
-        test_coupon_size: data.testCouponSize || "",
-        positions: data.positions || "",
-        testing_variables_and_qualification_limits_automatic: data.automaticWeldingEquipmentVariables.map(variable => ({
-          name: variable.name,
-          actual_values: variable.actualValue,
-          range_values: variable.rangeQualified
-        })),
-        testing_variables_and_qualification_limits_machine: data.machineWeldingEquipmentVariables.map(variable => ({
-          name: variable.name,
-          actual_values: variable.actualValue,
-          range_values: variable.rangeQualified
-        })),
-        tests: data.testsConducted.map(test => ({
-          type: test.testType,
-          test_performed: test.testPerformed,
-          results: test.results,
-          report_no: test.reportNo
-        })),
-        law_name: data.certificationStatement || "",
-        tested_by: data.testSupervisor || "",
-        witnessed_by: data.testingWitnessed || ""
-      }
-      
       // Update certificate via API
-      await updateOperatorCertificate.mutateAsync({ id: params.id as string, data: apiData })
+      await updateOperatorCertificate.mutateAsync({ id: params.id as string, data })
       
       toast.success("Operator performance certificate updated successfully")
       setIsEditing(false)

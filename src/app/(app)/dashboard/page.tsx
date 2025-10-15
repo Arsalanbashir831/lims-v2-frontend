@@ -123,7 +123,7 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2">
         {/* Jobs Per Week Chart */}
         <LineChartComponent
-         title="Sample Received Per Month"
+          title="Sample Received Per Month"
           description="Monthly sample receiving trends"
           data={jobsChartData}
           height={300}

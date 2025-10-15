@@ -61,61 +61,76 @@ export default function WelderQualificationPage() {
       size: 80,
     },
     {
-      accessorKey: "date_of_test",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Date of Test" />,
+      accessorKey: "certificate_no",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Certificate No" />,
       cell: ({ row }) => {
-        const dateOfTest = row.getValue("date_of_test") as string
+        const certificateNo = row.getValue("certificate_no") as string
         return (
-          <div className="font-medium">
+          <div className="max-w-[150px] truncate font-medium" title={certificateNo}>
+            {certificateNo || "N/A"}
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "company",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Company" />,
+      cell: ({ row }) => {
+        const company = row.getValue("company") as string
+        return (
+          <div className="max-w-[150px] truncate font-medium" title={company}>
+            {company || "N/A"}
+          </div>
+        )
+      },
+    },
+    {
+      id: "card_no",
+      accessorFn: (row) => row.welder_card_info?.card_no || "N/A",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Card No" />,
+      cell: ({ row }) => {
+        const cardNo = row.getValue("card_no") as string
+        return (
+          <div className="max-w-[150px] truncate font-medium" title={cardNo}>
+            {cardNo}
+          </div>
+        )
+      },
+    },
+    {
+      id: "operator_id",
+      accessorFn: (row) => row.welder_card_info?.welder_info?.operator_id || "N/A",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Operator ID" />,
+      cell: ({ row }) => {
+        const operatorId = row.getValue("operator_id") as string
+        return (
+          <div className="max-w-[120px] truncate font-medium" title={operatorId}>
+            {operatorId}
+          </div>
+        )
+      },
+    },
+    {
+      id: "operator_name",
+      accessorFn: (row) => row.welder_card_info?.welder_info?.operator_name || "N/A",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Operator Name" />,
+      cell: ({ row }) => {
+        const operatorName = row.getValue("operator_name") as string
+        return (
+          <div className="max-w-[150px] truncate" title={operatorName}>
+            {operatorName}
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "created_at",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Issue Date" />,
+      cell: ({ row }) => {
+        const dateOfTest = row.getValue("created_at") as string
+        return (
+          <div className="max-w-[120px] truncate font-medium" title={dateOfTest}>
             {new Date(dateOfTest).toLocaleDateString()}
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "identification_of_wps_pqr",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="WPS/PQR" />,
-      cell: ({ row }) => {
-        const wpsPqr = row.getValue("identification_of_wps_pqr") as string
-        return (
-          <div className="max-w-[150px] truncate font-medium" title={wpsPqr}>
-            {wpsPqr}
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "qualification_standard",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Standard" />,
-      cell: ({ row }) => {
-        const standard = row.getValue("qualification_standard") as string
-        return (
-          <div className="max-w-[150px] truncate" title={standard}>
-            {standard}
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "joint_type",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Joint Type" />,
-      cell: ({ row }) => {
-        const jointType = row.getValue("joint_type") as string
-        return (
-          <div className="max-w-[100px] truncate" title={jointType}>
-            {jointType}
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "weld_type",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Weld Type" />,
-      cell: ({ row }) => {
-        const weldType = row.getValue("weld_type") as string
-        return (
-          <div className="max-w-[100px] truncate" title={weldType}>
-            {weldType}
           </div>
         )
       },
@@ -164,10 +179,10 @@ export default function WelderQualificationPage() {
     return data.filter((certificate) => {
       const searchTerm = globalFilter.toLowerCase()
       return (
-        certificate.identification_of_wps_pqr.toLowerCase().includes(searchTerm) ||
-        certificate.qualification_standard.toLowerCase().includes(searchTerm) ||
-        certificate.joint_type.toLowerCase().includes(searchTerm) ||
-        certificate.weld_type.toLowerCase().includes(searchTerm) ||
+        certificate.certificate_no?.toLowerCase().includes(searchTerm) ||
+        certificate.welder_card_info?.card_no?.toLowerCase().includes(searchTerm) ||
+        certificate.welder_card_info?.welder_info?.operator_id?.toLowerCase().includes(searchTerm) ||
+        certificate.welder_card_info?.welder_info?.operator_name?.toLowerCase().includes(searchTerm) ||
         certificate.date_of_test.toLowerCase().includes(searchTerm)
       )
     })

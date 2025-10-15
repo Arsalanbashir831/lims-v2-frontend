@@ -22,26 +22,22 @@ import { toast } from "sonner"
 
 interface OperatorPerformance {
   id: string
-  issuedIn: string
   certificateNumber: string
-  operatorId: string
+  cardNumber: string
+  welderId: string
   operatorName: string
-  clientName: string
+  createdAt: string
 }
 
 // Transform API data to table format
 const transformApiDataToTable = (apiData: OperatorCertificate[]): OperatorPerformance[] => {
   return apiData.map(item => ({
     id: String(item.id ?? ''),
-    issuedIn: item.date_of_issue 
-      ? new Date(String(item.date_of_issue)).getFullYear().toString() 
-      : item.date_of_welding 
-        ? new Date(String(item.date_of_welding)).getFullYear().toString()
-        : new Date(String(item.created_at ?? new Date())).getFullYear().toString(),
-    certificateNumber: String(item.welder_card_info?.card_no ?? item.law_name ?? "N/A"),
-    operatorId: String(item.welder_card_info?.welder_info?.operator_id ?? "N/A"),
+    certificateNumber: String(item.certificate_no ?? "N/A"),
+    cardNumber: String(item.welder_card_info?.card_no ?? "N/A"),
+    welderId: String(item.welder_card_info?.welder_info?.operator_id ?? "N/A"),
     operatorName: String(item.welder_card_info?.welder_info?.operator_name ?? item.tested_by ?? "N/A"),
-    clientName: String(item.welder_card_info?.company ?? item.witnessed_by ?? "N/A")
+    createdAt: String(item.created_at ?? new Date())
   }))
 }
 
@@ -89,14 +85,6 @@ export default function OperatorPerformancePage() {
       size: 80,
     },
     {
-      accessorKey: "issuedIn",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Issued In" />,
-      cell: ({ row }) => {
-        const issuedIn = row.getValue("issuedIn") as string
-        return <div className="font-medium">{issuedIn}</div>
-      },
-    },
-    {
       accessorKey: "certificateNumber",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Certificate No" />,
       cell: ({ row }) => {
@@ -109,13 +97,25 @@ export default function OperatorPerformancePage() {
       },
     },
     {
-      accessorKey: "operatorId",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Operator ID" />,
+      accessorKey: "cardNumber",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Card No" />,
       cell: ({ row }) => {
-        const operatorId = row.getValue("operatorId") as string
+        const cardNumber = row.getValue("cardNumber") as string
         return (
-          <div className="max-w-[120px] truncate font-medium" title={operatorId}>
-            {operatorId}
+          <div className="max-w-[150px] truncate font-medium" title={cardNumber}>
+            {cardNumber}
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "welderId",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Welder ID" />,
+      cell: ({ row }) => {
+        const welderId = row.getValue("welderId") as string
+        return (
+          <div className="max-w-[120px] truncate font-medium" title={welderId}>
+            {welderId}
           </div>
         )
       },
@@ -129,11 +129,15 @@ export default function OperatorPerformancePage() {
       },
     },
     {
-      accessorKey: "clientName",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Client Name" />,
+      accessorKey: "createdAt",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Issue Date" />,
       cell: ({ row }) => {
-        const clientName = row.getValue("clientName") as string
-        return <div className="max-w-[200px] truncate" title={clientName}>{clientName}</div>
+        const createdAt = row.getValue("createdAt") as string
+        return (
+          <div className="max-w-[120px] truncate font-medium" title={createdAt}>
+            {new Date(createdAt).toLocaleDateString()}
+          </div>
+        )
       },
     },
     {
@@ -178,11 +182,11 @@ export default function OperatorPerformancePage() {
     if (!globalFilter) return data
     const searchTerm = globalFilter.toLowerCase()
     return data.filter((item) =>
-      item.operatorName.toLowerCase().includes(searchTerm) ||
       item.certificateNumber.toLowerCase().includes(searchTerm) ||
-      item.operatorId.toLowerCase().includes(searchTerm) ||
-      item.clientName.toLowerCase().includes(searchTerm) ||
-      item.issuedIn.toLowerCase().includes(searchTerm)
+      item.cardNumber.toLowerCase().includes(searchTerm) ||
+      item.welderId.toLowerCase().includes(searchTerm) ||
+      item.operatorName.toLowerCase().includes(searchTerm) ||
+      item.createdAt.toLowerCase().includes(searchTerm)
     )
   }, [data, globalFilter])
 

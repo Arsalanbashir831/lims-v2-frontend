@@ -79,17 +79,26 @@ export const welderCertificateService = {
   async search(query: string, page: number = 1, limit: number = 10): Promise<WelderCertificateListResponse> {
     const response = await api.get(API_ROUTES.WELDERS_API.SEARCH_WELDER_CERTIFICATES, {
       searchParams: {
-        q: query,
+        certificate_no: query,
         page: page.toString(),
         limit: limit.toString(),
       }
     }).json<{
-      results: WelderCertificate[]
-      count: number
-      next: string | null
-      previous: string | null
+      status: string
+      data: WelderCertificate[]
+      total: number
+      filters_applied: {
+        certificate_no: string
+        company: string
+        card_no: string
+      }
     }>()
 
-    return response
+    return {
+      results: response.data,
+      count: response.total,
+      next: null, // Search API doesn't provide pagination info
+      previous: null,
+    }
   }
 }

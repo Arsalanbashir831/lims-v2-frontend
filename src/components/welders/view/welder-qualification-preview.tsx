@@ -15,9 +15,9 @@ interface WelderQualificationPreviewProps {
   isPublic?: boolean
 }
 
-export default function WelderQualificationPreview({
-  showButton = true,
-  isPublic = false
+export default function WelderQualificationPreview({ 
+  showButton = true, 
+  isPublic = false 
 }: WelderQualificationPreviewProps) {
   const params = useParams()
   const searchParams = useSearchParams()
@@ -49,12 +49,12 @@ export default function WelderQualificationPreview({
   useEffect(() => {
     if (isPrint && welderCertificate && !isLoading) {
       const timeout = setTimeout(() => {
-        if (typeof window !== "undefined") {
-          window.parent.postMessage({
-            type: 'DOCUMENT_READY',
+      if (typeof window !== "undefined") {
+        window.parent.postMessage({
+          type: 'DOCUMENT_READY',
             id: id
-          }, '*');
-        }
+        }, '*');
+      }
       }, 3000); // 3 second timeout
 
       return () => clearTimeout(timeout);
@@ -173,7 +173,7 @@ export default function WelderQualificationPreview({
       {showButton && (
         <div className="mb-6 flex items-center justify-between">
           <BackButton />
-
+          
           <div className="flex gap-2">
             <Button onClick={handlePrint}>
               <Printer className="mr-2 h-4 w-4" />
@@ -184,13 +184,13 @@ export default function WelderQualificationPreview({
       )}
 
       {/* Certificate Content */}
-      <WelderQualificationForm
+          <WelderQualificationForm
         initialData={welderCertificate}
         onSubmit={() => { }} // No-op for readonly mode
         onCancel={() => { }} // No-op for readonly mode
-        readOnly={true}
+            readOnly={true}
         onImageLoad={() => setImageLoaded(true)}
-      />
+          />
     </div>
   )
 }

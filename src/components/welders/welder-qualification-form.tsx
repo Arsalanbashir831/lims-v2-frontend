@@ -246,7 +246,7 @@ export function WelderQualificationForm({
       welderIdNo: apiData.welder_card_info?.welder_info?.operator_id || "", // Get from nested welder_info
       jointType: apiData.joint_type || "",
       dateOfTest: apiData.date_of_test || "",
-      certificateRefNo: apiData.welder_card_info?.card_no || "", // Get from welder_card_info
+      certificateRefNo: apiData.certificate_no || "", // Get from certificate_no field
       welderVariables:
         welderVariables.length > 0
           ? welderVariables
@@ -393,6 +393,7 @@ export function WelderQualificationForm({
     // Map form data to API schema
     const apiData: CreateWelderCertificateData = {
       welder_card_id: formData.welderCardId,
+      certificate_no: formData.certificateRefNo,
       date_of_test: formData.dateOfTest,
       identification_of_wps_pqr: formData.wpsIdentification,
       qualification_standard: formData.qualificationStandard,
@@ -549,12 +550,15 @@ export function WelderQualificationForm({
                                   );
                                   handleInputChange(
                                     "welderImage",
-                                    card.welder_info?.profile_image || null
+                                    card.welder_info?.profile_image || ""
                                   );
-                                  handleInputChange(
-                                    "certificateRefNo",
-                                    card.card_no || ""
-                                  );
+                                  // Only set certificateRefNo if it's empty, allowing user to edit
+                                  if (!formData.certificateRefNo) {
+                                    handleInputChange(
+                                      "certificateRefNo",
+                                      card.card_no || ""
+                                    );
+                                  }
                                   handleInputChange(
                                     "clientName",
                                     card.company || ""
@@ -609,7 +613,17 @@ export function WelderQualificationForm({
               Certificate Ref No
             </div>
             <div className="p-1 border-x">
-              <span className="text-sm">{formData.certificateRefNo}</span>
+            {readOnly ? (
+                <span className="text-sm">{formData.certificateRefNo}</span>
+              ) : (
+                <Input
+                type="text"
+                value={formData.certificateRefNo}
+                onChange={(e) => handleInputChange("certificateRefNo", e.target.value)}
+                  className="border-0 py-0 h-auto text-sm"
+                />
+              )}
+             
             </div>
           </div>
 
