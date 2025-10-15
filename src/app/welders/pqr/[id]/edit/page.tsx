@@ -173,14 +173,16 @@ export default function EditPQRPage() {
       // Get welder info from welder_card_info if available
       const welderInfo = pqr.welder_card_info?.welder_info
       const welderName = welderInfo?.operator_name || ''
-      const welderId = welderInfo?.operator_id || ''
+      const welderOperatorId = welderInfo?.operator_id || ''
+      const welderDatabaseId = welderInfo?.welder_id || '' // This is the database ID used by the selector
       
       const rows = [
         { id: 'wti1', label: 'Welder Name', value: welderName },
-        { id: 'wti2', label: 'Welder ID', value: welderId },
-        { id: 'wti3', label: 'Welder Card ID', value: pqr.welder_card_id || '', hidden: true },
-        { id: 'wti4', label: 'Mechanical Testing Conducted by', value: pqr.mechanical_testing_conducted_by || '' },
-        { id: 'wti5', label: 'Lab Test No.', value: pqr.lab_test_no || '' }
+        { id: 'wti2', label: 'Welder ID', value: welderOperatorId },
+        { id: 'wti3', label: 'Welder Database ID', value: welderDatabaseId, hidden: true }, // Hidden - for selector lookup
+        { id: 'wti4', label: 'Welder Card ID', value: pqr.welder_card_id || '', hidden: true }, // Hidden - for backend
+        { id: 'wti5', label: 'Mechanical Testing Conducted by', value: pqr.mechanical_testing_conducted_by || '' },
+        { id: 'wti6', label: 'Lab Test No.', value: pqr.lab_test_no || '' }
       ]
       
       return { columns, data: rows }

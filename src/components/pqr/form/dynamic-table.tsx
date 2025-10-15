@@ -31,6 +31,7 @@ export interface DynamicRow {
 
 interface WelderSelectorProps {
   selectedWelder?: Welder
+  welderDatabaseId?: string
   onWelderSelection: (welderId: string | undefined, welder: Welder | undefined) => void
   welderNameValue: string
   onWelderNameChange: (value: string) => void
@@ -297,7 +298,7 @@ export function DynamicTable({
                           onChange={(e) => handleCellChange(row.id, column.accessorKey, e.target.value)}
                           className="border-0 px-2 py-0.5 rounded-none h-auto text-sm"
                           placeholder={column.placeholder}
-                          disabled={readOnly}
+                          disabled={readOnly || (row as any).disabled}
                         />
                       ) : column.type === "numeric" ? (
                         <Input
@@ -306,12 +307,12 @@ export function DynamicTable({
                           onChange={(e) => handleCellChange(row.id, column.accessorKey, e.target.value)}
                           className="border-0 px-2 py-0.5 rounded-none h-auto text-sm"
                           placeholder={column.placeholder}
-                          disabled={readOnly}
+                          disabled={readOnly || (row as any).disabled}
                         />
                       ) : row.label === "Welder Name" && welderSelector ? (
                         <div className="px-2 py-0.5">
                           <WelderSelector
-                            value={welderSelector.selectedWelder?.id}
+                            value={welderSelector.welderDatabaseId || welderSelector.selectedWelder?.id}
                             onValueChange={(welderId, welder) => {
                               welderSelector.onWelderSelection(welderId, welder)
                               if (welder) {
@@ -343,7 +344,7 @@ export function DynamicTable({
                           onChange={(e) => handleCellChange(row.id, column.accessorKey, e.target.value)}
                           className="border-0 px-2 py-0.5 rounded-none h-auto text-sm"
                           placeholder={column.placeholder}
-                          disabled={readOnly}
+                          disabled={readOnly || (row as any).disabled}
                         />
                       )}
                     </td>
