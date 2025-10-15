@@ -205,7 +205,7 @@ export function WelderQualificationForm({
 }: WelderQualificationFormProps) {
   // Get welder cards for the selector
   const { data: welderCardsData } = useWelderCards(1, "", 100);
-  const mapApiDataToFormData = (apiData: Record<string, unknown>): WelderQualificationData => {
+  const mapApiDataToFormData = (apiData: any): WelderQualificationData => {
     if (!apiData) return createInitialFormData();
 
     // Map testing variables from API to form structure
@@ -230,20 +230,20 @@ export function WelderQualificationForm({
     );
 
     return {
-      id: apiData.id,
-      welderCardId: apiData.welder_card_id || "", // Set from API
-      clientName: apiData.welder_card_info?.company || "", // Get from welder_card_info
-      welderImage: apiData.welder_card_info?.welder_info?.profile_image || null, // Get from nested welder_info
-      welderName: apiData.welder_card_info?.welder_info?.operator_name || "", // Get from nested welder_info
-      wpsIdentification: apiData.identification_of_wps_pqr || "",
-      iqamaId: apiData.welder_card_info?.welder_info?.iqama || "", // Get from nested welder_info
-      qualificationStandard: apiData.qualification_standard || "",
-      baseMetalSpec: apiData.base_metal_specification || "",
-      weldType: apiData.weld_type || "",
-      welderIdNo: apiData.welder_card_info?.welder_info?.operator_id || "", // Get from nested welder_info
-      jointType: apiData.joint_type || "",
-      dateOfTest: apiData.date_of_test || "",
-      certificateRefNo: apiData.certificate_no || "", // Get from certificate_no field
+      id: String(apiData.id || ""),
+      welderCardId: String(apiData.welder_card_id || ""), // Set from API
+      clientName: String(apiData.company || ""), // Get from company field directly
+      welderImage: String((apiData.welder_card_info as any)?.welder_info?.profile_image || ""), // Get from nested welder_info
+      welderName: String((apiData.welder_card_info as any)?.welder_info?.operator_name || ""), // Get from nested welder_info
+      wpsIdentification: String(apiData.identification_of_wps_pqr || ""),
+      iqamaId: String((apiData.welder_card_info as any)?.welder_info?.iqama || ""), // Get from nested welder_info
+      qualificationStandard: String(apiData.qualification_standard || ""),
+      baseMetalSpec: String(apiData.base_metal_specification || ""),
+      weldType: String(apiData.weld_type || ""),
+      welderIdNo: String((apiData.welder_card_info as any)?.welder_info?.operator_id || ""), // Get from nested welder_info
+      jointType: String(apiData.joint_type || ""),
+      dateOfTest: String(apiData.date_of_test || ""),
+      certificateRefNo: String(apiData.certificate_no || ""), // Get from certificate_no field  
       welderVariables:
         welderVariables.length > 0
           ? welderVariables
@@ -252,9 +252,9 @@ export function WelderQualificationForm({
         testsConducted.length > 0
           ? testsConducted
           : JSON.parse(JSON.stringify(defaultTestsConducted)),
-      certificationStatement: apiData.law_name || "",
-      testingWitnessed: apiData.witnessed_by || "",
-      testSupervisor: apiData.tested_by || "",
+      certificationStatement: String(apiData.law_name || ""),
+      testingWitnessed: String(apiData.witnessed_by || ""),
+      testSupervisor: String(apiData.tested_by || ""),
     };
   };
 
@@ -281,11 +281,11 @@ export function WelderQualificationForm({
   });
 
   const [formData, setFormData] = useState<WelderQualificationData>(() =>
-    initialData ? mapApiDataToFormData(initialData) : createInitialFormData()
+    initialData ? mapApiDataToFormData(initialData as any) : createInitialFormData()
   );
   const [originalFormData, setOriginalFormData] =
     useState<WelderQualificationData>(() =>
-      initialData ? mapApiDataToFormData(initialData) : createInitialFormData()
+      initialData ? mapApiDataToFormData(initialData as any) : createInitialFormData()
     );
   const [qrSrc, setQrSrc] = useState<string | null>(null);
   const [selectedWelderCardId, setSelectedWelderCardId] = useState<
@@ -296,7 +296,7 @@ export function WelderQualificationForm({
   useEffect(() => {
     // Update both form data and original data when initialData changes
     if (initialData) {
-      const mappedData = mapApiDataToFormData(initialData);
+      const mappedData = mapApiDataToFormData(initialData as any);
       setFormData(mappedData);
       setOriginalFormData(mappedData);
     } else {
@@ -391,6 +391,7 @@ export function WelderQualificationForm({
     const apiData: CreateWelderCertificateData = {
       welder_card_id: formData.welderCardId,
       certificate_no: formData.certificateRefNo,
+      company: formData.clientName,
       date_of_test: formData.dateOfTest,
       identification_of_wps_pqr: formData.wpsIdentification,
       qualification_standard: formData.qualificationStandard,
@@ -556,10 +557,7 @@ export function WelderQualificationForm({
                                       card.card_no || ""
                                     );
                                   }
-                                  handleInputChange(
-                                    "clientName",
-                                    card.company || ""
-                                  );
+                                  // Don't auto-fill clientName - let user enter it manually
                                 }
                                 setOpen(false);
                               }}
