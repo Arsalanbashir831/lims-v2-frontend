@@ -46,24 +46,24 @@ export default function OperatorPerformancePreview({ showButton = true, isPublic
     baseMetalPNumber: apiData.data.base_metal_p_no || "",
     fillerClass: apiData.data.filler_class_aws || "",
     positions: apiData.data.positions || "",
-    automaticWeldingEquipmentVariables: apiData.data.testing_variables_and_qualification_limits_automatic?.map((variable: any, index: number) => ({
+    automaticWeldingEquipmentVariables: apiData.data.testing_variables_and_qualification_limits_automatic?.map((variable: Record<string, unknown>, index: number) => ({
       id: (index + 1).toString(),
-      name: variable.name || "",
-      actualValue: variable.actual_values || "",
-      rangeQualified: variable.range_values || ""
+      name: (variable.name as string) || "",
+      actualValue: (variable.actual_values as string) || "",
+      rangeQualified: (variable.range_values as string) || ""
     })) || [],
-    machineWeldingEquipmentVariables: apiData.data.testing_variables_and_qualification_limits_machine?.map((variable: any, index: number) => ({
+    machineWeldingEquipmentVariables: apiData.data.testing_variables_and_qualification_limits_machine?.map((variable: Record<string, unknown>, index: number) => ({
       id: (index + 11).toString(),
-      name: variable.name || "",
-      actualValue: variable.actual_values || "",
-      rangeQualified: variable.range_values || ""
+      name: (variable.name as string) || "",
+      actualValue: (variable.actual_values as string) || "",
+      rangeQualified: (variable.range_values as string) || ""
     })) || [],
-    testsConducted: apiData.data.tests?.map((test: any, index: number) => ({
+    testsConducted: apiData.data.tests?.map((test: Record<string, unknown>, index: number) => ({
       id: (index + 1).toString(),
-      testType: test.type || "",
-      reportNo: test.report_no || "",
-      results: test.results || "",
-      testPerformed: test.test_performed || false
+      testType: (test.type as string) || "",
+      reportNo: (test.report_no as string) || "",
+      results: (test.results as string) || "",
+      testPerformed: (test.test_performed as boolean) || false
     })) || [],
     certificationStatement: apiData.data.law_name || "",
     testingWitnessed: apiData.data.witnessed_by || "",

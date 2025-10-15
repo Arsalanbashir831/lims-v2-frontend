@@ -21,7 +21,7 @@ export function useSampleInformation(page: number = 1, searchQuery?: string, ena
     enabled,
     staleTime: 3 * 60 * 1000, // 3 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
-    placeholderData: (previousData: any) => previousData,
+    placeholderData: (previousData: unknown) => previousData,
   })
 }
 

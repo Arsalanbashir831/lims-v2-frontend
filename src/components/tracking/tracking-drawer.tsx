@@ -104,10 +104,10 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                 <Field label="Client" value={row?.clientName} />
                 <Field label="Project" value={row?.projectName} />
                 <Field label="Items" value={String(sampleLotsData?.total ?? row?.itemsCount ?? 0)} />
-                <Field label="End User" value={(sampleLotsData?.job_info as any)?.end_user ?? row?.endUser} />
-                <Field label="Received By" value={(sampleLotsData?.job_info as any)?.received_by ?? row?.receivedBy} />
-                <Field label="Received Date" value={(sampleLotsData?.job_info as any)?.receive_date ? new Date((sampleLotsData?.job_info as any).receive_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : row?.receivedDate} />
-                <Field label="Remarks" value={(sampleLotsData?.job_info as any)?.remarks ?? row?.remarks} />
+                <Field label="End User" value={(sampleLotsData?.job_info as Record<string, unknown>)?.end_user as string ?? row?.endUser} />
+                <Field label="Received By" value={(sampleLotsData?.job_info as Record<string, unknown>)?.received_by as string ?? row?.receivedBy} />
+                <Field label="Received Date" value={(sampleLotsData?.job_info as Record<string, unknown>)?.receive_date ? new Date((sampleLotsData?.job_info as Record<string, unknown>).receive_date as string).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : row?.receivedDate} />
+                <Field label="Remarks" value={(sampleLotsData?.job_info as Record<string, unknown>)?.remarks as string ?? row?.remarks} />
               </div>
             </section>
 
@@ -189,21 +189,21 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                         <TableCell className="font-medium">{preparation.request_no}</TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            {preparation.sample_lots.map((lot: any, index: number) => (
+                            {preparation.sample_lots.map((lot: Record<string, unknown>, index: number) => (
                               <div key={index} className="text-sm">
-                                <div className="font-medium">{lot.sample_lot_info?.item_no}</div>
-                                <div className="text-xs text-muted-foreground">{lot.item_description}</div>
+                                <div className="font-medium">{(lot.sample_lot_info as { item_no?: string })?.item_no}</div>
+                                <div className="text-xs text-muted-foreground">{lot.item_description as string}</div>
                               </div>
                             ))}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            {preparation.sample_lots.map((lot: any, index: number) => (
+                            {preparation.sample_lots.map((lot: Record<string, unknown>, index: number) => (
                               <div key={index} className="text-sm">
-                                <div className="font-medium">{lot.test_method?.test_name}</div>
+                                <div className="font-medium">{(lot.test_method as { test_name?: string })?.test_name}</div>
                                 <div className="text-xs text-muted-foreground">
-                                  {lot.planned_test_date ? new Date(lot.planned_test_date).toLocaleDateString() : 'No date'}
+                                  {lot.planned_test_date ? new Date(lot.planned_test_date as string).toLocaleDateString() : 'No date'}
                                 </div>
                               </div>
                             ))}
@@ -211,7 +211,7 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            {preparation.sample_lots.map((lot: any, index: number) => (
+                            {preparation.sample_lots.map((lot: Record<string, unknown>, index: number) => (
                               <div key={index} className="text-sm">
                                 <div className="font-medium">{lot.specimens_count} specimens</div>
                                 <div className="text-xs text-muted-foreground">

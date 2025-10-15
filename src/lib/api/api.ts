@@ -111,12 +111,12 @@ export async function uploadWithFormData<T>(
       // If JSON parsing fails, throw a more descriptive error
       throw new Error(`Invalid response format: ${responseText.substring(0, 200)}...`)
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle specific error cases
-    if (error.message?.includes("utf-8 codec can't decode")) {
+    if (error instanceof Error && error.message?.includes("utf-8 codec can't decode")) {
       throw new Error("Invalid image file format. Please ensure the image is a valid PNG, JPG, or JPEG file.")
     }
-    if (error.message?.includes("Invalid response format")) {
+    if (error instanceof Error && error.message?.includes("Invalid response format")) {
       throw new Error("Server returned an invalid response. Please check your image file and try again.")
     }
     throw error

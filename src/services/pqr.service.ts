@@ -225,7 +225,7 @@ export const pqrService = {
       
       const response = await uploadWithFormData<PQRResponse>(API_ROUTES.WELDERS_API.CREATE_WELDER_PQRS, formData, 'POST')
       return response
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw error
     }
   },
@@ -321,7 +321,7 @@ export const pqrService = {
       
       const response = await uploadWithFormData<PQRResponse>(API_ROUTES.WELDERS_API.UPDATE_WELDER_PQRS(id), formData, 'PUT')
       return response
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw error
     }
   },

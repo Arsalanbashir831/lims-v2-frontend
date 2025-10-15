@@ -35,7 +35,7 @@ export function DiscardedMaterialForm({ initialData, onSubmit, readOnly = false 
   const [selectedSpecimens, setSelectedSpecimens] = useState<string[]>(initialData?.items?.map(item => item.specimenId) ?? [])
   const [openSpecimenSelect, setOpenSpecimenSelect] = useState(false)
 
-  const [allPreps, setAllPreps] = useState<any[]>([])
+  const [allPreps, setAllPreps] = useState<Array<{ id: string; prepNo: string; sampleReceivingId: string; items: Array<{ indexNo: number; description: string; testMethodName: string; plannedTestDate?: string; specimenIds: string[] }> }>>([])
   const recMap = useMemo(() => new Map(listSampleReceivings().map(r => [r.id, r])), [])
   
   const selectedPrep = useMemo(() => allPreps.find(p => p.id === jobId), [allPreps, jobId])
@@ -66,7 +66,7 @@ export function DiscardedMaterialForm({ initialData, onSubmit, readOnly = false 
       testConductedDate: string
     }> = []
     
-    selectedPrep.items.forEach((item: any) => {
+    selectedPrep.items.forEach((item: { indexNo: number; description: string; testMethodName: string; plannedTestDate?: string; specimenIds: string[] }) => {
       item.specimenIds.forEach((specimenId: string) => {
         specimens.push({
           specimenId,

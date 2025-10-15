@@ -154,7 +154,7 @@ export default function DiscardedMaterialsPage() {
                 const selected = table.getSelectedRowModel().rows
                 const hasSelected = selected.length > 0
                 const onBulkDelete = () => {
-                    const ids = selected.map((r: any) => r.original.id)
+                    const ids = selected.map((r) => r.original.id)
                     if (deleteMultipleDiscardedMaterials(ids)) {
                         table.resetRowSelection()
                         window.location.reload()

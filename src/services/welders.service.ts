@@ -80,14 +80,14 @@ export const welderService = {
       }
       
       throw new Error(`Failed to create welder: ${response.status}`)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating welder:', error)
       
       // Handle specific UTF-8 decoding errors
-      if (error.message?.includes("utf-8 codec can't decode")) {
+      if (error instanceof Error && error.message?.includes("utf-8 codec can't decode")) {
         throw new Error("Invalid image file format. Please ensure the image is a valid PNG, JPG, or JPEG file.")
       }
-      if (error.message?.includes("Invalid response format")) {
+      if (error instanceof Error && error.message?.includes("Invalid response format")) {
         throw new Error("Server returned an invalid response. Please check your image file and try again.")
       }
       throw error
@@ -126,9 +126,9 @@ export const welderService = {
       }
       
       throw new Error("Failed to update welder")
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle specific UTF-8 decoding errors
-      if (error.message?.includes("utf-8 codec can't decode")) {
+      if (error instanceof Error && error.message?.includes("utf-8 codec can't decode")) {
         throw new Error("Invalid image file format. Please ensure the image is a valid PNG, JPG, or JPEG file.")
       }
       throw error

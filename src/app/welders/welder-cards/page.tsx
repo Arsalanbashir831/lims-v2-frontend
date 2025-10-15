@@ -205,7 +205,7 @@ export default function WelderCardPage() {
         const selected = table.getSelectedRowModel().rows
         const hasSelected = selected.length > 0
         const onBulkDelete = async () => {
-          const ids = selected.map((r: any) => r.original.id)
+          const ids = selected.map((r) => r.original.id)
           try {
             await Promise.all(ids.map(id => deleteWelderCard.mutateAsync(id)))
             toast.success(`${ids.length} welder cards deleted successfully!`)

@@ -29,7 +29,7 @@ interface OperatorPerformance {
 }
 
 // Transform API data to table format
-const transformApiDataToTable = (apiData: any[]): OperatorPerformance[] => {
+const transformApiDataToTable = (apiData: Array<Record<string, unknown>>): OperatorPerformance[] => {
   return apiData.map(item => ({
     id: item.id,
     issuedIn: item.date_of_issue 
@@ -195,7 +195,7 @@ export default function OperatorPerformancePage() {
         const selected = table.getSelectedRowModel().rows
         const hasSelected = selected.length > 0
         const onBulkDelete = async () => {
-          const ids = selected.map((r: any) => r.original.id)
+          const ids = selected.map((r) => r.original.id)
           try {
             // Delete each certificate via API
             await Promise.all(ids.map(id => deleteOperatorCertificate.mutateAsync(id)))

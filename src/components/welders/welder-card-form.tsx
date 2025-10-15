@@ -64,7 +64,7 @@ interface WelderCardFormProps {
     welding_inspector: string
     law_name: string
     card_no: string
-    attributes: Record<string, any>
+    attributes: Record<string, unknown>
   }) => void
   onCancel: () => void
   readOnly?: boolean
@@ -77,7 +77,7 @@ export function WelderCardForm({
   readOnly = false
 }: WelderCardFormProps) {
   const createInitialFormData = (): WelderCardFormData => {
-    const attributes = initialData?.attributes as Record<string, any> || {}
+    const attributes = initialData?.attributes as Record<string, unknown> || {}
     return {
       id: initialData?.id,
       company: initialData?.company || "",
@@ -144,7 +144,7 @@ export function WelderCardForm({
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleWelderSelect = (welderId: string | undefined, welder: any) => {
+  const handleWelderSelect = (welderId: string | undefined, welder: Record<string, unknown>) => {
     setFormData(prev => ({
       ...prev,
       welder_id: welderId || "",

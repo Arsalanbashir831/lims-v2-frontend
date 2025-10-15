@@ -285,7 +285,7 @@ export function OperatorPerformanceForm({
 
   const handleInputChange = (
     field: keyof OperatorPerformanceData,
-    value: any
+    value: string | WelderVariable[] | TestConducted[]
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };

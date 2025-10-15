@@ -77,7 +77,7 @@ interface WelderQualificationData {
 }
 
 interface WelderQualificationFormProps {
-  initialData?: WelderQualificationData | any; // Allow API data structure
+  initialData?: WelderQualificationData | Record<string, unknown>; // Allow API data structure
   onSubmit: (data: CreateWelderCertificateData) => void;
   onCancel: () => void;
   readOnly?: boolean;
@@ -208,13 +208,13 @@ export function WelderQualificationForm({
 }: WelderQualificationFormProps) {
   // Get welder cards for the selector
   const { data: welderCardsData } = useWelderCards(1, "", 100);
-  const mapApiDataToFormData = (apiData: any): WelderQualificationData => {
+  const mapApiDataToFormData = (apiData: Record<string, unknown>): WelderQualificationData => {
     if (!apiData) return createInitialFormData();
 
     // Map testing variables from API to form structure
     const welderVariables = (
-      apiData.testing_variables_and_qualification_limits || []
-    ).map((item: any, index: number) => ({
+      (apiData.testing_variables_and_qualification_limits as Array<Record<string, unknown>>) || []
+    ).map((item: Record<string, unknown>, index: number) => ({
       id: (index + 1).toString(),
       name: item.name || "",
       actualValue: item.actual_values || "",
@@ -222,8 +222,8 @@ export function WelderQualificationForm({
     }));
 
     // Map tests from API to form structure
-    const testsConducted = (apiData.tests || []).map(
-      (test: any, index: number) => ({
+    const testsConducted = ((apiData.tests as Array<Record<string, unknown>>) || []).map(
+      (test: Record<string, unknown>, index: number) => ({
         id: (index + 1).toString(),
         testType: test.type || "",
         reportNo: test.report_no || "",
@@ -335,7 +335,7 @@ export function WelderQualificationForm({
 
   const handleInputChange = (
     field: keyof WelderQualificationData,
-    value: any
+    value: string | WelderVariable[] | TestConducted[]
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };

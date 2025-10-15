@@ -186,7 +186,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
         const response = await sampleLotService.getByJobDocumentId(jobId)
 
         // Build a CompleteJob-like object for the UI from the new API response
-        const localSamples = (response.data || []).map((lot: any, idx: number) => ({
+        const localSamples = (response.data || []).map((lot: Record<string, unknown>, idx: number) => ({
           id: idx + 1, // local numeric id used for selection
           sample_id: lot.item_no || String(idx + 1),
           description: lot.description || "",

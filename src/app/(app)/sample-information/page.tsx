@@ -18,6 +18,13 @@ import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { PencilIcon, TrashIcon } from "lucide-react"
 import CompleteDetailsSidebar from "@/components/sample-information/complete-details-sidebar"
 
+interface SampleInformationResponse {
+  results: unknown[]
+  count: number
+  next: string | null
+  previous: string | null
+}
+
 export default function SampleInformationPage() {
     const queryClient = useQueryClient()
     const [currentPage, setCurrentPage] = useState(1)
@@ -36,11 +43,12 @@ export default function SampleInformationPage() {
         }
     }, [error])
 
-    const items = (data as { results: any[]; count: number; next: string | null; previous: string | null } | undefined)?.results ?? []
-    const totalCount = (data as { results: any[]; count: number; next: string | null; previous: string | null } | undefined)?.count ?? 0
+    const sampleData = data as SampleInformationResponse | undefined
+    const items = sampleData?.results ?? []
+    const totalCount = sampleData?.count ?? 0
     const pageSize = 20
-    const hasNext = (data as { results: any[]; count: number; next: string | null; previous: string | null } | undefined)?.next !== undefined ? Boolean((data as { results: any[]; count: number; next: string | null; previous: string | null } | undefined)?.next) : totalCount > currentPage * pageSize
-    const hasPrevious = (data as { results: any[]; count: number; next: string | null; previous: string | null } | undefined)?.previous !== undefined ? Boolean((data as { results: any[]; count: number; next: string | null; previous: string | null } | undefined)?.previous) : currentPage > 1
+    const hasNext = sampleData?.next !== undefined ? Boolean(sampleData?.next) : totalCount > currentPage * pageSize
+    const hasPrevious = sampleData?.previous !== undefined ? Boolean(sampleData?.previous) : currentPage > 1
 
     // Delete mutation using caching hooks
     const deleteMutation = useDeleteSampleInformation()
@@ -66,7 +74,7 @@ export default function SampleInformationPage() {
         setCurrentPage(page)
     }, [])
 
-    const columns: ColumnDef<any>[] = useMemo(() => [
+    const columns: ColumnDef<Record<string, unknown>>[] = useMemo(() => [
         {
             accessorKey: "job_id",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Job ID" />,
@@ -128,7 +136,7 @@ export default function SampleInformationPage() {
     ], [doDelete])
 
     // Define toolbar and footer callbacks outside of JSX
-    const toolbar = useCallback((table: TanstackTable<any>) => {
+    const toolbar = useCallback((table: TanstackTable<Record<string, unknown>>) => {
         return (
             <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
                 <FilterSearch
@@ -148,7 +156,7 @@ export default function SampleInformationPage() {
         )
     }, [searchQuery, handleSearchChange])
 
-    const footer = useCallback((table: TanstackTable<any>) => (
+    const footer = useCallback((table: TanstackTable<Record<string, unknown>>) => (
         <ServerPagination
             currentPage={currentPage}
             totalCount={totalCount}
