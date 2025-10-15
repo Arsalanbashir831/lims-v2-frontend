@@ -170,5 +170,13 @@ export const API_ROUTES = {
     UPDATE_WELDER_PQRS: (id: string) => `pqrs/${id}/`,
     DELETE_WELDER_PQRS: (id: string) => `pqrs/${id}/`,
     SEARCH_WELDER_PQRS: "pqrs/search/",
+
+    // Dashboard Stats
+    WELDERS_STATS: "welders/stats/",
+    WELDER_CARDS_STATS: "welder-cards/stats/",
+    WELDER_CERTIFICATES_STATS: "welder-certificates/stats/",
+    WELDER_OPERATOR_PERFORMANCE_STATS: "welder-performance-records/stats/",
+    WELDER_TESTING_REPORTS_STATS: "testing-reports/stats/",
+    WELDER_PQRS_STATS: "pqrs/stats/",
   }
 }
