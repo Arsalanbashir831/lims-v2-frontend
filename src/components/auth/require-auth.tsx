@@ -2,19 +2,45 @@
 
 import { PropsWithChildren } from "react"
 import { useAuth } from "@/hooks/use-auth"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useEffect } from "react"
+import { ROUTES } from "@/constants/routes"
+import { hasAccessToPath, getHomeRouteForRole } from "@/lib/auth/roles"
 
-export function RequireAuth({ children }: PropsWithChildren) {
-  const { isAuthenticated, isLoading } = useAuth()
+interface RequireAuthProps extends PropsWithChildren {
+  allowedRoles?: string[]
+}
+
+export function RequireAuth({ children, allowedRoles }: RequireAuthProps) {
+  const { user, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
-    // Only redirect if we're not loading and definitely not authenticated
-    if (!isLoading && !isAuthenticated) {
-      router.replace("/login")
+    // Only check role-based access if we're authenticated
+    if (!isLoading && isAuthenticated && user) {
+      const userRole = user.role
+      
+      // Check if user has access to the current path
+      if (!hasAccessToPath(userRole, pathname)) {
+        // User doesn't have access to this path, redirect to appropriate dashboard
+        const homeRoute = getHomeRouteForRole(userRole as any)
+        router.replace(homeRoute)
+        return
+      }
+
+      // Check if specific roles are required for this component
+      if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
+        // User doesn't have the required role, redirect to appropriate dashboard
+        const homeRoute = getHomeRouteForRole(userRole as any)
+        router.replace(homeRoute)
+        return
+      }
+    } else if (!isLoading && !isAuthenticated) {
+      // Not authenticated, redirect to login
+      router.replace(ROUTES.AUTH.LOGIN)
     }
-  }, [isAuthenticated, isLoading, router])
+  }, [isAuthenticated, isLoading, user, pathname, router, allowedRoles])
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -29,7 +55,7 @@ export function RequireAuth({ children }: PropsWithChildren) {
   }
 
   // Don't render anything while redirecting
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
     return null
   }
 

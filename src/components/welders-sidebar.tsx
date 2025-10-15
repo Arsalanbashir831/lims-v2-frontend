@@ -14,12 +14,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { Home, Award, Users, CreditCard, FileText, BookOpenText, UserPlus } from "lucide-react"
+import { Home, Award, Users, CreditCard, FileText, BookOpenText, UserPlus, FlaskConical } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { ThemeSwitcher } from "@/components/ui/theme-switcher"
 import { useTheme } from "next-themes"
 import { LogoutButton } from "@/components/logout-button"
 import Image from "next/image"
+import { useAuth } from "@/hooks/use-auth"
 
 const navItems = [
   { href: ROUTES.APP.WELDERS.DASHBOARD, label: "Dashboard", icon: Home },
@@ -34,6 +35,7 @@ const navItems = [
 export function WeldersSidebar() {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
+  const { user } = useAuth()
 
   return (
     <Sidebar className="border-none">
@@ -67,6 +69,21 @@ export function WeldersSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <div className="px-2 py-3 grid gap-3">
+          {/* Role-based navigation for admin users */}
+          {user?.role === 'admin' && (
+            <div className="grid gap-2">
+              <div className="text-xs font-medium text-muted-foreground">Switch Dashboard</div>
+              <div className="grid gap-1">
+                <SidebarMenuButton asChild>
+                  <Link href={ROUTES.APP.DASHBOARD} className="justify-start">
+                    <FlaskConical className="size-4" />
+                    <span>Lab Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </div>
+            </div>
+          )}
+          
           <ThemeSwitcher value={(theme as any) ?? "system"} onChange={(t) => setTheme(t)} />
           <div className="flex items-center gap-2">
             <LogoutButton />

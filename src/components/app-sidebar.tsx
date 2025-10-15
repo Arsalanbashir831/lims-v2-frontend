@@ -17,13 +17,14 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
-import { Home, FlaskConical, Microscope, ClipboardList, FileText, Route, ChevronDown, ChevronRight, Users } from "lucide-react"
+import { Home, FlaskConical, Microscope, ClipboardList, FileText, Route, ChevronDown, ChevronRight, Users, Wrench } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { ThemeSwitcher } from "@/components/ui/theme-switcher"
 import { useTheme } from "next-themes"
 import { LogoutButton } from "@/components/logout-button"
 import Image from "next/image"
 import { useState } from "react"
+import { useAuth } from "@/hooks/use-auth"
 
 const navItems = [
   { href: ROUTES.APP.DASHBOARD, label: "Dashboard", icon: Home },
@@ -57,6 +58,7 @@ export function AppSidebar() {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const [expandedSections, setExpandedSections] = useState<string[]>([])
+  const { user } = useAuth()
 
   const toggleSection = (sectionLabel: string) => {
     setExpandedSections(prev => 
@@ -142,6 +144,21 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <div className="px-2 py-3 grid gap-3">
+          {/* Role-based navigation for admin users */}
+          {user?.role === 'admin' && (
+            <div className="grid gap-2">
+              <div className="text-xs font-medium text-muted-foreground">Switch Dashboard</div>
+              <div className="grid gap-1">
+                <SidebarMenuButton asChild>
+                  <Link href={ROUTES.APP.WELDERS.DASHBOARD} className="justify-start">
+                    <Wrench className="size-4" />
+                    <span>Welder Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </div>
+            </div>
+          )}
+          
           <ThemeSwitcher value={(theme as any) ?? "system"} onChange={(t) => setTheme(t)} />
           <div className="flex items-center gap-2">
             <LogoutButton />
