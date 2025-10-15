@@ -91,31 +91,69 @@ export const welderCardService = {
     await api.delete(API_ROUTES.WELDERS_API.DELETE_WELDER_CARD(id))
   },
 
-  async search(welder_name: string, page: number = 1, limit: number = 10): Promise<WelderCardListResponse> {
+  async search(query: string, page: number = 1, limit: number = 10): Promise<WelderCardListResponse> {
+    // Backend doesn't support 'q' parameter - it only accepts specific filters
+    // Available filters: card_no, company, welder_id (ObjectId only), authorized_by
+    // Since we can't search multiple fields with OR logic, we'll search by card_no
+    // which is the most commonly searched field for welder cards
     const response = await api.get(API_ROUTES.WELDERS_API.SEARCH_WELDER_CARDS, {
       searchParams: {
-        welder_name: welder_name,
+        card_no: query,
         page: page.toString(),
         limit: limit.toString(),
       }
     }).json<{
       status: string
-      data: WelderCardResponse[]
-      pagination: {
-        current_page: number
-        limit: number
-        total_records: number
-        total_pages: number
-        has_next: boolean
+      data: Array<{
+        id: string
+        card_no: string
+        company: string
+        welder_id: string
+        welder_name?: string
+        authorized_by: string
+        is_active: boolean
+      }>
+      total: number
+      filters_applied: {
+        card_no: string
+        company: string
+        welder_id: string
+        authorized_by: string
       }
     }>()
 
     if (response.status === "success" && response.data) {
+      // Transform the flat search response to match the expected structure
+      const transformedData = response.data.map(item => ({
+        id: item.id,
+        card_no: item.card_no,
+        company: item.company,
+        welder_id: item.welder_id,
+        authorized_by: item.authorized_by,
+        welding_inspector: "",
+        law_name: "",
+        attributes: null,
+        is_active: item.is_active,
+        created_at: "",
+        updated_at: "",
+        // If welder_name is present, create a minimal welder_info object
+        // Note: operator_id is not returned by search API, using welder_id as fallback
+        ...(item.welder_name ? {
+          welder_info: {
+            welder_id: item.welder_id,
+            operator_name: item.welder_name,
+            operator_id: item.welder_id, // Using welder_id as fallback since search doesn't return operator_id
+            iqama: "",
+            profile_image: null,
+          }
+        } : {})
+      }))
+
       return {
-        results: response.data,
-        count: response.pagination.total_records,
-        next: response.pagination.has_next ? 'next' : null,
-        previous: response.pagination.current_page > 1 ? 'prev' : null,
+        results: transformedData as WelderCardResponse[],
+        count: response.total,
+        next: null,
+        previous: null,
       }
     }
     
