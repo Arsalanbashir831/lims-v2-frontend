@@ -233,20 +233,6 @@ export function PQRForm({
                 type: getPQRType(isAsme)
             }
 
-            // Debug: Log the data being sent
-            console.log(`===== ${pqrId ? 'UPDATING' : 'CREATING'} PQR =====`)
-            console.log("PQR Data being sent:", backendData)
-            console.log("Form Data before transformation:", formData)
-            
-            // Additional debug for specific sections
-            console.log("GAS section:", formData.gas)
-            console.log("GAS transformed:", backendData.gas)
-            console.log("Tensile Test section:", formData.tensileTest)
-            console.log("Tensile Test transformed:", backendData.tensile_test)
-            console.log("Signature section:", formData.signatures)
-            console.log("Signature transformed:", backendData.signatures)
-            console.log("===================================")
-
             // Validate that we have at least some data to send
             const hasData = Object.values(backendData).some(value => {
                 if (typeof value === 'object' && value !== null) {
@@ -266,7 +252,6 @@ export function PQRForm({
 
             if (pqrId) {
                 // Update existing PQR
-                console.log(`Updating PQR ${pqrId}`)
                 await updatePQRMutation.mutateAsync({
                     id: pqrId,
                     data: backendData,
@@ -275,7 +260,6 @@ export function PQRForm({
                 toast.success("PQR updated successfully!")
             } else {
                 // Create new PQR
-                console.log("Creating new PQR")
                 await createPQRMutation.mutateAsync({
                     data: backendData,
                     files: files

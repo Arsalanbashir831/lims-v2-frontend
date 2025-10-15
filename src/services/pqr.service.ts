@@ -127,48 +127,35 @@ export const pqrService = {
   // Create PQR - Simplified to match Postman success
   async create(data: CreatePQRData, files?: File[]): Promise<PQRResponse> {
     try {
-      console.log("Creating PQR with data:", JSON.stringify(data, null, 2))
-      
       const formData = new FormData()
       
       // Add required fields (matching your successful Postman request)
-      console.log("Checking type field:", data.type, "typeof:", typeof data.type, "undefined:", data.type === undefined, "null:", data.type === null)
-      
       // Send the type as-is (no mapping needed)
       let backendType: string = data.type || ''
       
-      console.log("Mapped type:", data.type, "->", backendType)
-      
       if (backendType !== undefined && backendType !== null) {
         formData.append('type', backendType)
-        console.log("Adding type field:", backendType)
       } else {
-        console.error("Type field is missing! Value:", data.type, "Mapped:", backendType)
         throw new Error("Required field 'type' is missing")
       }
       
       if (data.welder_card_id !== undefined && data.welder_card_id !== null) {
         formData.append('welder_card_id', data.welder_card_id)
-        console.log("Adding welder_card_id field:", data.welder_card_id)
       } else {
-        console.error("welder_card_id field is missing!")
         throw new Error("Required field 'welder_card_id' is missing")
       }
       
       // Add optional fields (these can be empty strings)
       if (data.mechanical_testing_conducted_by !== undefined) {
         formData.append('mechanical_testing_conducted_by', data.mechanical_testing_conducted_by || '')
-        console.log("Adding mechanical_testing_conducted_by field:", data.mechanical_testing_conducted_by || '')
       }
       
       if (data.lab_test_no !== undefined) {
         formData.append('lab_test_no', data.lab_test_no || '')
-        console.log("Adding lab_test_no field:", data.lab_test_no || '')
       }
       
       if (data.law_name !== undefined) {
         formData.append('law_name', data.law_name || '')
-        console.log("Adding law_name field:", data.law_name || '')
       }
       
       // Add optional fields as JSON strings (matching the API documentation)
@@ -236,27 +223,9 @@ export const pqrService = {
         formData.append('is_active', data.is_active ? 'true' : 'false')
       }
       
-      // Debug: Log all form data entries with detailed info
-      console.log("FormData entries:")
-      for (let [key, value] of formData.entries()) {
-        const valueLength = typeof value === 'string' ? value.length : 'N/A'
-        console.log(`${key}:`, value, `(type: ${typeof value}, length: ${valueLength})`)
-      }
-      
-      // Additional debugging for type field specifically
-      console.log("Type field specifically:")
-      console.log("- formData.has('type'):", formData.has('type'))
-      console.log("- formData.get('type'):", formData.get('type'))
-      console.log("- formData.getAll('type'):", formData.getAll('type'))
-      
       const response = await uploadWithFormData<PQRResponse>(API_ROUTES.WELDERS_API.CREATE_WELDER_PQRS, formData, 'POST')
-    return response
+      return response
     } catch (error: any) {
-      console.error("PQR creation failed:", error)
-      if (error.response) {
-        console.error("Response status:", error.response.status)
-        console.error("Response data:", await error.response.text())
-      }
       throw error
     }
   },
@@ -264,8 +233,6 @@ export const pqrService = {
   // Update PQR
   async update(id: string, data: UpdatePQRData, files?: File[]): Promise<PQRResponse> {
     try {
-      console.log("Updating PQR with data:", JSON.stringify(data, null, 2))
-      
       const formData = new FormData()
       
       // Add fields if they exist
@@ -353,13 +320,8 @@ export const pqrService = {
     //   }
       
       const response = await uploadWithFormData<PQRResponse>(API_ROUTES.WELDERS_API.UPDATE_WELDER_PQRS(id), formData, 'PUT')
-    return response
+      return response
     } catch (error: any) {
-      console.error("PQR update failed:", error)
-      if (error.response) {
-        console.error("Response status:", error.response.status)
-        console.error("Response data:", await error.response.text())
-      }
       throw error
     }
   },

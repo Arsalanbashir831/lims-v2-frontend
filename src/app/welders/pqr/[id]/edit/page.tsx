@@ -34,15 +34,12 @@ export default function EditPQRPage() {
 
   useEffect(() => {
     if (pqrData) {
-      console.log("=== PQR Edit Page: Received data from backend ===", pqrData)
-      
       // Set form type based on PQR type
       const newFormType = pqrData.type === 'ASME_SEC_IX' ? 'asme' : 'api'
       setFormType(newFormType)
       
       // Transform PQR data to form format
       const formData = transformPQRToFormData(pqrData)
-      console.log("=== PQR Edit Page: Transformed form data ===", formData)
       setInitialFormData(formData)
     }
   }, [pqrData])

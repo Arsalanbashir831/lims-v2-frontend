@@ -40,7 +40,6 @@ export default function TestingReportPage() {
   // Debounce search query for API calls
   useEffect(() => {
     const timer = setTimeout(() => {
-      console.log('Setting debounced search query:', globalFilter)
       setDebouncedSearchQuery(globalFilter)
       setPage(1) // Reset to page 1 when search changes
     }, 500) // 500ms debounce
@@ -51,12 +50,6 @@ export default function TestingReportPage() {
   // Fetch data from API with debounced search
   const { data: apiData, isLoading, error } = useWelderTestReports(page, debouncedSearchQuery, limit)
   const deleteMutation = useDeleteWelderTestReport()
-
-  // Log when API data changes
-  useEffect(() => {
-    console.log('API Data received:', apiData)
-    console.log('Search query used:', debouncedSearchQuery)
-  }, [apiData, debouncedSearchQuery])
 
   // Transform the API response to match the expected format
   const data = useMemo(() => {
@@ -106,16 +99,13 @@ export default function TestingReportPage() {
     if (!debouncedSearchQuery.trim()) return data
     
     const searchTerm = debouncedSearchQuery.toLowerCase()
-    const filtered = data.filter((item) =>
+    return data.filter((item) =>
       item.welder_name.toLowerCase().includes(searchTerm) ||
       item.welder_id.toLowerCase().includes(searchTerm) ||
       item.iqama_number.toLowerCase().includes(searchTerm) ||
       item.test_coupon_id.toLowerCase().includes(searchTerm) ||
       item.result_status.toLowerCase().includes(searchTerm)
     )
-    
-    console.log(`Client-side filtering: ${data.length} records → ${filtered.length} records matching "${searchTerm}"`)
-    return filtered
   }, [data, debouncedSearchQuery])
 
 

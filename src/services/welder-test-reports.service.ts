@@ -118,11 +118,7 @@ export const welderTestReportsService = {
 
   // Search welder test reports
   async search(query: string, page: number = 1, limit: number = 10): Promise<WelderTestReportListResponse> {
-    console.log('Calling search API with query:', query, 'page:', page, 'limit:', limit)
-    const url = `${API_ROUTES.WELDERS_API.SEARCH_WELDER_TESTING_REPORTS}?search=${encodeURIComponent(query)}&page=${page}&limit=${limit}`
-    console.log('Search URL:', url)
-    const response = await api.get(url).json()
-    console.log('Search response:', response)
+    const response = await api.get(`${API_ROUTES.WELDERS_API.SEARCH_WELDER_TESTING_REPORTS}?search=${encodeURIComponent(query)}&page=${page}&limit=${limit}`).json()
     return response as WelderTestReportListResponse
   },
 
