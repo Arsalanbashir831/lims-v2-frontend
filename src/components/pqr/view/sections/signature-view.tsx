@@ -1,3 +1,10 @@
+import { getSectionDataByAccessor } from '@/lib/pqr-utils';
+import { DynamicColumn, DynamicRow } from '../../form/dynamic-table';
+
+interface SectionData {
+  columns: DynamicColumn[];
+  data: DynamicRow[];
+}
 
 export const SignatureView = ({ signatureData }: { signatureData: SectionData }) => {
   if (
@@ -11,7 +18,17 @@ export const SignatureView = ({ signatureData }: { signatureData: SectionData })
       </p>
     );
   }
+
+  const columns = signatureData.columns || [];
   const sigRow = signatureData.data[0] || {};
+
+  // Map of accessorKeys to display names for signature columns
+  const columnLabels: Record<string, string> = {
+    inspector: "Witnessing / Welding Inspector",
+    supervisor: "Welding Supervisor",
+    lab: "Lab Testing Supervisor"
+  };
+
   return (
     <div className="mt-4 border overflow-hidden">
       <div className="dark:bg-sidebar p-2 text-center text-sm font-semibold">
@@ -20,34 +37,28 @@ export const SignatureView = ({ signatureData }: { signatureData: SectionData })
       <table className="w-full text-sm">
         <thead>
           <tr className="border-y dark:bg-sidebar">
-            <th className="w-1/3 border-r p-2 font-medium text-gray-600 dark:text-gray-300">
-              Witnessing / Welding Inspector
-            </th>
-            <th className="w-1/3 border-r p-2 font-medium text-gray-600 dark:text-gray-300">
-              Welding Supervisor
-            </th>
-            <th className="w-1/3 p-2 font-medium text-gray-600 dark:text-gray-300">
-              Lab Testing Supervisor
-            </th>
+            {columns.map((col) => (
+              <th 
+                key={col.id} 
+                className="border-r p-2 font-medium text-gray-600 dark:text-gray-300 last:border-r-0"
+              >
+                {columnLabels[col.accessorKey] || col.header}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td className="h-16 border-r p-2 text-center">
-              {sigRow.inspector || (
-                <span className="text-gray-400 italic">(No entry)</span>
-              )}
-            </td>
-            <td className="h-16 border-r p-2 text-center">
-              {sigRow.supervisor || (
-                <span className="text-gray-400 italic">(No entry)</span>
-              )}
-            </td>
-            <td className="h-16 p-2 text-center">
-              {sigRow.lab || (
-                <span className="text-gray-400 italic">(No entry)</span>
-              )}
-            </td>
+            {columns.map((col) => (
+              <td 
+                key={col.id} 
+                className="h-16 border-r p-2 text-center last:border-r-0"
+              >
+                {getSectionDataByAccessor(sigRow, col.accessorKey) || (
+                  <span className="text-gray-400 italic">(No entry)</span>
+                )}
+              </td>
+            ))}
           </tr>
         </tbody>
       </table>

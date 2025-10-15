@@ -93,18 +93,57 @@ function transformPQRDataToView(pqr: PQR): PqrDataToView {
       return { columns: [], data: [] };
     }
 
-    const columns = [
-      { id: `${labelKey}-col`, header: "Parameter", accessorKey: labelKey, type: "label" as const },
-      { id: `${valueKey}-col`, header: "Details", accessorKey: valueKey, type: "input" as const },
-    ];
+    // Check if this is multi-column table data (keys like "row_0_columnname")
+    const hasRowPrefix = Object.keys(obj).some(key => key.startsWith('row_'));
+    
+    if (hasRowPrefix) {
+      // This is multi-column table data - reconstruct rows
+      const rowsMap = new Map<number, Record<string, any>>();
+      const columnNamesSet = new Set<string>();
+      
+      Object.entries(obj).forEach(([key, value]) => {
+        const match = key.match(/^row_(\d+)_(.+)$/);
+        if (match) {
+          const rowIndex = parseInt(match[1]);
+          const columnName = match[2];
+          
+          columnNamesSet.add(columnName);
+          
+          if (!rowsMap.has(rowIndex)) {
+            rowsMap.set(rowIndex, { id: `row-${rowIndex}` });
+          }
+          
+          rowsMap.get(rowIndex)![columnName] = value;
+        }
+      });
+      
+      // Create columns from the column names found
+      const columns: DynamicColumn[] = Array.from(columnNamesSet).map(colName => ({
+        id: `col-${colName}`,
+        header: colName.charAt(0).toUpperCase() + colName.slice(1), // Capitalize first letter
+        accessorKey: colName,
+        type: "input" as const
+      }));
+      
+      // Convert map to array
+      const data = Array.from(rowsMap.values()) as DynamicRow[];
+      
+      return { columns, data };
+    } else {
+      // This is label-value table data
+      const columns = [
+        { id: `${labelKey}-col`, header: "Parameter", accessorKey: labelKey, type: "label" as const },
+        { id: `${valueKey}-col`, header: "Details", accessorKey: valueKey, type: "input" as const },
+      ];
 
-    const data = Object.entries(obj).map(([key, value], index) => ({
-      id: `row-${index}`,
-      [labelKey]: key,
-      [valueKey]: value ?? "",
-    }));
+      const data = Object.entries(obj).map(([key, value], index) => ({
+        id: `row-${index}`,
+        [labelKey]: key,
+        [valueKey]: value ?? "",
+      }));
 
-    return { columns, data };
+      return { columns, data };
+    }
   };
 
   return {
