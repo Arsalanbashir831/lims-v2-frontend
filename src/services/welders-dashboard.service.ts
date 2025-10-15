@@ -114,14 +114,15 @@ export const weldersDashboardService = {
       const [
         welders,
         welderCards,
-        welderCertificates,
+        // Skip welder certificates - endpoint not available on backend
+        // welderCertificates,
         welderOperatorPerformance,
         welderTestingReports,
         welderPQRs
       ] = await Promise.all([
         this.getWeldersStats().catch((err) => { console.error('Welders stats error:', err); return { total_welders: 0 } }),
         this.getWelderCardsStats().catch((err) => { console.error('Welder cards stats error:', err); return { total_cards: 0 } }),
-        this.getWelderCertificatesStats().catch((err) => { console.error('Welder certificates stats error:', err); return { total_certificates: 0 } }),
+        // this.getWelderCertificatesStats().catch((err) => { console.error('Welder certificates stats error:', err); return { total_certificates: 0 } }),
         this.getWelderOperatorPerformanceStats().catch((err) => { console.error('Welder operator performance stats error:', err); return { total_records: 0 } }),
         this.getWelderTestingReportsStats().catch((err) => { console.error('Welder testing reports stats error:', err); return { total_reports: 0 } }),
         this.getWelderPQRsStats().catch((err) => { console.error('Welder PQRs stats error:', err); return { total_pqrs: 0 } }),
@@ -130,7 +131,8 @@ export const weldersDashboardService = {
       return {
         welders,
         welder_cards: welderCards,
-        welder_certificates: welderCertificates,
+        // welder_certificates: welderCertificates,
+        welder_certificates: { total_certificates: 0 }, // Default value since endpoint is not available
         welder_operator_performance: welderOperatorPerformance,
         welder_testing_reports: welderTestingReports,
         welder_pqrs: welderPQRs,
