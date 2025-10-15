@@ -139,31 +139,31 @@ export const welderService = {
     await api.delete(API_ROUTES.WELDERS_API.DELETE_WELDER(id))
   },
 
-  async search(operator_id: string, page: number = 1, limit: number = 10): Promise<WelderListResponse> {
+  async search(query: string, page: number = 1, limit: number = 10): Promise<WelderListResponse> {
     const response = await api.get(API_ROUTES.WELDERS_API.SEARCH_WELDERS, {
       searchParams: {
-        operator_id: operator_id,
+        operator_id: query,
         page: page.toString(),
         limit: limit.toString(),
       }
     }).json<{
       status: string
       data: WelderResponse[]
-      pagination: {
-        current_page: number
-        limit: number
-        total_records: number
-        total_pages: number
-        has_next: boolean
+      total: number
+      filters_applied: {
+        name: string
+        operator_id: string
+        iqama: string
+        active: string
       }
     }>()
 
     if (response.status === "success" && response.data) {
       return {
         results: response.data,
-        count: response.pagination.total_records,
-        next: response.pagination.has_next ? 'next' : null,
-        previous: response.pagination.current_page > 1 ? 'prev' : null,
+        count: response.total,
+        next: null,
+        previous: null,
       }
     }
     
