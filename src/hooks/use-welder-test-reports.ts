@@ -22,9 +22,12 @@ export const useWelderTestReports = (page: number = 1, searchQuery: string = "",
   return useQuery({
     queryKey: WELDER_TEST_REPORTS_QUERY_KEYS.list(page, searchQuery, limit),
     queryFn: () => {
+      console.log('useWelderTestReports hook called with searchQuery:', searchQuery, 'page:', page)
       if (searchQuery.trim()) {
+        console.log('Calling search service')
         return welderTestReportsService.search(searchQuery, page, limit)
       }
+      console.log('Calling getAll service')
       return welderTestReportsService.getAll(page, limit)
     },
     staleTime: 5 * 60 * 1000, // 5 minutes

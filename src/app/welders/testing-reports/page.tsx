@@ -32,13 +32,31 @@ interface TestingReport {
 export default function TestingReportPage() {
   const router = useRouter()
   const [globalFilter, setGlobalFilter] = useState("")
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
   const [page, setPage] = useState(1)
   const [limit] = useState(10)
   const [isMounted, setIsMounted] = useState(false)
 
-  // Fetch data from API
-  const { data: apiData, isLoading, error } = useWelderTestReports(page, globalFilter, limit)
+  // Debounce search query for API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log('Setting debounced search query:', globalFilter)
+      setDebouncedSearchQuery(globalFilter)
+      setPage(1) // Reset to page 1 when search changes
+    }, 500) // 500ms debounce
+
+    return () => clearTimeout(timer)
+  }, [globalFilter])
+
+  // Fetch data from API with debounced search
+  const { data: apiData, isLoading, error } = useWelderTestReports(page, debouncedSearchQuery, limit)
   const deleteMutation = useDeleteWelderTestReport()
+
+  // Log when API data changes
+  useEffect(() => {
+    console.log('API Data received:', apiData)
+    console.log('Search query used:', debouncedSearchQuery)
+  }, [apiData, debouncedSearchQuery])
 
   // Transform the API response to match the expected format
   const data = useMemo(() => {
@@ -49,29 +67,32 @@ export default function TestingReportPage() {
     
     apiData.data.forEach((batchReport: {
       id: string
-      results?: Array<{
+      client_name?: string
+      prepared_by?: string
+      welders_info?: Array<{
         welder_id: string
         welder_name: string
         iqama_number: string
-        test_coupon_id: string
-        date_of_inspection: string
+        test_coupon_id?: string
+        date_of_inspection?: string
         result_status: string
       }>
+      welders_count?: number
       created_at: string
-      updated_at: string
+      updated_at?: string
     }) => {
-      if (batchReport.results && Array.isArray(batchReport.results)) {
-        batchReport.results.forEach((welder) => {
+      if (batchReport.welders_info && Array.isArray(batchReport.welders_info)) {
+        batchReport.welders_info.forEach((welder) => {
           flattenedData.push({
             id: `${batchReport.id}-${welder.welder_id}`, // Create unique ID
             welder_id: welder.welder_id,
             welder_name: welder.welder_name,
             iqama_number: welder.iqama_number,
-            test_coupon_id: welder.test_coupon_id,
-            date_of_inspection: welder.date_of_inspection,
+            test_coupon_id: welder.test_coupon_id || '',
+            date_of_inspection: welder.date_of_inspection || '',
             result_status: welder.result_status,
             created_at: batchReport.created_at,
-            updated_at: batchReport.updated_at,
+            updated_at: batchReport.updated_at || batchReport.created_at,
           })
         })
       }
@@ -79,6 +100,23 @@ export default function TestingReportPage() {
     
     return flattenedData
   }, [apiData])
+
+  // Client-side filtering as fallback (since backend search is not working properly)
+  const filteredData = useMemo(() => {
+    if (!debouncedSearchQuery.trim()) return data
+    
+    const searchTerm = debouncedSearchQuery.toLowerCase()
+    const filtered = data.filter((item) =>
+      item.welder_name.toLowerCase().includes(searchTerm) ||
+      item.welder_id.toLowerCase().includes(searchTerm) ||
+      item.iqama_number.toLowerCase().includes(searchTerm) ||
+      item.test_coupon_id.toLowerCase().includes(searchTerm) ||
+      item.result_status.toLowerCase().includes(searchTerm)
+    )
+    
+    console.log(`Client-side filtering: ${data.length} records → ${filtered.length} records matching "${searchTerm}"`)
+    return filtered
+  }, [data, debouncedSearchQuery])
 
 
   // Handle hydration
@@ -257,85 +295,6 @@ export default function TestingReportPage() {
       size: 100,
     },
   ]
-
-  const filteredData = useMemo(() => {
-    if (!globalFilter) return data
-    const searchTerm = globalFilter.toLowerCase()
-    return data.filter((item) =>
-      item.welder_name.toLowerCase().includes(searchTerm) ||
-      item.welder_id.toLowerCase().includes(searchTerm) ||
-      item.iqama_number.toLowerCase().includes(searchTerm) ||
-      item.test_coupon_id.toLowerCase().includes(searchTerm) ||
-      item.result_status.toLowerCase().includes(searchTerm)
-    )
-  }, [data, globalFilter])
-
-  // Handle hydration - show loading until mounted
-  if (!isMounted) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Handle loading and error states
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Loading testing reports...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <p className="text-destructive">Failed to load testing reports</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Error: {error instanceof Error ? error.message : 'Unknown error'}
-          </p>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => window.location.reload()}
-            className="mt-2"
-          >
-            Retry
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  // Show empty state if no data
-  if (!isLoading && data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <p className="text-muted-foreground">No testing reports found</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Create your first testing report to get started
-          </p>
-          <Button 
-            size="sm" 
-            className="mt-4"
-            onClick={() => router.push(ROUTES.APP.WELDERS.TESTING_REPORTS.NEW)}
-          >
-            <PlusIcon className="mr-2 h-4 w-4" />
-            Create Testing Report
-          </Button>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <DataTable
