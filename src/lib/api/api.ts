@@ -2,7 +2,7 @@ import { ROUTES } from "@/constants/routes"
 import ky from "ky"
 import { TokenStorage } from "@/lib/auth/token-storage"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api` || "http://localhost:8000/api"
 
 // Create a base API client
 const baseApi = ky.create({

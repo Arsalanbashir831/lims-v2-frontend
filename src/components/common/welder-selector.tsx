@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useWelders } from "@/hooks/use-welders"
-import { useWelderCards } from "@/hooks/use-welder-cards"
 import { Welder } from "@/lib/schemas/welder"
 
 interface WelderSelectorProps {
@@ -38,20 +37,11 @@ export function WelderSelector({
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  // Use only welder cards API which has all the information
-  const { data: welderCardsData, isLoading, error } = useWelderCards(1, debouncedSearchQuery, 100)
+  // Use welders search API
+  const { data: weldersData, isLoading, error } = useWelders(1, debouncedSearchQuery, 100)
 
-  // Extract welders from the welder cards response
-  const welders = welderCardsData?.results?.map(card => ({
-    id: card.welder_id,
-    operator_name: card.welder_info?.operator_name || "",
-    operator_id: card.welder_info?.operator_id || "",
-    iqama: card.welder_info?.iqama || "",
-    profile_image: card.welder_info?.profile_image,
-    is_active: true, // Default value
-    created_at: new Date(), // Default value
-    updated_at: new Date(), // Default value
-  })) || []
+  // Extract welders from the response
+  const welders = weldersData?.results || []
 
   // Find selected welder
   const selectedWelder = useMemo(() => {
@@ -61,22 +51,11 @@ export function WelderSelector({
   const handleSelect = useCallback((welderId: string) => {
     const welder = welders.find(w => w.id === welderId)
     if (welder) {
-      // Find the welder card for this welder to get complete data
-      const welderCard = welderCardsData?.results?.find(card => card.welder_id === welderId)
-      
-      // Merge welder data with card data
-      const completeWelderData = {
-        ...welder,
-        card_id: welderCard?.id,
-        card_no: welderCard?.card_no,
-        company: welderCard?.company,
-      }
-      
-      onValueChange(welderId, completeWelderData)
+      onValueChange(welderId, welder)
       setOpen(false)
       setSearchQuery("")
     }
-  }, [welders, welderCardsData, onValueChange])
+  }, [welders, onValueChange])
 
   const handleClear = useCallback(() => {
     onValueChange(undefined, undefined)

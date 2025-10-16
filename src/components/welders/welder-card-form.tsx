@@ -33,7 +33,7 @@ interface WelderCardFormData {
   welder_name: string
   iqama_no: string
   operator_id: string
-  welder_image: string
+  profile_image_url: string
   // Attributes fields (mapped to attributes JSON)
   wpsNo: string
   process: string
@@ -90,7 +90,7 @@ export function WelderCardForm({
       welder_name: initialData?.welder_info?.operator_name || "",
       iqama_no: initialData?.welder_info?.iqama || "",
       operator_id: initialData?.welder_info?.operator_id || "",
-      welder_image: initialData?.welder_info?.profile_image || "",
+      profile_image_url: initialData?.welder_info?.profile_image || "",
       // Map attributes fields
       wpsNo: String(attributes.wps_no || ""),
       process: String(attributes.process || ""),
@@ -151,7 +151,7 @@ export function WelderCardForm({
       welder_name: String(welder?.operator_name || ""),
       iqama_no: String(welder?.iqama || ""),
       operator_id: String(welder?.operator_id || ""),
-      welder_image: String(welder?.profile_image_url || "")
+      profile_image_url: String(welder?.profile_image_url || "")
     }))
   }
 
@@ -234,9 +234,9 @@ export function WelderCardForm({
                 <div className="w-full h-full flex items-center justify-center print:bg-white relative">
                   {formData.welder_id ? (
                     <div className="">
-                      {formData.welder_image ? (
+                      {formData.profile_image_url ? (
                         <Image
-                          src={`${process.env.NEXT_PUBLIC_BACKEND_URL}/${formData.welder_image.replace(/\\/g, '/')}`}
+                          src={`${process.env.NEXT_PUBLIC_BACKEND_URL}${formData.profile_image_url}`}
                           alt={formData.welder_name || "Welder"}
                           fill
                           className="w-full h-full object-cover"
@@ -304,7 +304,7 @@ export function WelderCardForm({
               <div className="grid grid-cols-2 border">
                 <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Welder ID</div>
                 <div className="p-3 border">
-                  <span className="text-sm text-white print:!text-black">{formData.operator_id || "Select a welder first"}</span>
+                  <span className="text-sm text-black print:!text-black">{formData.operator_id || "Select a welder first"}</span>
                 </div>
               </div>
             </div>
@@ -433,9 +433,9 @@ export function WelderCardForm({
                 <span className="text-sm print:text-black">{formData.positionQualified}</span>
               ) : (
                 <Input
-                  value={formData.positionQualified}
+                  value={formData.testPosition}
                   placeholder="Enter Test Position"
-                  onChange={(e) => handleInputChange('positionQualified', e.target.value)}
+                  onChange={(e) => handleInputChange('testPosition', e.target.value)}
                   className="border-0 py-0 h-auto text-sm"
                 />
               )}
