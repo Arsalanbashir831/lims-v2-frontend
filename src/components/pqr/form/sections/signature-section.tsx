@@ -63,7 +63,7 @@ export function SignatureSection({ onUpdate, initialSectionData }: SignatureSect
             })
           }
           allowAddRow={true}
-          allowAddColumn={false}
+          allowAddColumn={true}
         />
       </CardContent>
     </Card>

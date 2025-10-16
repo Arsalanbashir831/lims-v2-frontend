@@ -2,7 +2,7 @@ import { SectionComponentWrapper } from "../section-component-wrapper"
 import { DynamicColumn, DynamicRow } from "../dynamic-table"
 import { WelderSelector } from "@/components/common/welder-selector"
 import { Welder } from "@/lib/schemas/welder"
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 
 interface WelderTestingInfoSectionProps {
   onUpdate: (sectionData: { columns: DynamicColumn[]; data: DynamicRow[] }) => void
@@ -17,6 +17,11 @@ export function WelderTestingInfoSection({
   const [welderNameValue, setWelderNameValue] = useState("")
   const [welderIdValue, setWelderIdValue] = useState("")
   const [welderDatabaseId, setWelderDatabaseId] = useState<string | undefined>(undefined)
+  
+  // Use ref to track latest section data without causing re-renders
+  const sectionDataRef = useRef(initialSectionData)
+  // Track if we've initialized from data to prevent re-initialization
+  const hasInitializedRef = useRef(false)
 
   const initialCols: DynamicColumn[] = [
     {
@@ -43,21 +48,34 @@ export function WelderTestingInfoSection({
     { id: "wti6", label: "Lab Test No.", value: "" },
   ]
 
-  // Initialize from initial data if available - set the welder name and ID values
+  // Update ref when initialSectionData changes
   useEffect(() => {
-    if (initialSectionData?.data) {
+    sectionDataRef.current = initialSectionData
+  }, [initialSectionData])
+
+  // Initialize from initial data if available - set the welder name and ID values (only once)
+  useEffect(() => {
+    // Only initialize once, when data first becomes available
+    if (initialSectionData?.data && !hasInitializedRef.current) {
       const welderNameRow = initialSectionData.data.find(row => row.label === "Welder Name")
       const welderIdRow = initialSectionData.data.find(row => row.label === "Welder ID")
       const welderDatabaseIdRow = initialSectionData.data.find(row => row.label === "Welder Database ID")
       
-      if (welderNameRow) {
-        setWelderNameValue(welderNameRow.value as string || "")
-      }
-      if (welderIdRow) {
-        setWelderIdValue(welderIdRow.value as string || "")
-      }
-      if (welderDatabaseIdRow && welderDatabaseIdRow.value) {
-        setWelderDatabaseId(welderDatabaseIdRow.value as string)
+      // Only initialize if we have actual values (for edit mode)
+      const hasWelderName = welderNameRow && welderNameRow.value
+      const hasWelderId = welderIdRow && welderIdRow.value
+      
+      if (hasWelderName || hasWelderId) {
+        if (hasWelderName) {
+          setWelderNameValue(welderNameRow.value as string || "")
+        }
+        if (hasWelderId) {
+          setWelderIdValue(welderIdRow.value as string || "")
+        }
+        if (welderDatabaseIdRow && welderDatabaseIdRow.value) {
+          setWelderDatabaseId(welderDatabaseIdRow.value as string)
+        }
+        hasInitializedRef.current = true
       }
     }
   }, [initialSectionData])
@@ -75,7 +93,9 @@ export function WelderTestingInfoSection({
       const cardId = ('card_id' in welder ? (welder as Welder & { card_id?: string }).card_id : '') || ""
       
       // Update the form data with the selected welder information
-      const currentData = initialSectionData?.data || defaultData
+      // Use ref to get latest data without causing callback recreation
+      const currentSectionData = sectionDataRef.current
+      const currentData = currentSectionData?.data || defaultData
       const updatedData = currentData.map(row => {
         if (row.label === "Welder Name") {
           return { ...row, value: welder.operator_name }
@@ -93,7 +113,7 @@ export function WelderTestingInfoSection({
       })
       
       onUpdate({
-        columns: initialSectionData?.columns || initialCols,
+        columns: currentSectionData?.columns || initialCols,
         data: updatedData
       })
     } else {
@@ -102,7 +122,8 @@ export function WelderTestingInfoSection({
       setWelderDatabaseId(undefined)
       
       // Clear the form data
-      const currentData = initialSectionData?.data || defaultData
+      const currentSectionData = sectionDataRef.current
+      const currentData = currentSectionData?.data || defaultData
       const updatedData = currentData.map(row => {
         if (row.label === "Welder Name" || row.label === "Welder ID") {
           return { ...row, value: "" }
@@ -117,11 +138,11 @@ export function WelderTestingInfoSection({
       })
       
       onUpdate({
-        columns: initialSectionData?.columns || initialCols,
+        columns: currentSectionData?.columns || initialCols,
         data: updatedData
       })
     }
-  }, [initialSectionData, onUpdate, initialCols, defaultData])
+  }, [onUpdate, initialCols, defaultData])
 
   const handleWelderNameChange = useCallback((value: string) => {
     setWelderNameValue(value)

@@ -116,51 +116,110 @@ export function PQRForm({
         }
 
         try {
-            // Helper function to transform dynamic table data to flat object
-            const transformDynamicData = (sectionData: { columns?: DynamicColumn[]; data?: DynamicRow[] } | undefined): Record<string, string | number | boolean> => {
-                if (!sectionData?.data || !Array.isArray(sectionData.data)) return {}
+            // Helper function to transform dynamic table data to clean array/object format
+            const transformDynamicData = (sectionData: { columns?: DynamicColumn[]; data?: DynamicRow[] } | undefined, sectionName = ''): any => {
+                console.log(`\n🔍 Transforming section: ${sectionName}`)
+                console.log('Input data:', sectionData)
                 
-                const result: Record<string, string | number | boolean> = {}
+                if (!sectionData?.data || !Array.isArray(sectionData.data)) {
+                    console.log(`⚠️ No data found for ${sectionName}`)
+                    return {}
+                }
+                
+                console.log(`✅ ${sectionName} has ${sectionData.data.length} rows`)
+                console.log(`✅ ${sectionName} has ${sectionData.columns?.length} columns`)
                 
                 // Check if this is a label-value table or a multi-column table
+                // Label-value tables have ONLY 2 columns: (label/description) and value
                 const hasLabelColumn = sectionData.columns?.some(col => 
                     col.accessorKey === 'label' || col.accessorKey === 'description'
                 )
+                const hasValueColumn = sectionData.columns?.some(col => 
+                    col.accessorKey === 'value'
+                )
+                const columnCount = sectionData.columns?.filter(col => col.accessorKey !== 'id').length || 0
                 
-                if (hasLabelColumn) {
+                // It's a label-value table ONLY if it has exactly 2 columns (label/description + value)
+                const isLabelValueTable = hasLabelColumn && hasValueColumn && columnCount === 2
+                
+                console.log(`📋 ${sectionName} is ${isLabelValueTable ? 'label-value' : 'multi-column'} table (${columnCount} columns)`)
+                
+                if (isLabelValueTable) {
                     // Handle label-value tables (e.g., PWHT, Preheat, etc.)
-                    sectionData.data.forEach((row: DynamicRow) => {
-                        // Support both 'label' and 'description' fields
-                        const label = row.label || row.description
-                        const value = row.value
-                        if (label && value !== undefined && value !== null && value !== '') {
-                            // Convert label to snake_case key
-                            const key = String(label)
-                                .toLowerCase()
-                                .replace(/[^a-z0-9]+/g, '_') // Replace any non-alphanumeric chars with underscore
-                                .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
-                            result[key] = value
-                        }
-                    })
+                    // Return as array of [label, value] arrays
+                    const rows = sectionData.data
+                        .map((row: DynamicRow) => {
+                            // Support both 'label' and 'description' fields
+                            const label = row.label || row.description
+                            const value = row.value
+                            // Only include rows that have a label (keep even if value is empty)
+                            if (label) {
+                                return [String(label), value ?? ""]
+                            }
+                            return null
+                        })
+                        .filter(row => row !== null)
+                    
+                    return { rows }
                 } else {
                     // Handle multi-column tables (e.g., GAS, Tensile Test, Signature, etc.)
-                    // For these tables, we need to serialize all rows with all their columns
-                    sectionData.data.forEach((row: DynamicRow, rowIndex: number) => {
-                        // Skip the 'id' field and any hidden rows
-                        if ((row as any).hidden) return
-                        
-                        // For each column in the row, create a key like "row_0_column_name"
-                        Object.entries(row).forEach(([key, value]) => {
-                            if (key !== 'id' && key !== 'hidden' && value !== undefined && value !== null && value !== '') {
-                                // Create a unique key for each cell
-                                const cellKey = `row_${rowIndex}_${key}`
-                                result[cellKey] = value
-                            }
+                    console.log(`🔧 Multi-column transformation for ${sectionName}`)
+                    const result: any = {}
+                    
+                    // Store ALL column headers metadata (including user-added columns)
+                    if (sectionData.columns && sectionData.columns.length > 0) {
+                        result.columns = sectionData.columns
+                            .filter(col => col.accessorKey !== 'id') // Exclude 'id' column
+                            .map(col => ({
+                                key: col.accessorKey,
+                                header: col.header
+                            }))
+                        console.log(`  📊 Transformed columns (${result.columns.length}):`, result.columns.map((c: any) => c.header))
+                    }
+                    
+                    // Store rows as array of objects - include ALL data from dynamically added columns
+                    result.rows = sectionData.data
+                        .filter((row: DynamicRow) => !(row as any).hidden)
+                        .map((row: DynamicRow, idx: number) => {
+                            const rowData: Record<string, any> = {}
+                            
+                            console.log(`    🔸 Row ${idx} RAW:`, JSON.stringify(row, null, 2))
+                            
+                            // Include ALL keys from the row (including user-added columns)
+                            Object.entries(row).forEach(([key, value]) => {
+                                // Only exclude 'id' and 'hidden' keys
+                                if (key !== 'id' && key !== 'hidden') {
+                                    // Include value even if empty string (user might have added column but not filled it yet)
+                                    if (value !== undefined && value !== null) {
+                                        rowData[key] = value
+                                    }
+                                }
+                            })
+                            
+                            console.log(`    ➡️ Transformed row ${idx}:`, rowData)
+                            return rowData
                         })
-                    })
+                        .filter(row => {
+                            // Only filter out completely empty rows (all values are empty)
+                            const values = Object.values(row)
+                            const hasData = values.length > 0 && values.some(val => val !== '' && val !== null && val !== undefined)
+                            if (!hasData) {
+                                console.log(`    ❌ Filtering out empty row`)
+                            }
+                            return hasData
+                        })
+                    
+                    console.log(`  ✅ Final rows count: ${result.rows.length}`)
+                    
+                    // Only return if we have data
+                    if (!result.rows || result.rows.length === 0) {
+                        console.log(`  ⚠️ No rows found, returning empty`)
+                        return {}
+                    }
+                    
+                    console.log(`  🎉 Final result for ${sectionName}:`, result)
+                    return result
                 }
-                
-                return result
             }
 
             // Extract welder_card_id and other welder testing info
@@ -184,14 +243,20 @@ export function PQRForm({
                 }
             }
 
-            // Transform header info to basic_info structure
-            const headerData = transformDynamicData(formData.headerInfo)
+            // Extract specific values from header info for basic_info
+            const extractHeaderValue = (labelText: string): string => {
+                if (!formData.headerInfo?.data) return "";
+                const row = formData.headerInfo.data.find((r: DynamicRow) => 
+                    (r.label || r.description) === labelText
+                );
+                return row ? String(row.value || "") : "";
+            };
             
             const basicInfo = {
-                pqr_number: String(headerData.pqr_no || ""),
-                date_qualified: String(headerData.date_of_issue || ""),
-                qualified_by: String(headerData.contractor_name || ""),
-                approved_by: String(headerData.client_end_user || "")
+                pqr_number: extractHeaderValue("PQR No."),
+                date_qualified: extractHeaderValue("Date of Issue"),
+                qualified_by: extractHeaderValue("Contractor Name"),
+                approved_by: extractHeaderValue("Client/End User")
             }
 
             // Transform form data to backend format
@@ -199,26 +264,26 @@ export function PQRForm({
                 // Transform header info to basic_info format
                 basic_info: {
                     ...basicInfo,
-                    ...transformDynamicData(formData.headerInfo)
+                    ...transformDynamicData(formData.headerInfo, 'headerInfo')
                 },
                 
                 // Transform dynamic sections to flat objects with correct field names
-                joints: transformDynamicData(formData.joints),
-                base_metals: transformDynamicData(formData.baseMetals),
-                filler_metals: transformDynamicData(formData.fillerMetals),
-                positions: transformDynamicData(formData.positions),
-                preheat: transformDynamicData(formData.preheat),
-                post_weld_heat_treatment: transformDynamicData(formData.pwht),
-                gas: transformDynamicData(formData.gas),
-                electrical_characteristics: transformDynamicData(formData.electrical),
-                techniques: transformDynamicData(formData.techniques),
-                welding_parameters: transformDynamicData(formData.weldingParameters),
-                tensile_test: transformDynamicData(formData.tensileTest),
-                guided_bend_test: transformDynamicData(formData.guidedBendTest),
-                toughness_test: transformDynamicData(formData.toughnessTest),
-                fillet_weld_test: transformDynamicData(formData.filletWeldTest),
-                other_tests: transformDynamicData(formData.otherTests),
-                signatures: transformDynamicData(formData.signatures),
+                joints: transformDynamicData(formData.joints, 'joints'),
+                base_metals: transformDynamicData(formData.baseMetals, 'base_metals'),
+                filler_metals: transformDynamicData(formData.fillerMetals, 'filler_metals'),
+                positions: transformDynamicData(formData.positions, 'positions'),
+                preheat: transformDynamicData(formData.preheat, 'preheat'),
+                post_weld_heat_treatment: transformDynamicData(formData.pwht, 'pwht'),
+                gas: transformDynamicData(formData.gas, 'GAS'),
+                electrical_characteristics: transformDynamicData(formData.electrical, 'electrical'),
+                techniques: transformDynamicData(formData.techniques, 'techniques'),
+                welding_parameters: transformDynamicData(formData.weldingParameters, 'welding_parameters'),
+                tensile_test: transformDynamicData(formData.tensileTest, 'TENSILE_TEST'),
+                guided_bend_test: transformDynamicData(formData.guidedBendTest, 'GUIDED_BEND_TEST'),
+                toughness_test: transformDynamicData(formData.toughnessTest, 'TOUGHNESS_TEST'),
+                fillet_weld_test: transformDynamicData(formData.filletWeldTest, 'FILLET_WELD_TEST'),
+                other_tests: transformDynamicData(formData.otherTests, 'OTHER_TESTS'),
+                signatures: transformDynamicData(formData.signatures, 'SIGNATURES'),
                 
                 // Add specific fields at top level
                 ...(welderCardId && { welder_card_id: String(welderCardId) }),
@@ -232,6 +297,12 @@ export function PQRForm({
                 
                 type: getPQRType(isAsme)
             }
+
+            // Log final payload
+            console.log('\n' + '='.repeat(60))
+            console.log('📦 FINAL BACKEND PAYLOAD:')
+            console.log(JSON.stringify(backendData, null, 2))
+            console.log('='.repeat(60) + '\n')
 
             // Validate that we have at least some data to send
             const hasData = Object.values(backendData).some(value => {

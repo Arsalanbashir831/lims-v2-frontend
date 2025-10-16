@@ -27,6 +27,16 @@ export const FillerMetalsView = ({ fillerMetalsData, isAsme }: { fillerMetalsDat
                 FILLER METALS {isAsme && '(QW-404)'}
               </th>
             </tr>
+            <tr className="border-y dark:bg-sidebar">
+              {columns.map((col: DynamicColumn) => (
+                <th
+                  key={col.id}
+                  className="border-r p-2 font-medium text-gray-600 dark:text-gray-300 last:border-r-0"
+                >
+                  {col.header}
+                </th>
+              ))}
+            </tr>
           </thead>
           <tbody>
             {(fillerMetalsData.data || []).map((row: DynamicRow) => (
