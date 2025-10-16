@@ -96,16 +96,160 @@ function transformPQRDataToView(pqr: PQR): PqrDataToView {
   };
 
   // Helper function to convert object to table format
-  const objectToTableFormat = (obj: Record<string, string | number | boolean> | null | undefined, labelKey = "label", valueKey = "value"): { columns: DynamicColumn[], data: DynamicRow[] } => {
+  const objectToTableFormat = (obj: any, labelKey = "label", valueKey = "value"): { columns: DynamicColumn[], data: DynamicRow[] } => {
     if (!obj || typeof obj !== 'object') {
       return { columns: [], data: [] };
     }
 
+    // NEW FORMAT: Check if this has 'rows' array
+    if (obj.rows && Array.isArray(obj.rows)) {
+      // Check if this has columns metadata (multi-column table)
+      if (obj.columns && Array.isArray(obj.columns)) {
+        // Multi-column table format with exact headers
+        const columns: DynamicColumn[] = obj.columns.map((col: any, index: number) => ({
+          id: `col-${col.key}-${index}`,
+          header: col.header, // Use exact header from form
+          accessorKey: col.key,
+          type: "input" as const
+        }));
+        
+        const data: DynamicRow[] = obj.rows.map((row: any, index: number) => ({
+          id: `row-${index}`,
+          ...row
+        }));
+        
+        return { columns, data };
+      } else {
+        // Label-value table format with exact labels
+        const columns = [
+          { id: `${labelKey}-col`, header: "Parameter", accessorKey: labelKey, type: "label" as const },
+          { id: `${valueKey}-col`, header: "Details", accessorKey: valueKey, type: "input" as const },
+        ];
+        
+        // Handle both array format [label, value] and object format {label, value}
+        const data: DynamicRow[] = obj.rows.map((row: any, index: number) => {
+          if (Array.isArray(row)) {
+            // New format: [label, value]
+            return {
+              id: `row-${index}`,
+              [labelKey]: row[0] ?? "",
+              [valueKey]: row[1] ?? "",
+            };
+          } else {
+            // Old format: {label, value}
+            return {
+              id: `row-${index}`,
+              [labelKey]: row.label ?? "",
+              [valueKey]: row.value ?? "",
+            };
+          }
+        });
+        
+        return { columns, data };
+      }
+    }
+
+    // FALLBACK: Old format - Check if this has row_X_label / row_X_value pattern
+    const hasLabelValuePattern = Object.keys(obj).some(key => key.match(/^row_\d+_label$/));
+    
+    if (hasLabelValuePattern) {
+      // Old label-value format: row_0_label, row_0_value
+      const columns = [
+        { id: `${labelKey}-col`, header: "Parameter", accessorKey: labelKey, type: "label" as const },
+        { id: `${valueKey}-col`, header: "Details", accessorKey: valueKey, type: "input" as const },
+      ];
+
+      // Extract rows from row_X_label and row_X_value
+      const rowsMap = new Map<number, { label: string; value: any }>();
+      
+      Object.entries(obj).forEach(([key, value]) => {
+        const labelMatch = key.match(/^row_(\d+)_label$/);
+        const valueMatch = key.match(/^row_(\d+)_value$/);
+        
+        if (labelMatch) {
+          const rowIndex = parseInt(labelMatch[1]);
+          if (!rowsMap.has(rowIndex)) {
+            rowsMap.set(rowIndex, { label: '', value: '' });
+          }
+          rowsMap.get(rowIndex)!.label = String(value);
+        } else if (valueMatch) {
+          const rowIndex = parseInt(valueMatch[1]);
+          if (!rowsMap.has(rowIndex)) {
+            rowsMap.set(rowIndex, { label: '', value: '' });
+          }
+          rowsMap.get(rowIndex)!.value = value;
+        }
+      });
+
+      const data = Array.from(rowsMap.entries())
+        .sort(([a], [b]) => a - b)
+        .map(([index, row]) => ({
+          id: `row-${index}`,
+          [labelKey]: row.label,
+          [valueKey]: row.value ?? "",
+        })) as DynamicRow[];
+
+      return { columns, data };
+    }
+    
+    // Check if this has column metadata pattern (_col_X_key / _col_X_header)
+    const hasColumnMetadataPattern = Object.keys(obj).some(key => key.match(/^_col_\d+_key$/));
+    
+    if (hasColumnMetadataPattern) {
+      // Old multi-column format with _col_ metadata
+      const columnDefs = new Map<number, { key: string; header: string }>();
+      const rowsMap = new Map<number, Record<string, any>>();
+      
+      Object.entries(obj).forEach(([key, value]) => {
+        const colKeyMatch = key.match(/^_col_(\d+)_key$/);
+        const colHeaderMatch = key.match(/^_col_(\d+)_header$/);
+        const rowMatch = key.match(/^row_(\d+)_(.+)$/);
+        
+        if (colKeyMatch) {
+          const colIndex = parseInt(colKeyMatch[1]);
+          if (!columnDefs.has(colIndex)) {
+            columnDefs.set(colIndex, { key: '', header: '' });
+          }
+          columnDefs.get(colIndex)!.key = String(value);
+        } else if (colHeaderMatch) {
+          const colIndex = parseInt(colHeaderMatch[1]);
+          if (!columnDefs.has(colIndex)) {
+            columnDefs.set(colIndex, { key: '', header: '' });
+          }
+          columnDefs.get(colIndex)!.header = String(value);
+        } else if (rowMatch) {
+          const rowIndex = parseInt(rowMatch[1]);
+          const columnName = rowMatch[2];
+          
+          if (!rowsMap.has(rowIndex)) {
+            rowsMap.set(rowIndex, { id: `row-${rowIndex}` });
+          }
+          
+          rowsMap.get(rowIndex)![columnName] = value;
+        }
+      });
+      
+      // Create columns from metadata with exact headers
+      const columns: DynamicColumn[] = Array.from(columnDefs.entries())
+        .sort(([a], [b]) => a - b)
+        .map(([index, def]) => ({
+          id: `col-${def.key}`,
+          header: def.header, // Use exact header from metadata
+          accessorKey: def.key,
+          type: "input" as const
+        }));
+      
+      // Convert map to array
+      const data = Array.from(rowsMap.values()) as DynamicRow[];
+      
+      return { columns, data };
+    }
+    
     // Check if this is multi-column table data (keys like "row_0_columnname")
     const hasRowPrefix = Object.keys(obj).some(key => key.startsWith('row_'));
     
     if (hasRowPrefix) {
-      // This is multi-column table data - reconstruct rows
+      // This is multi-column table data - reconstruct rows (without metadata)
       const rowsMap = new Map<number, Record<string, any>>();
       const columnNamesSet = new Set<string>();
       
@@ -114,6 +258,9 @@ function transformPQRDataToView(pqr: PQR): PqrDataToView {
         if (match) {
           const rowIndex = parseInt(match[1]);
           const columnName = match[2];
+          
+          // Skip label/value keys (already handled above)
+          if (columnName === 'label' || columnName === 'value') return;
           
           columnNamesSet.add(columnName);
           
@@ -138,7 +285,7 @@ function transformPQRDataToView(pqr: PQR): PqrDataToView {
       
       return { columns, data };
     } else {
-      // This is label-value table data
+      // This is label-value table data (fallback for old format)
       const columns = [
         { id: `${labelKey}-col`, header: "Parameter", accessorKey: labelKey, type: "label" as const },
         { id: `${valueKey}-col`, header: "Details", accessorKey: valueKey, type: "input" as const },
@@ -147,8 +294,8 @@ function transformPQRDataToView(pqr: PQR): PqrDataToView {
       const data = Object.entries(obj).map(([key, value], index) => ({
         id: `row-${index}`,
         [labelKey]: simpleSnakeCaseToTitle(key),
-        [valueKey]: value ?? "",
-      }));
+        [valueKey]: value ?? "" as string | number | boolean,
+      })) as DynamicRow[];
 
       return { columns, data };
     }

@@ -116,11 +116,9 @@ export function PQRForm({
         }
 
         try {
-            // Helper function to transform dynamic table data to flat object AND store column metadata
-            const transformDynamicData = (sectionData: { columns?: DynamicColumn[]; data?: DynamicRow[] } | undefined): Record<string, string | number | boolean> => {
+            // Helper function to transform dynamic table data to clean array/object format
+            const transformDynamicData = (sectionData: { columns?: DynamicColumn[]; data?: DynamicRow[] } | undefined): any => {
                 if (!sectionData?.data || !Array.isArray(sectionData.data)) return {}
-                
-                const result: Record<string, string | number | boolean> = {}
                 
                 // Check if this is a label-value table or a multi-column table
                 const hasLabelColumn = sectionData.columns?.some(col => 
@@ -129,44 +127,48 @@ export function PQRForm({
                 
                 if (hasLabelColumn) {
                     // Handle label-value tables (e.g., PWHT, Preheat, etc.)
-                    // Store the original labels directly without conversion
-                    sectionData.data.forEach((row: DynamicRow, rowIndex: number) => {
-                        // Support both 'label' and 'description' fields
-                        const label = row.label || row.description
-                        const value = row.value
-                        if (label && value !== undefined && value !== null && value !== '') {
-                            // Store with row index to preserve order and exact label text
-                            result[`row_${rowIndex}_label`] = String(label)
-                            result[`row_${rowIndex}_value`] = value
-                        }
-                    })
+                    // Return as array of [label, value] arrays
+                    const rows = sectionData.data
+                        .map((row: DynamicRow) => {
+                            // Support both 'label' and 'description' fields
+                            const label = row.label || row.description
+                            const value = row.value
+                            if (label && value !== undefined && value !== null && value !== '') {
+                                return [String(label), value]
+                            }
+                            return null
+                        })
+                        .filter(row => row !== null)
+                    
+                    return { rows }
                 } else {
                     // Handle multi-column tables (e.g., GAS, Tensile Test, Signature, etc.)
+                    const result: any = {}
+                    
                     // Store column headers metadata
                     if (sectionData.columns && sectionData.columns.length > 0) {
-                        sectionData.columns.forEach((col, colIndex) => {
-                            result[`_col_${colIndex}_key`] = col.accessorKey
-                            result[`_col_${colIndex}_header`] = col.header
-                        })
+                        result.columns = sectionData.columns.map(col => ({
+                            key: col.accessorKey,
+                            header: col.header
+                        }))
                     }
                     
-                    // For these tables, we need to serialize all rows with all their columns
-                    sectionData.data.forEach((row: DynamicRow, rowIndex: number) => {
-                        // Skip the 'id' field and any hidden rows
-                        if ((row as any).hidden) return
-                        
-                        // For each column in the row, create a key like "row_0_column_name"
-                        Object.entries(row).forEach(([key, value]) => {
-                            if (key !== 'id' && key !== 'hidden' && value !== undefined && value !== null && value !== '') {
-                                // Create a unique key for each cell
-                                const cellKey = `row_${rowIndex}_${key}`
-                                result[cellKey] = value
-                            }
+                    // Store rows as array of objects
+                    result.rows = sectionData.data
+                        .filter((row: DynamicRow) => !(row as any).hidden)
+                        .map((row: DynamicRow) => {
+                            const rowData: Record<string, any> = {}
+                            Object.entries(row).forEach(([key, value]) => {
+                                if (key !== 'id' && key !== 'hidden' && value !== undefined && value !== null && value !== '') {
+                                    rowData[key] = value
+                                }
+                            })
+                            return rowData
                         })
-                    })
+                        .filter(row => Object.keys(row).length > 0)
+                    
+                    return result
                 }
-                
-                return result
             }
 
             // Extract welder_card_id and other welder testing info
