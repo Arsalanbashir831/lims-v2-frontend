@@ -65,327 +65,237 @@ interface PqrDataToView {
   signatures: PqrSection;
 }
 
-// Simple fallback function for old data format (converts snake_case to Title Case)
-function simpleSnakeCaseToTitle(str: string): string {
-  return str
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-}
-
 // Function to transform backend PQR data to view format
 function transformPQRDataToView(pqr: PQR): PqrDataToView {
   // Get the backend base URL for media files
   const getMediaUrl = (relativePath?: string): string | undefined => {
     if (!relativePath) return undefined;
-    
-    // If it's already a full URL, return as is
-    if (relativePath.startsWith('http') || relativePath.startsWith('blob:')) {
+    if (relativePath.startsWith("http") || relativePath.startsWith("blob:"))
       return relativePath;
-    }
-    
-    // Get the backend URL (without /api suffix)
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-    
-    // Replace backslashes with forward slashes and ensure proper path construction
-    const cleanPath = relativePath.replace(/\\/g, '/');
-    const separator = cleanPath.startsWith('/') ? '' : '/';
-    
-    // Construct the full URL
+
+    const backendUrl =
+      process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+    const cleanPath = relativePath.replace(/\\/g, "/");
+    const separator = cleanPath.startsWith("/") ? "" : "/";
     return `${backendUrl}${separator}${cleanPath}`;
   };
 
   // Helper function to convert object to table format
-  const objectToTableFormat = (obj: any, labelKey = "label", valueKey = "value"): { columns: DynamicColumn[], data: DynamicRow[] } => {
-    if (!obj || typeof obj !== 'object') {
+  const objectToTableFormat = (
+    obj: any,
+    labelKey = "label",
+    valueKey = "value"
+  ): { columns: DynamicColumn[]; data: DynamicRow[] } => {
+    // Guard
+    if (!obj || typeof obj !== "object") {
       return { columns: [], data: [] };
     }
-
-    // NEW FORMAT: Check if this has 'rows' array
-    if (obj.rows && Array.isArray(obj.rows) && obj.rows.length > 0) {
-      // Check if this has columns metadata (multi-column table)
-      if (obj.columns && Array.isArray(obj.columns) && obj.columns.length > 0) {
-        // Multi-column table format with exact headers
-        const columns: DynamicColumn[] = obj.columns.map((col: any, index: number) => ({
-          id: `col-${col.key}-${index}`,
-          header: col.header, // Use exact header from form
+  
+    // If rows exist
+    if (Array.isArray((obj as any).rows) && (obj as any).rows.length > 0) {
+      const rows = (obj as any).rows;
+  
+      // Explicit columns
+      if (Array.isArray((obj as any).columns) && (obj as any).columns.length > 0) {
+        const columns: DynamicColumn[] = (obj as any).columns.map((col: any, i: number) => ({
+          id: `col-${col.key}-${i}`,
+          header: col.header,
           accessorKey: col.key,
-          type: "input" as const
+          type: col.key === "label" || col.key === "description" ? "label" : "input",
         }));
-        
-        const data: DynamicRow[] = obj.rows.map((row: any, index: number) => ({
-          id: `row-${index}`,
-          ...row
-        }));
-        
-        return { columns, data };
-      } else {
-        // Label-value table format with exact labels
-        const columns = [
-          { id: `${labelKey}-col`, header: "Parameter", accessorKey: labelKey, type: "label" as const },
-          { id: `${valueKey}-col`, header: "Details", accessorKey: valueKey, type: "input" as const },
-        ];
-        
-        // Handle both array format [label, value] and object format {label, value}
-        const data: DynamicRow[] = obj.rows
-          .map((row: any, index: number) => {
-            if (Array.isArray(row) && row.length >= 2) {
-              // New format: [label, value]
-              return {
-                id: `row-${index}`,
-                [labelKey]: String(row[0] ?? ""),
-                [valueKey]: row[1] ?? "",
-              };
-            } else if (typeof row === 'object' && row !== null) {
-              // Old format: {label, value} or other object format
-              return {
-                id: `row-${index}`,
-                [labelKey]: String(row.label ?? row[labelKey] ?? ""),
-                [valueKey]: row.value ?? row[valueKey] ?? "",
-              };
-            } else {
-              // Fallback
-              return {
-                id: `row-${index}`,
-                [labelKey]: "",
-                [valueKey]: "",
-              };
-            }
-          })
-          .filter((row: any) => {
-            // Only filter out rows where label is empty (keep rows with label even if value is empty)
-            const label = row[labelKey];
-            return label && String(label).trim() !== "";
-          });
-        
+        const data: DynamicRow[] = rows.map((r: any, i: number) => ({ id: `row-${i}`, ...r }));
         return { columns, data };
       }
-    }
-
-    // FALLBACK: Old format - Check if this has row_X_label / row_X_value pattern
-    const hasLabelValuePattern = Object.keys(obj).some(key => key.match(/^row_\d+_label$/));
-    
-    if (hasLabelValuePattern) {
-      // Old label-value format: row_0_label, row_0_value
-      const columns = [
-        { id: `${labelKey}-col`, header: "Parameter", accessorKey: labelKey, type: "label" as const },
-        { id: `${valueKey}-col`, header: "Details", accessorKey: valueKey, type: "input" as const },
-      ];
-
-      // Extract rows from row_X_label and row_X_value
-      const rowsMap = new Map<number, { label: string; value: any }>();
-      
-      Object.entries(obj).forEach(([key, value]) => {
-        const labelMatch = key.match(/^row_(\d+)_label$/);
-        const valueMatch = key.match(/^row_(\d+)_value$/);
-        
-        if (labelMatch) {
-          const rowIndex = parseInt(labelMatch[1]);
-          if (!rowsMap.has(rowIndex)) {
-            rowsMap.set(rowIndex, { label: '', value: '' });
-          }
-          rowsMap.get(rowIndex)!.label = String(value);
-        } else if (valueMatch) {
-          const rowIndex = parseInt(valueMatch[1]);
-          if (!rowsMap.has(rowIndex)) {
-            rowsMap.set(rowIndex, { label: '', value: '' });
-          }
-          rowsMap.get(rowIndex)!.value = value;
-        }
+  
+      // Infer columns from rows
+      const keySet = new Set<string>();
+      rows.forEach((r: any) => {
+        if (r && typeof r === "object" && !Array.isArray(r)) Object.keys(r).forEach((k) => keySet.add(k));
       });
-
-      const data = Array.from(rowsMap.entries())
-        .sort(([a], [b]) => a - b)
-        .map(([index, row]) => ({
-          id: `row-${index}`,
-          [labelKey]: row.label,
-          [valueKey]: row.value ?? "",
-        })) as DynamicRow[];
-
-      return { columns, data };
-    }
-    
-    // Check if this has column metadata pattern (_col_X_key / _col_X_header)
-    const hasColumnMetadataPattern = Object.keys(obj).some(key => key.match(/^_col_\d+_key$/));
-    
-    if (hasColumnMetadataPattern) {
-      // Old multi-column format with _col_ metadata
-      const columnDefs = new Map<number, { key: string; header: string }>();
-      const rowsMap = new Map<number, Record<string, any>>();
-      
-      Object.entries(obj).forEach(([key, value]) => {
-        const colKeyMatch = key.match(/^_col_(\d+)_key$/);
-        const colHeaderMatch = key.match(/^_col_(\d+)_header$/);
-        const rowMatch = key.match(/^row_(\d+)_(.+)$/);
-        
-        if (colKeyMatch) {
-          const colIndex = parseInt(colKeyMatch[1]);
-          if (!columnDefs.has(colIndex)) {
-            columnDefs.set(colIndex, { key: '', header: '' });
-          }
-          columnDefs.get(colIndex)!.key = String(value);
-        } else if (colHeaderMatch) {
-          const colIndex = parseInt(colHeaderMatch[1]);
-          if (!columnDefs.has(colIndex)) {
-            columnDefs.set(colIndex, { key: '', header: '' });
-          }
-          columnDefs.get(colIndex)!.header = String(value);
-        } else if (rowMatch) {
-          const rowIndex = parseInt(rowMatch[1]);
-          const columnName = rowMatch[2];
-          
-          if (!rowsMap.has(rowIndex)) {
-            rowsMap.set(rowIndex, { id: `row-${rowIndex}` });
-          }
-          
-          rowsMap.get(rowIndex)![columnName] = value;
-        }
-      });
-      
-      // Create columns from metadata with exact headers
-      const columns: DynamicColumn[] = Array.from(columnDefs.entries())
-        .sort(([a], [b]) => a - b)
-        .map(([index, def]) => ({
-          id: `col-${def.key}`,
-          header: def.header, // Use exact header from metadata
-          accessorKey: def.key,
-          type: "input" as const
+      keySet.delete("id");
+      const keys = Array.from(keySet);
+      const hasLabel = keys.includes("label") || keys.includes("description");
+      const hasValue = keys.includes("value");
+      const simpleLV = hasLabel && hasValue && keys.length === 2;
+  
+      if (!simpleLV && keys.length > 0) {
+        const columns: DynamicColumn[] = keys.map((k, i) => ({
+          id: `col-${k}-${i}`,
+          header: k.charAt(0).toUpperCase() + k.slice(1),
+          accessorKey: k,
+          type: k === "label" || k === "description" ? "label" : "input",
         }));
-      
-      // Convert map to array
-      const data = Array.from(rowsMap.values()) as DynamicRow[];
-      
-      return { columns, data };
-    }
-    
-    // Check if this is multi-column table data (keys like "row_0_columnname")
-    const hasRowPrefix = Object.keys(obj).some(key => key.startsWith('row_'));
-    
-    if (hasRowPrefix) {
-      // This is multi-column table data - reconstruct rows (without metadata)
-      const rowsMap = new Map<number, Record<string, any>>();
-      const columnNamesSet = new Set<string>();
-      
-      Object.entries(obj).forEach(([key, value]) => {
-        const match = key.match(/^row_(\d+)_(.+)$/);
-        if (match) {
-          const rowIndex = parseInt(match[1]);
-          const columnName = match[2];
-          
-          // Skip label/value keys (already handled above)
-          if (columnName === 'label' || columnName === 'value') return;
-          
-          columnNamesSet.add(columnName);
-          
-          if (!rowsMap.has(rowIndex)) {
-            rowsMap.set(rowIndex, { id: `row-${rowIndex}` });
-          }
-          
-          rowsMap.get(rowIndex)![columnName] = value;
-        }
-      });
-      
-      // Create columns from the column names found (fallback for old data)
-      const columns: DynamicColumn[] = Array.from(columnNamesSet).map(colName => ({
-        id: `col-${colName}`,
-        header: simpleSnakeCaseToTitle(colName),
-        accessorKey: colName,
-        type: "input" as const
-      }));
-      
-      // Convert map to array
-      const data = Array.from(rowsMap.values()) as DynamicRow[];
-      
-      return { columns, data };
-    } else {
-      // This is label-value table data (fallback for old format)
-      const columns = [
-        { id: `${labelKey}-col`, header: "Parameter", accessorKey: labelKey, type: "label" as const },
-        { id: `${valueKey}-col`, header: "Details", accessorKey: valueKey, type: "input" as const },
+        const data: DynamicRow[] = rows.map((r: any, i: number) => ({ id: `row-${i}`, ...r }));
+        return { columns, data };
+      }
+  
+      // Simple label/value
+      const columns: DynamicColumn[] = [
+        { id: `${labelKey}-col`, header: "Parameter", accessorKey: labelKey, type: "label" },
+        { id: `${valueKey}-col`, header: "Details", accessorKey: valueKey, type: "input" },
       ];
-
-      const data = Object.entries(obj).map(([key, value], index) => ({
-        id: `row-${index}`,
-        [labelKey]: simpleSnakeCaseToTitle(key),
-        [valueKey]: value ?? "" as string | number | boolean,
-      })) as DynamicRow[];
-
+      const data: DynamicRow[] = rows
+        .map((r: any, i: number) => {
+          if (Array.isArray(r) && r.length >= 2)
+            return { id: `row-${i}`, [labelKey]: String(r[0] ?? ""), [valueKey]: r[1] ?? "" } as DynamicRow;
+          if (r && typeof r === "object")
+            return {
+              id: `row-${i}`,
+              [labelKey]: String(r.label ?? r[labelKey] ?? ""),
+              [valueKey]: r.value ?? r[valueKey] ?? "",
+            } as DynamicRow;
+          return { id: `row-${i}`, [labelKey]: "", [valueKey]: "" } as DynamicRow;
+        })
+        .filter((r: any) => String((r as any)[labelKey] ?? "").trim() !== "");
       return { columns, data };
     }
+  
+    // No rows → key/value object
+    const entries = Object.entries(obj).filter(([k, v]) => k !== "columns" && v !== undefined && v !== null);
+    if (entries.length === 0) {
+      return { columns: [], data: [] };
+    }
+    const columns: DynamicColumn[] = [
+      { id: `${labelKey}-col`, header: "Parameter", accessorKey: labelKey, type: "label" },
+      { id: `${valueKey}-col`, header: "Details", accessorKey: valueKey, type: "input" },
+    ];
+    const data: DynamicRow[] = entries.map(([k, v], i) => ({
+      id: `row-${i}`,
+      [labelKey]: String(k),
+      [valueKey]: v as any,
+    })) as DynamicRow[];
+  
+    return { columns, data };
   };
-
-  // Helper to add 'description' alias to data for backward compatibility with HeaderInfoView
-  const addDescriptionAlias = (result: { columns: DynamicColumn[], data: DynamicRow[] }) => {
-    return {
-      ...result,
-      data: result.data.map(row => ({
-        ...row,
-        description: row.label // Add 'description' as alias for 'label'
-      }))
-    };
-  };
-
+  
   return {
-    headerInfo: pqr.basic_info ? objectToTableFormat(pqr.basic_info, "description", "value") : { columns: [], data: [] },
+    headerInfo: pqr.basic_info
+      ? objectToTableFormat(pqr.basic_info, "description", "value")
+      : { columns: [], data: [] },
     joints: {
-      columns: pqr.joints ? objectToTableFormat(pqr.joints, "label", "value").columns : [],
-      data: pqr.joints ? objectToTableFormat(pqr.joints, "label", "value").data : [],
+      columns: pqr.joints
+        ? objectToTableFormat(pqr.joints, "label", "value").columns
+        : [],
+      data: pqr.joints
+        ? objectToTableFormat(pqr.joints, "label", "value").data
+        : [],
       designPhotoUrl: getMediaUrl(pqr.joint_design_sketch?.[0]),
     },
-    baseMetals: pqr.base_metals ? objectToTableFormat(pqr.base_metals) : { columns: [], data: [] },
-    fillerMetals: pqr.filler_metals ? objectToTableFormat(pqr.filler_metals) : { columns: [], data: [] },
-    positions: pqr.positions ? objectToTableFormat(pqr.positions) : { columns: [], data: [] },
-    preheat: pqr.preheat ? objectToTableFormat(pqr.preheat) : { columns: [], data: [] },
-    pwht: pqr.post_weld_heat_treatment ? objectToTableFormat(pqr.post_weld_heat_treatment) : { columns: [], data: [] },
+    baseMetals: pqr.base_metals
+      ? objectToTableFormat(pqr.base_metals)
+      : { columns: [], data: [] },
+    fillerMetals: pqr.filler_metals
+      ? objectToTableFormat(pqr.filler_metals)
+      : { columns: [], data: [] },
+    positions: pqr.positions
+      ? objectToTableFormat(pqr.positions)
+      : { columns: [], data: [] },
+    preheat: pqr.preheat
+      ? objectToTableFormat(pqr.preheat)
+      : { columns: [], data: [] },
+    pwht: pqr.post_weld_heat_treatment
+      ? objectToTableFormat(pqr.post_weld_heat_treatment)
+      : { columns: [], data: [] },
     gas: pqr.gas ? objectToTableFormat(pqr.gas) : { columns: [], data: [] },
-    electrical: pqr.electrical_characteristics ? objectToTableFormat(pqr.electrical_characteristics) : { columns: [], data: [] },
-    techniques: pqr.techniques ? objectToTableFormat(pqr.techniques) : { columns: [], data: [] },
-    weldingParameters: pqr.welding_parameters ? objectToTableFormat(pqr.welding_parameters) : { columns: [], data: [] },
-    tensileTest: pqr.tensile_test ? objectToTableFormat(pqr.tensile_test) : { columns: [], data: [] },
-    guidedBendTest: pqr.guided_bend_test ? objectToTableFormat(pqr.guided_bend_test) : { columns: [], data: [] },
-    toughnessTest: pqr.toughness_test ? objectToTableFormat(pqr.toughness_test) : { columns: [], data: [] },
-    filletWeldTest: pqr.fillet_weld_test ? objectToTableFormat(pqr.fillet_weld_test) : { columns: [], data: [] },
-    otherTests: pqr.other_tests ? objectToTableFormat(pqr.other_tests) : { columns: [], data: [] },
+    electrical: pqr.electrical_characteristics
+      ? objectToTableFormat(pqr.electrical_characteristics)
+      : { columns: [], data: [] },
+    techniques: pqr.techniques
+      ? objectToTableFormat(pqr.techniques)
+      : { columns: [], data: [] },
+    weldingParameters: pqr.welding_parameters
+      ? objectToTableFormat(pqr.welding_parameters)
+      : { columns: [], data: [] },
+    tensileTest: pqr.tensile_test
+      ? objectToTableFormat(pqr.tensile_test)
+      : { columns: [], data: [] },
+    guidedBendTest: pqr.guided_bend_test
+      ? objectToTableFormat(pqr.guided_bend_test)
+      : { columns: [], data: [] },
+    toughnessTest: pqr.toughness_test
+      ? objectToTableFormat(pqr.toughness_test)
+      : { columns: [], data: [] },
+    filletWeldTest: pqr.fillet_weld_test
+      ? objectToTableFormat(pqr.fillet_weld_test)
+      : { columns: [], data: [] },
+    otherTests: pqr.other_tests
+      ? objectToTableFormat(pqr.other_tests)
+      : { columns: [], data: [] },
     welderTestingInfo: {
       columns: [
-        { id: "wti-label", header: "Parameter", accessorKey: "label", type: "label" as const },
-        { id: "wti-value", header: "Details", accessorKey: "value", type: "input" as const },
+        {
+          id: "wti-label",
+          header: "Parameter",
+          accessorKey: "label",
+          type: "label" as const,
+        },
+        {
+          id: "wti-value",
+          header: "Details",
+          accessorKey: "value",
+          type: "input" as const,
+        },
       ],
       data: [
-        { id: "wti1", label: "Welder Name", value: pqr.welder_card_info?.welder_info?.operator_name || "" },
-        { id: "wti2", label: "Welder ID", value: pqr.welder_card_info?.welder_info?.operator_id || "" },
-        { id: "wti3", label: "Mechanical Testing Conducted by", value: pqr.mechanical_testing_conducted_by || "" },
+        {
+          id: "wti1",
+          label: "Welder Name",
+          value: pqr.welder_card_info?.welder_info?.operator_name || "",
+        },
+        {
+          id: "wti2",
+          label: "Welder ID",
+          value: pqr.welder_card_info?.welder_info?.operator_id || "",
+        },
+        {
+          id: "wti3",
+          label: "Mechanical Testing Conducted by",
+          value: pqr.mechanical_testing_conducted_by || "",
+        },
         { id: "wti4", label: "Lab Test No.", value: pqr.lab_test_no || "" },
       ],
     },
     certification: {
       data: [{ id: "cert-ref", reference: pqr.type || "" }],
     },
-    signatures: pqr.signatures ? objectToTableFormat(pqr.signatures, "label", "value") : { columns: [], data: [] },
+    signatures: pqr.signatures
+      ? objectToTableFormat(pqr.signatures, "label", "value")
+      : { columns: [], data: [] },
   };
 }
 
-export default function PQRReportPreview({ showButton = true, isPublic = false }) {
+export default function PQRReportPreview({
+  showButton = true,
+  isPublic = false,
+}) {
   const params = useParams<{ id: string }>();
   const pqrId = params?.id;
 
-  const [pqrDataToView, setPqrDataToView] = useState<PqrDataToView | null>(null);
+  const [pqrDataToView, setPqrDataToView] = useState<PqrDataToView | null>(
+    null
+  );
   const [qrSrc, setQrSrc] = useState<string | null>(null);
 
-  const [frontendBase, setFrontendBase] = useState("")
-  
-  // Fetch PQR data from backend using the hook
-  const { data: pqrResponse, isLoading: loadingView, error: errorResponse } = usePQR(pqrId ?? "");
-  
-  useEffect(() => {
-    const url = (process.env.NEXT_PUBLIC_FRONTEND_URL as string | undefined) ||
-               (process.env.FRONTEND_URL as string | undefined) ||
-               (typeof window !== "undefined" ? window.location.origin : "");
-    setFrontendBase(url)
-  }, [])
-  
-  const publicPreviewBase = `${frontendBase}${ROUTES.PUBLIC?.PQR_PREVIEW(pqrId ?? "")}`;
+  const [frontendBase, setFrontendBase] = useState("");
 
+  // Fetch PQR data from backend using the hook
+  const {
+    data: pqrResponse,
+    isLoading: loadingView,
+    error: errorResponse,
+  } = usePQR(pqrId ?? "");
+
+  useEffect(() => {
+    const url =
+      (process.env.NEXT_PUBLIC_FRONTEND_URL as string | undefined) ||
+      (process.env.FRONTEND_URL as string | undefined) ||
+      (typeof window !== "undefined" ? window.location.origin : "");
+    setFrontendBase(url);
+  }, []);
+
+  const publicPreviewBase = `${frontendBase}${ROUTES.PUBLIC?.PQR_PREVIEW(
+    pqrId ?? ""
+  )}`;
 
   // ref to the entire printable area
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -406,7 +316,7 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
   // Generate QR code
   useEffect(() => {
     if (!pqrId) return;
-    
+
     (async () => {
       try {
         const url = `${publicPreviewBase}/${pqrId}`;
@@ -423,9 +333,9 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
     if (!loadingView && pqrDataToView) {
       try {
         if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type: 'DOCUMENT_READY', id: pqrId }, '*');
+          window.parent.postMessage({ type: "DOCUMENT_READY", id: pqrId }, "*");
         }
-      } catch { }
+      } catch {}
     }
   }, [loadingView, pqrDataToView, pqrId]);
 
@@ -436,13 +346,13 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
     try {
       const success = await generatePdf(publicPreviewBase, pqrId);
       if (success) {
-        toast.info('Preparing your document...');
+        toast.info("Preparing your document...");
       } else {
-        toast.error('Failed to prepare the document. Please try again.');
+        toast.error("Failed to prepare the document. Please try again.");
       }
     } catch (error) {
-      console.error('PDF generation failed:', error);
-      toast.error('Failed to prepare the document. Please try again.');
+      console.error("PDF generation failed:", error);
+      toast.error("Failed to prepare the document. Please try again.");
     }
   };
 
@@ -470,13 +380,19 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error Loading PQR</AlertTitle>
-          <AlertDescription>{errorResponse?.message || "Failed to load PQR data"}</AlertDescription>
+          <AlertDescription>
+            {errorResponse?.message || "Failed to load PQR data"}
+          </AlertDescription>
         </Alert>
-        <BackButton variant="default" label="Go Back" href={ROUTES.APP.WELDERS.PQR.ROOT} />
+        <BackButton
+          variant="default"
+          label="Go Back"
+          href={ROUTES.APP.WELDERS.PQR.ROOT}
+        />
       </div>
     );
   }
-  
+
   if (!pqrId) {
     return (
       <div className="container mx-auto p-6">
@@ -485,7 +401,11 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>No PQR ID provided for viewing.</AlertDescription>
         </Alert>
-        <BackButton variant="default" label="Go Back" href={ROUTES.APP.WELDERS.PQR.ROOT} />
+        <BackButton
+          variant="default"
+          label="Go Back"
+          href={ROUTES.APP.WELDERS.PQR.ROOT}
+        />
       </div>
     );
   }
@@ -494,7 +414,11 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
     return (
       <div className="container mx-auto p-6 text-center">
         <p>No data available for this PQR record.</p>
-        <BackButton variant="default" label="Go Back" href={ROUTES.APP.WELDERS.PQR.ROOT} />
+        <BackButton
+          variant="default"
+          label="Go Back"
+          href={ROUTES.APP.WELDERS.PQR.ROOT}
+        />
       </div>
     );
   }
@@ -505,16 +429,34 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
     <div className="max-w-7xl mx-auto rounded-2xl p-2 sm:p-4 md:p-8 print:bg-white print:p-0">
       <header className="mb-6 flex items-center justify-between sm:mb-8">
         <div>
-          <NextJSImage src="/gripco-logo.webp" alt="Logo" width={300} height={60} className="h-24 w-64 bg-background" />
+          <NextJSImage
+            src="/gripco-logo.webp"
+            alt="Logo"
+            width={300}
+            height={60}
+            className="h-24 w-64 bg-background"
+          />
         </div>
         {isPublic && (
           <div className="flex items-center gap-2">
             <div>
-              <NextJSImage src="/ias-logo-vertical.webp" alt="Logo" width={80} height={60} className="h-24 w-20" />
+              <NextJSImage
+                src="/ias-logo-vertical.webp"
+                alt="Logo"
+                width={80}
+                height={60}
+                className="h-24 w-20"
+              />
             </div>
             <div className="flex items-center gap-2">
               {qrSrc ? (
-                <NextJSImage src={qrSrc} alt="PQR Public Link" className="h-24 w-24" width={80} height={80} />
+                <NextJSImage
+                  src={qrSrc}
+                  alt="PQR Public Link"
+                  className="h-24 w-24"
+                  width={80}
+                  height={80}
+                />
               ) : null}
             </div>
           </div>
@@ -524,7 +466,11 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
             <Button onClick={handleGeneratePdf} variant="outline">
               Export PDF
             </Button>
-            <BackButton variant="default" label="Back to List" href={ROUTES.APP.WELDERS.PQR.ROOT} />
+            <BackButton
+              variant="default"
+              label="Back to List"
+              href={ROUTES.APP.WELDERS.PQR.ROOT}
+            />
           </div>
         )}
       </header>
@@ -532,23 +478,55 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
       <div ref={contentRef} className="pqr-view-content space-y-4">
         <HeaderInfoView headerInfoData={pqrDataToView.headerInfo} />
         <JointsView jointsData={pqrDataToView.joints} isAsme={isAsme} />
-        <BaseMetalsView baseMetalsData={pqrDataToView.baseMetals} isAsme={isAsme} />
-        <FillerMetalsView fillerMetalsData={pqrDataToView.fillerMetals} isAsme={isAsme} />
-        <PositionsPreheatView positionsData={pqrDataToView.positions} preheatData={pqrDataToView.preheat} isAsme={isAsme} />
-        <PWHTGasView pwhtData={pqrDataToView.pwht} gasData={pqrDataToView.gas} isAsme={isAsme} />
-        <ElectricalTechniquesView electricalData={pqrDataToView.electrical} techniquesData={pqrDataToView.techniques} isAsme={isAsme} />
-        <WeldingParametersView weldingParamsData={pqrDataToView.weldingParameters} />
-        <TensileTestView tensileTestData={pqrDataToView.tensileTest} isAsme={isAsme} />
-        <GuidedBendTestView guidedBendTestData={pqrDataToView.guidedBendTest} isAsme={isAsme} />
-        <ToughnessTestView toughnessTestData={pqrDataToView.toughnessTest} isAsme={isAsme} />
-        <FilletWeldTestView filletWeldTestData={pqrDataToView.filletWeldTest} isAsme={isAsme} />
+        <BaseMetalsView
+          baseMetalsData={pqrDataToView.baseMetals}
+          isAsme={isAsme}
+        />
+        <FillerMetalsView
+          fillerMetalsData={pqrDataToView.fillerMetals}
+          isAsme={isAsme}
+        />
+        <PositionsPreheatView
+          positionsData={pqrDataToView.positions}
+          preheatData={pqrDataToView.preheat}
+          isAsme={isAsme}
+        />
+        <PWHTGasView
+          pwhtData={pqrDataToView.pwht}
+          gasData={pqrDataToView.gas}
+          isAsme={isAsme}
+        />
+        <ElectricalTechniquesView
+          electricalData={pqrDataToView.electrical}
+          techniquesData={pqrDataToView.techniques}
+          isAsme={isAsme}
+        />
+        <WeldingParametersView
+          weldingParamsData={pqrDataToView.weldingParameters}
+        />
+        <TensileTestView
+          tensileTestData={pqrDataToView.tensileTest}
+          isAsme={isAsme}
+        />
+        <GuidedBendTestView
+          guidedBendTestData={pqrDataToView.guidedBendTest}
+          isAsme={isAsme}
+        />
+        <ToughnessTestView
+          toughnessTestData={pqrDataToView.toughnessTest}
+          isAsme={isAsme}
+        />
+        <FilletWeldTestView
+          filletWeldTestData={pqrDataToView.filletWeldTest}
+          isAsme={isAsme}
+        />
         <OtherTestsView otherTestsData={pqrDataToView.otherTests} />
-        <WelderTestingInfoView welderTestingInfoData={pqrDataToView.welderTestingInfo} />
+        <WelderTestingInfoView
+          welderTestingInfoData={pqrDataToView.welderTestingInfo}
+        />
         <CertificationView certificationData={pqrDataToView.certification} />
         <SignatureView signatureData={pqrDataToView.signatures} />
       </div>
     </div>
   );
 }
-
-

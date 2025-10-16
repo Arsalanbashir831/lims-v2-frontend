@@ -3,6 +3,7 @@ import { getSectionDataByAccessor } from '@/lib/pqr-utils';
 interface JointColumn {
   id: string;
   accessorKey: string;
+  header?: string;
 }
 
 interface JointRow {
@@ -46,6 +47,11 @@ export const JointsView = ({ jointsData, isAsme }: { jointsData: JointsData; isA
     );
   }
 
+  // Check if this is a pure label-value table (exactly 2 columns: label and value)
+  const hasLabelColumn = columns.some(col => col.accessorKey === 'label')
+  const hasValueColumn = columns.some(col => col.accessorKey === 'value')
+  const isLabelValueTable = hasLabelColumn && hasValueColumn && columns.length === 2
+
   return (
     <div className="mt-4 overflow-hidden border">
       <div className="dark:bg-sidebar  p-2">
@@ -58,7 +64,8 @@ export const JointsView = ({ jointsData, isAsme }: { jointsData: JointsData; isA
         {/* Left side - Table */}
         <div className="overflow-x-auto ">
           <table className="w-full text-sm border">
-            {columns.length > 0 && !columns.some(col => col.accessorKey === 'label' || col.accessorKey === 'value') && (
+            {/* Show column headers for multi-column tables (not pure label-value tables) */}
+            {columns.length > 0 && !isLabelValueTable && (
               <thead>
                 <tr className="border-y dark:bg-sidebar">
                   {columns.map((col: JointColumn) => (
@@ -66,7 +73,7 @@ export const JointsView = ({ jointsData, isAsme }: { jointsData: JointsData; isA
                       key={col.id}
                       className="border-r p-2 font-medium text-gray-600 dark:text-gray-300 last:border-r-0"
                     >
-                      {(col as any).header || col.accessorKey}
+                      {col.header || col.accessorKey}
                     </th>
                   ))}
                 </tr>
@@ -74,9 +81,8 @@ export const JointsView = ({ jointsData, isAsme }: { jointsData: JointsData; isA
             )}
             <tbody >
               {hasData ? (
-                // Check if this is a label-value table or multi-column table
-                // Label-value tables have columns with accessorKey 'label' and 'value'
-                columns.some(col => col.accessorKey === 'label' || col.accessorKey === 'value')
+                // Render based on whether it's a pure label-value table or multi-column table
+                isLabelValueTable
                   ? (data || []).map((item: JointRow | JointItem) => {
                       if (isJointItem(item)) {
                         return (
