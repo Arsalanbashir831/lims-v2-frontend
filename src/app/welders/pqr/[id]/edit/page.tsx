@@ -169,26 +169,62 @@ export default function EditPQRPage() {
           return { columns, data: rows }
         } else {
           // Multi-column table data
-          // Group by row index
+          // First, check if there's column metadata (_col_X_key, _col_X_header)
+          const columnMetadata = new Map<number, { key: string; header: string }>()
           const rowsMap = new Map<number, Record<string, any>>()
           
           Object.entries(data).forEach(([key, value]) => {
-            const match = key.match(/^row_(\d+)_(.+)$/)
-            if (match) {
-              const rowIndex = parseInt(match[1])
-              const columnName = match[2]
-              
-              if (!rowsMap.has(rowIndex)) {
-                rowsMap.set(rowIndex, { id: `row_${rowIndex}` })
+            // Check for column metadata
+            const colKeyMatch = key.match(/^_col_(\d+)_key$/)
+            const colHeaderMatch = key.match(/^_col_(\d+)_header$/)
+            
+            if (colKeyMatch) {
+              const colIndex = parseInt(colKeyMatch[1])
+              if (!columnMetadata.has(colIndex)) {
+                columnMetadata.set(colIndex, { key: '', header: '' })
               }
-              
-              rowsMap.get(rowIndex)![columnName] = value
+              columnMetadata.get(colIndex)!.key = String(value)
+            } else if (colHeaderMatch) {
+              const colIndex = parseInt(colHeaderMatch[1])
+              if (!columnMetadata.has(colIndex)) {
+                columnMetadata.set(colIndex, { key: '', header: '' })
+              }
+              columnMetadata.get(colIndex)!.header = String(value)
+            } else {
+              // Regular row data
+              const match = key.match(/^row_(\d+)_(.+)$/)
+              if (match) {
+                const rowIndex = parseInt(match[1])
+                const columnName = match[2]
+                
+                if (!rowsMap.has(rowIndex)) {
+                  rowsMap.set(rowIndex, { id: `row_${rowIndex}` })
+                }
+                
+                rowsMap.get(rowIndex)![columnName] = value
+              }
             }
           })
           
-          // Convert map to array and return without columns (sections will use their default columns)
+          // Convert map to array
           const rows = Array.from(rowsMap.values()) as any[]
-          return { columns: undefined as any, data: rows as any }
+          
+          // If we have column metadata, reconstruct the columns array
+          if (columnMetadata.size > 0) {
+            const columns = Array.from(columnMetadata.entries())
+              .sort(([a], [b]) => a - b)
+              .map(([index, col]) => ({
+                id: `col-${col.key}-${index}`,
+                header: col.header,
+                accessorKey: col.key,
+                type: 'input' as const
+              }))
+            
+            return { columns, data: rows }
+          } else {
+            // No column metadata, return without columns (sections will use their default columns)
+            return { columns: undefined as any, data: rows as any }
+          }
         }
       } else {
         // This is plain object label-value table data (very old format)
@@ -218,7 +254,7 @@ export default function EditPQRPage() {
     }
 
     // Transform basic_info with proper field mapping
-    const transformBasicInfo = (basicInfo: Record<string, string | number | boolean> | null | undefined, pqr: PQR) => {
+    const transformBasicInfo = (basicInfo: any, pqr: PQR) => {
       const columns = [
         { 
           id: 'fieldDesc', 
@@ -234,7 +270,50 @@ export default function EditPQRPage() {
         }
       ]
       
-      // Map backend fields to form fields - matching what HeaderInfoSection expects
+      // NEW FORMAT: Check if basic_info has 'rows' array
+      if (basicInfo?.rows && Array.isArray(basicInfo.rows) && basicInfo.rows.length > 0) {
+        // Check if this has columns metadata (multi-column table)
+        if (basicInfo.columns && Array.isArray(basicInfo.columns) && basicInfo.columns.length > 0) {
+          // Multi-column table format (user added custom columns)
+          const multiColumns = basicInfo.columns.map((col: any, index: number) => ({
+            id: `col-${col.key}-${index}`,
+            header: col.header,
+            accessorKey: col.key,
+            // Keep 'description' as label type, others as input
+            type: (col.key === 'description' || col.key === 'label') ? 'label' as const : 'input' as const
+          }))
+          
+          const multiRows = basicInfo.rows.map((row: any, index: number) => ({
+            id: `s1r${index + 1}`,
+            ...row
+          }))
+          
+          return { columns: multiColumns, data: multiRows }
+        }
+        
+        // Label-value table format [[label, value], ...]
+        const rows = basicInfo.rows.map((row: any, index: number) => {
+          if (Array.isArray(row) && row.length >= 2) {
+            const label = String(row[0] ?? '')
+            const value = row[1] ?? ''
+            
+            // Determine if this is a date field based on label
+            const isDateField = label.toLowerCase().includes('date')
+            
+            return {
+              id: `s1r${index + 1}`,
+              description: label,
+              value: value,
+              ...(isDateField ? { type: 'date' as const } : {})
+            }
+          }
+          return null
+        }).filter((row: any) => row !== null)
+        
+        return { columns, data: rows }
+      }
+      
+      // OLD FORMAT: Fallback to extracting from flat object structure
       // Helper to get value from basicInfo using multiple possible keys
       const getValue = (...keys: string[]): string => {
         if (!basicInfo) return ''

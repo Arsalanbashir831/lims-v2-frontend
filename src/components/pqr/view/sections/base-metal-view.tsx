@@ -27,6 +27,16 @@ export const BaseMetalsView = ({ baseMetalsData, isAsme }: { baseMetalsData: Sec
                 BASE METALS {isAsme && '(QW-403)'}
               </th>
             </tr>
+            <tr className="border-y dark:bg-sidebar">
+              {columns.map((col: DynamicColumn) => (
+                <th
+                  key={col.id}
+                  className="border-r p-2 font-medium text-gray-600 dark:text-gray-300 last:border-r-0"
+                >
+                  {col.header}
+                </th>
+              ))}
+            </tr>
           </thead>
           <tbody>
             {(baseMetalsData.data || []).map((row: DynamicRow) => (

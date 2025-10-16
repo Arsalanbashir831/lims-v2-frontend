@@ -58,6 +58,20 @@ export const JointsView = ({ jointsData, isAsme }: { jointsData: JointsData; isA
         {/* Left side - Table */}
         <div className="overflow-x-auto ">
           <table className="w-full text-sm border">
+            {columns.length > 0 && !columns.some(col => col.accessorKey === 'label' || col.accessorKey === 'value') && (
+              <thead>
+                <tr className="border-y dark:bg-sidebar">
+                  {columns.map((col: JointColumn) => (
+                    <th
+                      key={col.id}
+                      className="border-r p-2 font-medium text-gray-600 dark:text-gray-300 last:border-r-0"
+                    >
+                      {(col as any).header || col.accessorKey}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+            )}
             <tbody >
               {hasData ? (
                 // Check if this is a label-value table or multi-column table

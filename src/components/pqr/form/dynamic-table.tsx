@@ -85,11 +85,11 @@ export function DynamicTable({
     const name = newColumnName.trim()
     if (!name) return
     const base = name.toLowerCase().replace(/\s+/g, "_")
-    const colId = `${base}_${Date.now()}`
+    const colId = `${base}_${Date.now()}` // Keep ID unique for React
     const newColumn: DynamicColumn = {
       id: colId,
       header: name,
-      accessorKey: colId,
+      accessorKey: base, // Use clean key without timestamp
       type: "input",
       placeholder: "Enter value",
     }

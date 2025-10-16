@@ -19,6 +19,18 @@ export const PWHTGasView = ({ pwhtData, gasData, isAsme }: { pwhtData: SectionDa
                 POST WELD HEAT TREATMENT {isAsme && '(QW-407)'}
               </th>
             </tr>
+            {pwhtCols.length > 0 && (
+              <tr className="border-y dark:bg-sidebar">
+                {pwhtCols.map((col: DynamicColumn) => (
+                  <th
+                    key={col.id}
+                    className="border-r p-2 font-medium text-gray-600 dark:text-gray-300 last:border-r-0"
+                  >
+                    {col.header}
+                  </th>
+                ))}
+              </tr>
+            )}
           </thead>
           <tbody>
             {pwhtCols.length > 0

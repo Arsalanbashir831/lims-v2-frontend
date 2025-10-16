@@ -30,6 +30,14 @@ export const HeaderInfoView = ({ headerInfoData }: { headerInfoData: SectionData
                 WELDING PROCEDURE QUALIFICATION RECORD (PQR)
               </th>
             </tr>
+            {/* Column Headers Row */}
+            <tr className="dark:bg-sidebar border-b">
+              {columns.map((col) => (
+                <th key={col.id} className="border-r p-2 text-left font-semibold last:border-r-0">
+                  {col.header}
+                </th>
+              ))}
+            </tr>
           </thead>
           <tbody>
             {(headerInfoData.data || []).map((row) => (

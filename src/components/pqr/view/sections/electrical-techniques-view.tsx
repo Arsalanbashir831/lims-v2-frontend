@@ -26,6 +26,18 @@ export const ElectricalTechniquesView = ({
                 ELECTRICAL CHARACTERISTICS {isAsme && '(QW-409)'}
               </th>
             </tr>
+            {eCols.length > 0 && (
+              <tr className="border-y dark:bg-sidebar">
+                {eCols.map((col: DynamicColumn) => (
+                  <th
+                    key={col.id}
+                    className="border-r p-2 font-medium text-gray-600 dark:text-gray-300 last:border-r-0"
+                  >
+                    {col.header}
+                  </th>
+                ))}
+              </tr>
+            )}
           </thead>
           <tbody>
             {eCols.length > 0
@@ -71,6 +83,18 @@ export const ElectricalTechniquesView = ({
                 TECHNIQUES {isAsme && '(QW-410)'}
               </th>
             </tr>
+            {tCols.length > 0 && (
+              <tr className="border-y dark:bg-sidebar">
+                {tCols.map((col: DynamicColumn) => (
+                  <th
+                    key={col.id}
+                    className="border-r p-2 font-medium text-gray-600 dark:text-gray-300 last:border-r-0"
+                  >
+                    {col.header}
+                  </th>
+                ))}
+              </tr>
+            )}
           </thead>
           <tbody>
             {tCols.length > 0

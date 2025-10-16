@@ -27,6 +27,18 @@ export const PositionsPreheatView = ({
                 POSITIONS {isAsme && '(QW-405)'}
               </th>
             </tr>
+            {posCols.length > 0 && (
+              <tr className="border-y dark:bg-sidebar">
+                {posCols.map((col: DynamicColumn) => (
+                  <th
+                    key={col.id}
+                    className="border-r p-2 font-medium text-gray-600 dark:text-gray-300 last:border-r-0"
+                  >
+                    {col.header}
+                  </th>
+                ))}
+              </tr>
+            )}
           </thead>
           <tbody>
             {posCols.length > 0
@@ -71,6 +83,18 @@ export const PositionsPreheatView = ({
                 PREHEAT {isAsme && '(QW-406)'}
               </th>
             </tr>
+            {preCols.length > 0 && (
+              <tr className="border-y dark:bg-sidebar">
+                {preCols.map((col: DynamicColumn) => (
+                  <th
+                    key={col.id}
+                    className="border-r p-2 font-medium text-gray-600 dark:text-gray-300 last:border-r-0"
+                  >
+                    {col.header}
+                  </th>
+                ))}
+              </tr>
+            )}
           </thead>
           <tbody>
             {preCols.length > 0

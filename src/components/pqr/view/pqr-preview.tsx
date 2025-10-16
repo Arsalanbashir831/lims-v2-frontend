@@ -326,7 +326,7 @@ function transformPQRDataToView(pqr: PQR): PqrDataToView {
   };
 
   return {
-    headerInfo: pqr.basic_info ? addDescriptionAlias(objectToTableFormat(pqr.basic_info, "label", "value")) : { columns: [], data: [] },
+    headerInfo: pqr.basic_info ? objectToTableFormat(pqr.basic_info, "description", "value") : { columns: [], data: [] },
     joints: {
       columns: pqr.joints ? objectToTableFormat(pqr.joints, "label", "value").columns : [],
       data: pqr.joints ? objectToTableFormat(pqr.joints, "label", "value").data : [],
