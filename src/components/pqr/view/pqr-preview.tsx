@@ -51,7 +51,10 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
   useEffect(() => {
     if (!pqrResponse?.data) return;
     try {
-      setPqrDataToView(buildPqrView(pqrResponse.data));
+      const transformedData = buildPqrView(pqrResponse.data);
+      console.log('PQR Preview - transformedData:', transformedData);
+      console.log('PQR Preview - joints data:', transformedData.joints);
+      setPqrDataToView(transformedData);
     } catch (err) {
       console.error("Error transforming PQR data:", err);
       toast.error("Failed to transform PQR data for viewing.");

@@ -35,6 +35,7 @@ function isJointItem(item: JointRow | JointItem): item is JointItem {
 export const JointsView = ({ jointsData, isAsme }: { jointsData: JointsData; isAsme: boolean }) => {
   const { data = [], designPhotoUrl, columns = [] } = jointsData || {};
 
+
   // Show section even if only image exists
   const hasData = data.length > 0;
   const hasImage = !!designPhotoUrl;
@@ -46,11 +47,6 @@ export const JointsView = ({ jointsData, isAsme }: { jointsData: JointsData; isA
       </p>
     );
   }
-
-  // Check if this is a pure label-value table (exactly 2 columns: label and value)
-  const hasLabelColumn = columns.some(col => col.accessorKey === 'label')
-  const hasValueColumn = columns.some(col => col.accessorKey === 'value')
-  const isLabelValueTable = hasLabelColumn && hasValueColumn && columns.length === 2
 
   return (
     <div className="mt-4 overflow-hidden border">
@@ -64,8 +60,8 @@ export const JointsView = ({ jointsData, isAsme }: { jointsData: JointsData; isA
         {/* Left side - Table */}
         <div className="overflow-x-auto ">
           <table className="w-full text-sm border">
-            {/* Show column headers for multi-column tables (not pure label-value tables) */}
-            {columns.length > 0 && !isLabelValueTable && (
+            {/* Show column headers for multi-column tables */}
+            {columns.length > 0 && (
               <thead>
                 <tr className="border-y dark:bg-sidebar">
                   {columns.map((col: JointColumn) => (
@@ -81,39 +77,17 @@ export const JointsView = ({ jointsData, isAsme }: { jointsData: JointsData; isA
             )}
             <tbody >
               {hasData ? (
-                // Render based on whether it's a pure label-value table or multi-column table
-                isLabelValueTable
-                  ? (data || []).map((item: JointRow | JointItem) => {
-                      if (isJointItem(item)) {
-                        return (
-                          <tr key={item.id} className="border-b  last:border-b-0">
-                            <td className="border-r p-3 font-medium w-1/2">
-                              {item.label}
-                            </td>
-                            <td className="p-3 w-1/2">
-                              {item.value !== undefined && item.value !== null && item.value !== '' 
-                                ? String(item.value) 
-                                : '-'}
-                            </td>
-                          </tr>
-                        );
-                      }
-                      return null;
-                    })
-                  : (data || []).map((item: JointRow | JointItem) => {
-                      if (isJointRow(item)) {
-                        return (
-                          <tr key={item.id} className="border-b">
-                            {columns.map((col: JointColumn) => (
-                              <td key={col.id} className="border-r border-gray-200 p-3 last:border-r-0">
-                                {getSectionDataByAccessor(item, col.accessorKey)}
-                              </td>
-                            ))}
-                          </tr>
-                        );
-                      }
-                      return null;
-                    })
+                (data || []).map((item: JointRow | JointItem) => {
+                  return (
+                    <tr key={item.id} className="border-b">
+                      {columns.map((col: JointColumn) => (
+                        <td key={col.id} className="border-r p-3 last:border-r-0">
+                          {getSectionDataByAccessor(item, col.accessorKey) || '-'}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td
