@@ -20,14 +20,6 @@ export const SignatureView = ({ signatureData }: { signatureData: SectionData })
   }
 
   const columns = signatureData.columns || [];
-  const sigRow = signatureData.data[0] || {};
-
-  // Map of accessorKeys to display names for signature columns
-  const columnLabels: Record<string, string> = {
-    inspector: "Witnessing / Welding Inspector",
-    supervisor: "Welding Supervisor",
-    lab: "Lab Testing Supervisor"
-  };
 
   return (
     <div className="mt-4 border overflow-hidden">
@@ -42,24 +34,26 @@ export const SignatureView = ({ signatureData }: { signatureData: SectionData })
                 key={col.id} 
                 className="border-r p-2 font-medium text-gray-600 dark:text-gray-300 last:border-r-0"
               >
-                {columnLabels[col.accessorKey] || col.header}
+                {col.header}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          <tr>
-            {columns.map((col) => (
-              <td 
-                key={col.id} 
-                className="h-16 border-r p-2 text-center last:border-r-0"
-              >
-                {getSectionDataByAccessor(sigRow, col.accessorKey) || (
-                  <span className="text-gray-400 italic">(No entry)</span>
-                )}
-              </td>
-            ))}
-          </tr>
+          {signatureData.data.map((row: DynamicRow) => (
+            <tr key={row.id} className="border-b last:border-b-0">
+              {columns.map((col) => (
+                <td 
+                  key={col.id} 
+                  className="h-16 border-r p-2 text-center last:border-r-0"
+                >
+                  {getSectionDataByAccessor(row, col.accessorKey) || (
+                    <span className="text-gray-400 italic">(No entry)</span>
+                  )}
+                </td>
+              ))}
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
