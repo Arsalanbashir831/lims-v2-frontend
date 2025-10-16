@@ -248,7 +248,7 @@ export default function EditPQRPage() {
       const rows = [
         { id: 's1r1', description: 'Contractor Name', value: getValue('contractor_name', 'qualified_by') },
         { id: 's1r2', description: 'Document No.', value: getValue('document_no') },
-        { id: 's1r3', description: 'PQR No.', value: getValue('pqr_no', 'pqr_number') || pqr.id || '' },
+        { id: 's1r3', description: 'PQR No.', value: getValue('pqr_no', 'pqr_number') },
         { id: 's1r4', description: 'Page No.', value: getValue('page_no') },
         { id: 's1r5', description: 'Supporting PWPS No.', value: getValue('supporting_pwps_no') },
         { id: 's1r6', description: 'Date of Issue', value: getValue('date_of_issue', 'date_qualified'), type: 'date' as const },
