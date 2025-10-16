@@ -44,69 +44,78 @@ export const JointsView = ({ jointsData, isAsme }: { jointsData: JointsData; isA
 
   return (
     <div className="mt-4 overflow-hidden border">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="bg-gray-100">
-            <th
-              colSpan={(columns && columns.length) || 2}
-              className="p-2 text-left font-semibold text-gray-700"
-            >
-              JOINTS {isAsme && '(QW-402)'}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {columns && columns.length > 0
-            ? (data || []).map((item: JointRow | JointItem) => {
-                if (isJointRow(item)) {
-                  return (
-                    <tr key={item.id} className="border-b">
-                      {columns.map((col: JointColumn) => (
-                        <td key={col.id} className="border-r p-2 last:border-r-0">
-                          {getSectionDataByAccessor(item, col.accessorKey)}
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                }
-                return null;
-              })
-            : (data || []).map((item: JointRow | JointItem) => {
-                if (isJointItem(item)) {
-                  return (
-                    <tr key={item.id} className="border-b">
-                      <td className="border-r p-2 font-medium text-gray-600">
-                        {item.label}
-                      </td>
-                      <td className="p-2">
-                        {item.value !== undefined ? String(item.value) : 'N/A'}
-                      </td>
-                    </tr>
-                  );
-                }
-                return null;
-              })}
-          {data.length === 0 && (
-            <tr>
-              <td
-                colSpan={(columns && columns.length) || 2}
-                className="p-2 text-center text-gray-500"
-              >
-                No joints data.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-      {designPhotoUrl && (
-        <div className="p-2 text-center">
-          <img
-            src={designPhotoUrl}
-            alt="Joint Design Photo"
-            className="mx-auto max-h-64 object-contain"
-          />
+      <div className="bg-gray-100 p-2">
+        <h3 className="text-left font-semibold text-gray-700">
+          JOINTS {isAsme && '(QW-402)'}
+        </h3>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-2">
+        {/* Left side - Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border">
+            <tbody>
+              {columns && columns.length > 0
+                ? (data || []).map((item: JointRow | JointItem) => {
+                    if (isJointRow(item)) {
+                      return (
+                        <tr key={item.id} className="border-b">
+                          {columns.map((col: JointColumn) => (
+                            <td key={col.id} className="border-r p-2 last:border-r-0">
+                              {getSectionDataByAccessor(item, col.accessorKey)}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    }
+                    return null;
+                  })
+                : (data || []).map((item: JointRow | JointItem) => {
+                    if (isJointItem(item)) {
+                      return (
+                        <tr key={item.id} className="border-b">
+                          <td className="border-r p-2 font-medium text-gray-600 w-1/2">
+                            {item.label}
+                          </td>
+                          <td className="p-2 w-1/2">
+                            {item.value !== undefined && item.value !== null && item.value !== '' 
+                              ? String(item.value) 
+                              : '-'}
+                          </td>
+                        </tr>
+                      );
+                    }
+                    return null;
+                  })}
+              {data.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={(columns && columns.length) || 2}
+                    className="p-2 text-center text-gray-500"
+                  >
+                    No joints data.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+        
+        {/* Right side - Image */}
+        <div className="flex items-center justify-center border rounded">
+          {designPhotoUrl ? (
+            <img
+              src={designPhotoUrl}
+              alt="Joint Design Sketch"
+              className="max-h-64 w-full object-contain p-2"
+            />
+          ) : (
+            <div className="text-center text-gray-400 p-4">
+              No joint design sketch available
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

@@ -102,9 +102,9 @@ function transformPQRDataToView(pqr: PQR): PqrDataToView {
     }
 
     // NEW FORMAT: Check if this has 'rows' array
-    if (obj.rows && Array.isArray(obj.rows)) {
+    if (obj.rows && Array.isArray(obj.rows) && obj.rows.length > 0) {
       // Check if this has columns metadata (multi-column table)
-      if (obj.columns && Array.isArray(obj.columns)) {
+      if (obj.columns && Array.isArray(obj.columns) && obj.columns.length > 0) {
         // Multi-column table format with exact headers
         const columns: DynamicColumn[] = obj.columns.map((col: any, index: number) => ({
           id: `col-${col.key}-${index}`,
@@ -127,23 +127,36 @@ function transformPQRDataToView(pqr: PQR): PqrDataToView {
         ];
         
         // Handle both array format [label, value] and object format {label, value}
-        const data: DynamicRow[] = obj.rows.map((row: any, index: number) => {
-          if (Array.isArray(row)) {
-            // New format: [label, value]
-            return {
-              id: `row-${index}`,
-              [labelKey]: row[0] ?? "",
-              [valueKey]: row[1] ?? "",
-            };
-          } else {
-            // Old format: {label, value}
-            return {
-              id: `row-${index}`,
-              [labelKey]: row.label ?? "",
-              [valueKey]: row.value ?? "",
-            };
-          }
-        });
+        const data: DynamicRow[] = obj.rows
+          .map((row: any, index: number) => {
+            if (Array.isArray(row) && row.length >= 2) {
+              // New format: [label, value]
+              return {
+                id: `row-${index}`,
+                [labelKey]: String(row[0] ?? ""),
+                [valueKey]: row[1] ?? "",
+              };
+            } else if (typeof row === 'object' && row !== null) {
+              // Old format: {label, value} or other object format
+              return {
+                id: `row-${index}`,
+                [labelKey]: String(row.label ?? row[labelKey] ?? ""),
+                [valueKey]: row.value ?? row[valueKey] ?? "",
+              };
+            } else {
+              // Fallback
+              return {
+                id: `row-${index}`,
+                [labelKey]: "",
+                [valueKey]: "",
+              };
+            }
+          })
+          .filter((row: any) => {
+            // Only filter out rows where label is empty (keep rows with label even if value is empty)
+            const label = row[labelKey];
+            return label && String(label).trim() !== "";
+          });
         
         return { columns, data };
       }
@@ -301,10 +314,22 @@ function transformPQRDataToView(pqr: PQR): PqrDataToView {
     }
   };
 
+  // Helper to add 'description' alias to data for backward compatibility with HeaderInfoView
+  const addDescriptionAlias = (result: { columns: DynamicColumn[], data: DynamicRow[] }) => {
+    return {
+      ...result,
+      data: result.data.map(row => ({
+        ...row,
+        description: row.label // Add 'description' as alias for 'label'
+      }))
+    };
+  };
+
   return {
-    headerInfo: pqr.basic_info ? objectToTableFormat(pqr.basic_info, "description", "value") : { columns: [], data: [] },
+    headerInfo: pqr.basic_info ? addDescriptionAlias(objectToTableFormat(pqr.basic_info, "label", "value")) : { columns: [], data: [] },
     joints: {
-      ...(pqr.joints ? objectToTableFormat(pqr.joints) : { columns: [], data: [] }),
+      columns: pqr.joints ? objectToTableFormat(pqr.joints, "label", "value").columns : [],
+      data: pqr.joints ? objectToTableFormat(pqr.joints, "label", "value").data : [],
       designPhotoUrl: getMediaUrl(pqr.joint_design_sketch?.[0]),
     },
     baseMetals: pqr.base_metals ? objectToTableFormat(pqr.base_metals) : { columns: [], data: [] },
@@ -336,7 +361,7 @@ function transformPQRDataToView(pqr: PQR): PqrDataToView {
     certification: {
       data: [{ id: "cert-ref", reference: pqr.type || "" }],
     },
-    signatures: pqr.signatures ? objectToTableFormat(pqr.signatures) : { columns: [], data: [] },
+    signatures: pqr.signatures ? objectToTableFormat(pqr.signatures, "label", "value") : { columns: [], data: [] },
   };
 }
 

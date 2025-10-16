@@ -133,8 +133,9 @@ export function PQRForm({
                             // Support both 'label' and 'description' fields
                             const label = row.label || row.description
                             const value = row.value
-                            if (label && value !== undefined && value !== null && value !== '') {
-                                return [String(label), value]
+                            // Only include rows that have a label (keep even if value is empty)
+                            if (label) {
+                                return [String(label), value ?? ""]
                             }
                             return null
                         })

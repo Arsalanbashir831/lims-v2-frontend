@@ -46,37 +46,152 @@ export default function EditPQRPage() {
 
   // Transform backend PQR data to form format
   function transformPQRToFormData(pqr: PQR): PQRFormData {
-    const transformToDynamicData = (data: Record<string, string | number | boolean> | null | undefined) => {
+    const transformToDynamicData = (data: any) => {
       // If no data, return undefined so sections use their default data
-      if (!data || Object.keys(data).length === 0) return undefined
+      if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) return undefined
       
-      // Check if this is multi-column table data (keys like "row_0_columnname")
+      // NEW FORMAT: Check if this has 'rows' array from backend
+      if (data.rows && Array.isArray(data.rows) && data.rows.length > 0) {
+        // Check if this has columns metadata (multi-column table)
+        if (data.columns && Array.isArray(data.columns) && data.columns.length > 0) {
+          // Multi-column table format
+          const columns = data.columns.map((col: any, index: number) => ({
+            id: `col-${col.key}-${index}`,
+            header: col.header,
+            accessorKey: col.key,
+            type: 'input' as const
+          }))
+          
+          const rows = data.rows.map((row: any, index: number) => ({
+            id: `row-${index}`,
+            ...row
+          }))
+          
+          return { columns, data: rows }
+        } else {
+          // Label-value table format with array: [[label, value], ...]
+          const columns = [
+            { 
+              id: 'label', 
+              header: 'Parameter',
+              accessorKey: 'label',
+              type: 'label' as const
+            },
+            { 
+              id: 'value', 
+              header: 'Value',
+              accessorKey: 'value',
+              type: 'input' as const
+            }
+          ]
+          
+          const rows = data.rows.map((row: any, index: number) => {
+            if (Array.isArray(row) && row.length >= 2) {
+              // New format: [label, value]
+              return {
+                id: `row-${index}`,
+                label: String(row[0] ?? ''),
+                value: row[1] ?? ''
+              }
+            } else if (typeof row === 'object' && row !== null) {
+              // Old format: {label, value}
+              return {
+                id: `row-${index}`,
+                label: String(row.label ?? ''),
+                value: row.value ?? ''
+              }
+            } else {
+              return {
+                id: `row-${index}`,
+                label: '',
+                value: ''
+              }
+            }
+          })
+          
+          return { columns, data: rows }
+        }
+      }
+      
+      // OLD FORMAT: Check if this is multi-column table data (keys like "row_0_columnname")
       const hasRowPrefix = Object.keys(data).some(key => key.startsWith('row_'))
       
       if (hasRowPrefix) {
-        // This is multi-column table data
-        // Group by row index
-        const rowsMap = new Map<number, Record<string, any>>()
+        // Check for row_X_label / row_X_value pattern (label-value table)
+        const hasLabelValuePattern = Object.keys(data).some(key => key.match(/^row_\d+_label$/))
         
-        Object.entries(data).forEach(([key, value]) => {
-          const match = key.match(/^row_(\d+)_(.+)$/)
-          if (match) {
-            const rowIndex = parseInt(match[1])
-            const columnName = match[2]
-            
-            if (!rowsMap.has(rowIndex)) {
-              rowsMap.set(rowIndex, { id: `row_${rowIndex}` })
+        if (hasLabelValuePattern) {
+          // Label-value format: row_0_label, row_0_value
+          const columns = [
+            { 
+              id: 'label', 
+              header: 'Parameter',
+              accessorKey: 'label',
+              type: 'label' as const
+            },
+            { 
+              id: 'value', 
+              header: 'Value',
+              accessorKey: 'value',
+              type: 'input' as const
             }
+          ]
+          
+          const rowsMap = new Map<number, { label: string; value: any }>()
+          
+          Object.entries(data).forEach(([key, value]) => {
+            const labelMatch = key.match(/^row_(\d+)_label$/)
+            const valueMatch = key.match(/^row_(\d+)_value$/)
             
-            rowsMap.get(rowIndex)![columnName] = value
-          }
-        })
-        
-        // Convert map to array and return without columns (sections will use their default columns)
-        const rows = Array.from(rowsMap.values()) as any[]
-        return { columns: undefined as any, data: rows as any }
+            if (labelMatch) {
+              const rowIndex = parseInt(labelMatch[1])
+              if (!rowsMap.has(rowIndex)) {
+                rowsMap.set(rowIndex, { label: '', value: '' })
+              }
+              rowsMap.get(rowIndex)!.label = String(value)
+            } else if (valueMatch) {
+              const rowIndex = parseInt(valueMatch[1])
+              if (!rowsMap.has(rowIndex)) {
+                rowsMap.set(rowIndex, { label: '', value: '' })
+              }
+              rowsMap.get(rowIndex)!.value = value
+            }
+          })
+          
+          const rows = Array.from(rowsMap.entries())
+            .sort(([a], [b]) => a - b)
+            .map(([index, row]) => ({
+              id: `row-${index}`,
+              label: row.label,
+              value: row.value ?? ''
+            }))
+          
+          return { columns, data: rows }
+        } else {
+          // Multi-column table data
+          // Group by row index
+          const rowsMap = new Map<number, Record<string, any>>()
+          
+          Object.entries(data).forEach(([key, value]) => {
+            const match = key.match(/^row_(\d+)_(.+)$/)
+            if (match) {
+              const rowIndex = parseInt(match[1])
+              const columnName = match[2]
+              
+              if (!rowsMap.has(rowIndex)) {
+                rowsMap.set(rowIndex, { id: `row_${rowIndex}` })
+              }
+              
+              rowsMap.get(rowIndex)![columnName] = value
+            }
+          })
+          
+          // Convert map to array and return without columns (sections will use their default columns)
+          const rows = Array.from(rowsMap.values()) as any[]
+          return { columns: undefined as any, data: rows as any }
+        }
       } else {
-        // This is label-value table data
+        // This is plain object label-value table data (very old format)
         const columns = [
           { 
             id: 'label', 
