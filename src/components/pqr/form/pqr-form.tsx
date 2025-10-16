@@ -116,7 +116,7 @@ export function PQRForm({
         }
 
         try {
-            // Helper function to transform dynamic table data to flat object
+            // Helper function to transform dynamic table data to flat object AND store column metadata
             const transformDynamicData = (sectionData: { columns?: DynamicColumn[]; data?: DynamicRow[] } | undefined): Record<string, string | number | boolean> => {
                 if (!sectionData?.data || !Array.isArray(sectionData.data)) return {}
                 
@@ -129,21 +129,27 @@ export function PQRForm({
                 
                 if (hasLabelColumn) {
                     // Handle label-value tables (e.g., PWHT, Preheat, etc.)
-                    sectionData.data.forEach((row: DynamicRow) => {
+                    // Store the original labels directly without conversion
+                    sectionData.data.forEach((row: DynamicRow, rowIndex: number) => {
                         // Support both 'label' and 'description' fields
                         const label = row.label || row.description
                         const value = row.value
                         if (label && value !== undefined && value !== null && value !== '') {
-                            // Convert label to snake_case key
-                            const key = String(label)
-                                .toLowerCase()
-                                .replace(/[^a-z0-9]+/g, '_') // Replace any non-alphanumeric chars with underscore
-                                .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
-                            result[key] = value
+                            // Store with row index to preserve order and exact label text
+                            result[`row_${rowIndex}_label`] = String(label)
+                            result[`row_${rowIndex}_value`] = value
                         }
                     })
                 } else {
                     // Handle multi-column tables (e.g., GAS, Tensile Test, Signature, etc.)
+                    // Store column headers metadata
+                    if (sectionData.columns && sectionData.columns.length > 0) {
+                        sectionData.columns.forEach((col, colIndex) => {
+                            result[`_col_${colIndex}_key`] = col.accessorKey
+                            result[`_col_${colIndex}_header`] = col.header
+                        })
+                    }
+                    
                     // For these tables, we need to serialize all rows with all their columns
                     sectionData.data.forEach((row: DynamicRow, rowIndex: number) => {
                         // Skip the 'id' field and any hidden rows
@@ -184,14 +190,20 @@ export function PQRForm({
                 }
             }
 
-            // Transform header info to basic_info structure
-            const headerData = transformDynamicData(formData.headerInfo)
+            // Extract specific values from header info for basic_info
+            const extractHeaderValue = (labelText: string): string => {
+                if (!formData.headerInfo?.data) return "";
+                const row = formData.headerInfo.data.find((r: DynamicRow) => 
+                    (r.label || r.description) === labelText
+                );
+                return row ? String(row.value || "") : "";
+            };
             
             const basicInfo = {
-                pqr_number: String(headerData.pqr_no || ""),
-                date_qualified: String(headerData.date_of_issue || ""),
-                qualified_by: String(headerData.contractor_name || ""),
-                approved_by: String(headerData.client_end_user || "")
+                pqr_number: extractHeaderValue("PQR No."),
+                date_qualified: extractHeaderValue("Date of Issue"),
+                qualified_by: extractHeaderValue("Contractor Name"),
+                approved_by: extractHeaderValue("Client/End User")
             }
 
             // Transform form data to backend format

@@ -65,6 +65,14 @@ interface PqrDataToView {
   signatures: PqrSection;
 }
 
+// Simple fallback function for old data format (converts snake_case to Title Case)
+function simpleSnakeCaseToTitle(str: string): string {
+  return str
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 // Function to transform backend PQR data to view format
 function transformPQRDataToView(pqr: PQR): PqrDataToView {
   // Get the backend base URL for media files
@@ -117,10 +125,10 @@ function transformPQRDataToView(pqr: PQR): PqrDataToView {
         }
       });
       
-      // Create columns from the column names found
+      // Create columns from the column names found (fallback for old data)
       const columns: DynamicColumn[] = Array.from(columnNamesSet).map(colName => ({
         id: `col-${colName}`,
-        header: colName.charAt(0).toUpperCase() + colName.slice(1), // Capitalize first letter
+        header: simpleSnakeCaseToTitle(colName),
         accessorKey: colName,
         type: "input" as const
       }));
@@ -138,7 +146,7 @@ function transformPQRDataToView(pqr: PQR): PqrDataToView {
 
       const data = Object.entries(obj).map(([key, value], index) => ({
         id: `row-${index}`,
-        [labelKey]: key,
+        [labelKey]: simpleSnakeCaseToTitle(key),
         [valueKey]: value ?? "",
       }));
 
