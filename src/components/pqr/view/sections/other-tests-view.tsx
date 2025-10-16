@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { SectionData } from '../types';
+import { SectionData } from '@/types/pqr';
 import { DynamicColumn, DynamicRow } from '../../form/dynamic-table';
 
 export const OtherTestsView = ({ otherTestsData }: { otherTestsData: SectionData }) => {

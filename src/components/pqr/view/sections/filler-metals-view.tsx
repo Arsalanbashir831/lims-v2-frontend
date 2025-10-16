@@ -1,6 +1,6 @@
 
 import { getSectionDataByAccessor } from '@/lib/pqr-utils';
-import { SectionData } from '../types';
+import { SectionData } from '@/types/pqr';
 import { DynamicColumn, DynamicRow } from '../../form/dynamic-table';
 
 
