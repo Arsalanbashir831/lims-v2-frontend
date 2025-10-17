@@ -160,9 +160,8 @@ export default function WeldersDashboardPage() {
               </div>
             ) : (
               welderCardsData?.results?.slice(0, 3).map((card) => (
-                <Link
+                <div
                   key={card.id}
-                  href={ROUTES.APP.WELDERS.WELDER_CARDS.VIEW(card.id)}
                   className="block hover:bg-muted/50 rounded-lg p-3 transition-colors"
                 >
                   <div className="flex items-center justify-between">
@@ -185,12 +184,12 @@ export default function WeldersDashboardPage() {
                       className="h-fit w-fit px-3 py-1"
                     >
                       <Link href={ROUTES.APP.WELDERS.WELDER_CARDS.VIEW(card.id)}>
-                      <Eye className="h-4 w-4" />
+                        <Eye className="h-4 w-4" />
                         View
                       </Link>
                     </Button>
                   </div>
-                </Link>
+                </div>
               ))
             )}
           </CardContent>

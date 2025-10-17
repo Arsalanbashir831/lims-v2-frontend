@@ -3,7 +3,6 @@ import { DynamicColumn, DynamicRow } from "@/components/pqr/form";
 import { PQR } from "@/services/pqr.service";
 import { JointsSection, PqrDataToView, PqrSection } from "@/types/pqr";
 
-
 /* primitives */
 type KV = Record<string, unknown>;
 type ExplicitColumn = { key: string; header: string };

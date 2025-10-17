@@ -34,7 +34,7 @@ import { BackButton } from "@/components/ui/back-button";
 import { usePQR } from "@/hooks/use-pqr";
 
 
-import { buildPqrView } from "@/utils/pqr-handlers";
+import { buildPqrView } from "@/utils/pqr-preview-handlers";
 import { PqrDataToView } from "@/types/pqr";
 export default function PQRReportPreview({ showButton = true, isPublic = false }) {
   const params = useParams<{ id: string }>();
