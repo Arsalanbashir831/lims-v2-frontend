@@ -133,8 +133,8 @@ export const handleWelderTestingInfo = (pqr: PQR): PqrSection => ({
     { id: "wti-value", header: "Details", accessorKey: "value", type: "input" },
   ],
   data: [
-    { id: "wti1", label: "Welder Name", value: pqr.welder_card_info?.welder_info?.operator_name || "" },
-    { id: "wti2", label: "Welder ID", value: pqr.welder_card_info?.welder_info?.operator_id || "" },
+    { id: "wti1", label: "Welder Name", value: pqr.welder_info?.operator_name || "" },
+    { id: "wti2", label: "Welder ID", value: pqr.welder_info?.operator_id || "" },
     { id: "wti3", label: "Mechanical Testing Conducted by", value: pqr.mechanical_testing_conducted_by || "" },
     { id: "wti4", label: "Lab Test No.", value: pqr.lab_test_no || "" },
   ],

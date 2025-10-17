@@ -27,17 +27,13 @@ export interface PQR {
   toughness_test: Record<string, any>
   fillet_weld_test: Record<string, any>
   other_tests: Record<string, any>
-  welder_card_id: string
-  welder_card_info: {
-    card_id: string
-    card_no: string
-    company: string
-    welder_info: {
-      welder_id: string
-      operator_name: string
-      operator_id: string
-      iqama: string
-    }
+  welder_id: string
+  welder_info: {
+    welder_id: string
+    operator_name: string
+    operator_id: string
+    iqama: string
+    profile_image: string
   }
   mechanical_testing_conducted_by: string
   lab_test_no: string
@@ -70,7 +66,7 @@ export interface CreatePQRData {
   toughness_test?: Record<string, any>
   fillet_weld_test?: Record<string, any>
   other_tests?: Record<string, any>
-  welder_card_id?: string
+  welder_id?: string
   mechanical_testing_conducted_by?: string
   lab_test_no?: string
   law_name?: string
@@ -139,10 +135,11 @@ export const pqrService = {
         throw new Error("Required field 'type' is missing")
       }
       
-      if (data.welder_card_id !== undefined && data.welder_card_id !== null) {
-        formData.append('welder_card_id', data.welder_card_id)
+      // welder_id is required - throw error if not provided
+      if (data.welder_id !== undefined && data.welder_id !== null && data.welder_id !== '') {
+        formData.append('welder_id', data.welder_id)
       } else {
-        throw new Error("Required field 'welder_card_id' is missing")
+        throw new Error("Required field 'welder_id' is missing. Please select a welder.")
       }
       
       // Add optional fields (these can be empty strings)
@@ -241,8 +238,8 @@ export const pqrService = {
         let backendType: string = data.type || ''
         formData.append('type', backendType)
       }
-      if (data.welder_card_id !== undefined && data.welder_card_id !== null) {
-        formData.append('welder_card_id', data.welder_card_id)
+      if (data.welder_id !== undefined && data.welder_id !== null) {
+        formData.append('welder_id', data.welder_id)
       }
       if (data.mechanical_testing_conducted_by !== undefined) {
         formData.append('mechanical_testing_conducted_by', data.mechanical_testing_conducted_by || '')

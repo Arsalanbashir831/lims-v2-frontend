@@ -38,7 +38,8 @@ export default function PQRPage() {
     return items.filter((r) =>
       (r.basic_info?.qualified_by ?? "").toLowerCase().includes(q) ||
       (r.basic_info?.pqr_number ?? "").toLowerCase().includes(q) ||
-      (r.welder_card_info?.card_no ?? "").toLowerCase().includes(q) ||
+      (r.welder_info?.operator_name ?? "").toLowerCase().includes(q) ||
+      (r.welder_info?.operator_id ?? "").toLowerCase().includes(q) ||
       (r.basic_info?.approved_by ?? "").toLowerCase().includes(q)
     )
   }, [items, query])
@@ -77,9 +78,9 @@ export default function PQRPage() {
       cell: ({ row }) => row.original.basic_info?.date_qualified || "-"
     },
     { 
-      id: "welder_card", 
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Welder Card" />,
-      cell: ({ row }) => row.original.welder_card_info?.card_no || "-"
+      id: "welder_name", 
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Welder Name" />,
+      cell: ({ row }) => row.original.welder_info?.operator_name || "-"
     },
     { 
       id: "type", 

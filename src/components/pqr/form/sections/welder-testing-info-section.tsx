@@ -42,8 +42,7 @@ export function WelderTestingInfoSection({
   const defaultData: DynamicRow[] = [
     { id: "wti1", label: "Welder Name", value: "" },
     { id: "wti2", label: "Welder ID", value: "" },
-    { id: "wti3", label: "Welder Database ID", value: "", hidden: true }, // Hidden - for selector lookup
-    { id: "wti4", label: "Welder Card ID", value: "", hidden: true }, // Hidden - for backend
+    { id: "wti3", label: "Welder Database ID", value: "", hidden: true }, // Hidden - stores welder.id for backend
     { id: "wti5", label: "Mechanical Testing Conducted by", value: "" },
     { id: "wti6", label: "Lab Test No.", value: "" },
   ]
@@ -88,10 +87,6 @@ export function WelderTestingInfoSection({
       setWelderIdValue(welder.operator_id)
       setWelderDatabaseId(welder.id) // Set the database ID for selector
       
-      // Get the card_id from the welder data (this comes from the welder selector)
-      // The welder may have an optional card_id property added dynamically
-      const cardId = ('card_id' in welder ? (welder as Welder & { card_id?: string }).card_id : '') || ""
-      
       // Update the form data with the selected welder information
       // Use ref to get latest data without causing callback recreation
       const currentSectionData = sectionDataRef.current
@@ -104,10 +99,7 @@ export function WelderTestingInfoSection({
           return { ...row, value: welder.operator_id }
         }
         if (row.label === "Welder Database ID") {
-          return { ...row, value: welder.id, hidden: true } // Store database ID
-        }
-        if (row.label === "Welder Card ID") {
-          return { ...row, value: cardId, hidden: true } // Store card ID
+          return { ...row, value: welder.id, hidden: true } // Store database ID (sent as welder_id to backend)
         }
         return row
       })
@@ -131,9 +123,6 @@ export function WelderTestingInfoSection({
         if (row.label === "Welder Database ID") {
           return { ...row, value: "", hidden: true }
         }
-        if (row.label === "Welder Card ID") {
-          return { ...row, value: "", hidden: true }
-        }
         return row
       })
       
@@ -142,7 +131,7 @@ export function WelderTestingInfoSection({
         data: updatedData
       })
     }
-  }, [onUpdate, initialCols, defaultData])
+  }, [onUpdate])
 
   const handleWelderNameChange = useCallback((value: string) => {
     setWelderNameValue(value)

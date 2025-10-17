@@ -315,8 +315,35 @@ export function DynamicTable({
                             value={welderSelector.welderDatabaseId || welderSelector.selectedWelder?.id}
                             onValueChange={(welderId, welder) => {
                               welderSelector.onWelderSelection(welderId, welder)
+                              // Update all welder-related fields in the table
                               if (welder) {
-                                handleCellChange(row.id, column.accessorKey, welder.operator_name)
+                                const newData = data.map(r => {
+                                  if (r.label === "Welder Name") {
+                                    return { ...r, value: welder.operator_name }
+                                  }
+                                  if (r.label === "Welder ID") {
+                                    return { ...r, value: welder.operator_id }
+                                  }
+                                  if (r.label === "Welder Database ID") {
+                                    return { ...r, value: welder.id, hidden: true }
+                                  }
+                                  return r
+                                })
+                                setData(newData)
+                                onDataChange(newData)
+                              } else {
+                                // Clear all welder fields
+                                const newData = data.map(r => {
+                                  if (r.label === "Welder Name" || r.label === "Welder ID") {
+                                    return { ...r, value: "" }
+                                  }
+                                  if (r.label === "Welder Database ID") {
+                                    return { ...r, value: "", hidden: true }
+                                  }
+                                  return r
+                                })
+                                setData(newData)
+                                onDataChange(newData)
                               }
                             }}
                             placeholder="Select welder..."

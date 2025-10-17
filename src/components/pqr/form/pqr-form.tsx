@@ -222,18 +222,18 @@ export function PQRForm({
                 }
             }
 
-            // Extract welder_card_id and other welder testing info
-            let welderCardId = ""
+            // Extract welder_id (database ID) and other welder testing info
+            let welderId = ""
             let mechanicalTestingConductedBy = ""
             let labTestNo = ""
             
             if (formData.welderTestingInfo?.data) {
-                const welderCardIdRow = formData.welderTestingInfo.data.find(row => row.label === "Welder Card ID")
+                const welderDatabaseIdRow = formData.welderTestingInfo.data.find(row => row.label === "Welder Database ID")
                 const mechanicalTestingRow = formData.welderTestingInfo.data.find(row => row.label === "Mechanical Testing Conducted by")
                 const labTestRow = formData.welderTestingInfo.data.find(row => row.label === "Lab Test No.")
                 
-                if (welderCardIdRow) {
-                    welderCardId = welderCardIdRow.value as string || ""
+                if (welderDatabaseIdRow) {
+                    welderId = welderDatabaseIdRow.value as string || ""
                 }
                 if (mechanicalTestingRow) {
                     mechanicalTestingConductedBy = mechanicalTestingRow.value as string || ""
@@ -286,7 +286,7 @@ export function PQRForm({
                 signatures: transformDynamicData(formData.signatures, 'SIGNATURES'),
                 
                 // Add specific fields at top level
-                ...(welderCardId && { welder_card_id: String(welderCardId) }),
+                welder_id: String(welderId), // Required field
                 ...(mechanicalTestingConductedBy && { mechanical_testing_conducted_by: String(mechanicalTestingConductedBy) }),
                 ...(labTestNo && { lab_test_no: String(labTestNo) }),
                 
