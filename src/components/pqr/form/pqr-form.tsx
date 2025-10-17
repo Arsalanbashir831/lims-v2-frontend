@@ -118,16 +118,9 @@ export function PQRForm({
         try {
             // Helper function to transform dynamic table data to clean array/object format
             const transformDynamicData = (sectionData: { columns?: DynamicColumn[]; data?: DynamicRow[] } | undefined, sectionName = ''): any => {
-                console.log(`\n🔍 Transforming section: ${sectionName}`)
-                console.log('Input data:', sectionData)
-                
                 if (!sectionData?.data || !Array.isArray(sectionData.data)) {
-                    console.log(`⚠️ No data found for ${sectionName}`)
                     return {}
                 }
-                
-                console.log(`✅ ${sectionName} has ${sectionData.data.length} rows`)
-                console.log(`✅ ${sectionName} has ${sectionData.columns?.length} columns`)
                 
                 // Check if this is a label-value table or a multi-column table
                 // Label-value tables have ONLY 2 columns: (label/description) and value
@@ -141,8 +134,6 @@ export function PQRForm({
                 
                 // It's a label-value table ONLY if it has exactly 2 columns (label/description + value)
                 const isLabelValueTable = hasLabelColumn && hasValueColumn && columnCount === 2
-                
-                console.log(`📋 ${sectionName} is ${isLabelValueTable ? 'label-value' : 'multi-column'} table (${columnCount} columns)`)
                 
                 if (isLabelValueTable) {
                     // Handle label-value tables (e.g., PWHT, Preheat, etc.)
@@ -163,7 +154,6 @@ export function PQRForm({
                     return { rows }
                 } else {
                     // Handle multi-column tables (e.g., GAS, Tensile Test, Signature, etc.)
-                    console.log(`🔧 Multi-column transformation for ${sectionName}`)
                     const result: any = {}
                     
                     // Store ALL column headers metadata (including user-added columns)
@@ -174,16 +164,13 @@ export function PQRForm({
                                 key: col.accessorKey,
                                 header: col.header
                             }))
-                        console.log(`  📊 Transformed columns (${result.columns.length}):`, result.columns.map((c: any) => c.header))
                     }
                     
                     // Store rows as array of objects - include ALL data from dynamically added columns
                     result.rows = sectionData.data
                         .filter((row: DynamicRow) => !(row as any).hidden)
-                        .map((row: DynamicRow, idx: number) => {
+                        .map((row: DynamicRow) => {
                             const rowData: Record<string, any> = {}
-                            
-                            console.log(`    🔸 Row ${idx} RAW:`, JSON.stringify(row, null, 2))
                             
                             // Include ALL keys from the row (including user-added columns)
                             Object.entries(row).forEach(([key, value]) => {
@@ -196,28 +183,20 @@ export function PQRForm({
                                 }
                             })
                             
-                            console.log(`    ➡️ Transformed row ${idx}:`, rowData)
                             return rowData
                         })
                         .filter(row => {
                             // Only filter out completely empty rows (all values are empty)
                             const values = Object.values(row)
                             const hasData = values.length > 0 && values.some(val => val !== '' && val !== null && val !== undefined)
-                            if (!hasData) {
-                                console.log(`    ❌ Filtering out empty row`)
-                            }
                             return hasData
                         })
                     
-                    console.log(`  ✅ Final rows count: ${result.rows.length}`)
-                    
                     // Only return if we have data
                     if (!result.rows || result.rows.length === 0) {
-                        console.log(`  ⚠️ No rows found, returning empty`)
                         return {}
                     }
                     
-                    console.log(`  🎉 Final result for ${sectionName}:`, result)
                     return result
                 }
             }
@@ -297,12 +276,6 @@ export function PQRForm({
                 
                 type: getPQRType(isAsme)
             }
-
-            // Log final payload
-            console.log('\n' + '='.repeat(60))
-            console.log('📦 FINAL BACKEND PAYLOAD:')
-            console.log(JSON.stringify(backendData, null, 2))
-            console.log('='.repeat(60) + '\n')
 
             // Validate that we have at least some data to send
             const hasData = Object.values(backendData).some(value => {
