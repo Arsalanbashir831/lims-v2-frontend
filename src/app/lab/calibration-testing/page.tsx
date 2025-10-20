@@ -16,6 +16,7 @@ import { ROUTES } from "@/constants/routes"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
+import ExportExcelButton from "@/components/common/ExportExcelButton"
 
 export default function CalibrationTestingingPage() {
   const router = useRouter()
@@ -97,6 +98,14 @@ export default function CalibrationTestingingPage() {
             />
             <div className="flex items-center gap-2 w-full md:w-auto">
               <DataTableViewOptions table={table} />
+            <ExportExcelButton
+                  table={table}
+                  fileName="Calibration_Testing.xlsx"
+                  logos={{
+                    imagePath: "/gripco-logo.webp",
+                    rightImagePath: "/ias-logo-vertical.webp",
+                  }}
+                />
               <Button asChild size="sm">
                 <Link href={ROUTES.APP.CALIBRATION_TESTING.NEW}>New Record</Link>
               </Button>
