@@ -45,7 +45,7 @@ export const SignatureView = ({ signatureData }: { signatureData: SectionData })
               {columns.map((col) => (
                 <td 
                   key={col.id} 
-                  className="h-16 border-r p-2 text-center last:border-r-0"
+                  className="border-r p-2 text-center last:border-r-0"
                 >
                   {getSectionDataByAccessor(row, col.accessorKey) || (
                     <span className="text-gray-400 italic">(No entry)</span>
