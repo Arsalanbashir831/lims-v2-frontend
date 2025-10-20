@@ -9,8 +9,16 @@ import {
 
 export type CalibrationTesting = CalibrationTestingResponse
 
+type PaginationInfo = {
+  current_page: number
+  limit: number
+  total_records: number
+  total_pages: number
+  has_next: boolean
+}
+
 export const calibrationTestingService = {
-  async getAll(page: number = 1): Promise<{ results: CalibrationTesting[]; count: number; next: string | null; previous: string | null }> {
+  async getAll(page: number = 1): Promise<{ results: CalibrationTesting[]; count: number; next: string | null; previous: string | null; pagination?: PaginationInfo }> {
     const endpoint = `${API_ROUTES.Lab_MANAGERS.ALL_CALIBRATION_TESTS}?page=${page}`
     const response = await api.get(endpoint).json<CalibrationTestingListResponse>()
     
@@ -19,7 +27,8 @@ export const calibrationTestingService = {
       results: response.data ?? response.results ?? [],
       count: response.pagination?.total_records ?? response.count ?? 0,
       next: response.pagination?.has_next ? 'next' : null,
-      previous: (response.pagination?.current_page ?? 1) > 1 ? 'prev' : null
+      previous: (response.pagination?.current_page ?? 1) > 1 ? 'prev' : null,
+      pagination: response.pagination
     }
   },
 
@@ -48,7 +57,7 @@ export const calibrationTestingService = {
     await api.delete(API_ROUTES.Lab_MANAGERS.DELETE_CALIBRATION_TEST(id))
   },
 
-  async search(query: string, page: number = 1): Promise<{ results: CalibrationTesting[]; count: number; next: string | null; previous: string | null }> {
+  async search(query: string, page: number = 1): Promise<{ results: CalibrationTesting[]; count: number; next: string | null; previous: string | null; pagination?: PaginationInfo }> {
     const endpoint = `${API_ROUTES.Lab_MANAGERS.SEARCH_CALIBRATION_TESTS}?equipment_name=${query}&page=${page}`
     const response = await api.get(endpoint).json<CalibrationTestingListResponse>()
     
@@ -57,7 +66,8 @@ export const calibrationTestingService = {
       results: response.data ?? response.results ?? [],
       count: response.pagination?.total_records ?? response.count ?? 0,
       next: response.pagination?.has_next ? 'next' : null,
-      previous: (response.pagination?.current_page ?? 1) > 1 ? 'prev' : null
+      previous: (response.pagination?.current_page ?? 1) > 1 ? 'prev' : null,
+      pagination: response.pagination
     }
   },
 }

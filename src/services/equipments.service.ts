@@ -14,8 +14,16 @@ export type EquipmentListResponse = EquipmentListResponseType
 export type CreateEquipmentData = CreateEquipmentDataType
 export type UpdateEquipmentData = UpdateEquipmentDataType
 
+type PaginationInfo = {
+  current_page: number
+  limit: number
+  total_records: number
+  total_pages: number
+  has_next: boolean
+}
+
 export const equipmentService = {
-  async getAll(page: number = 1): Promise<{ results: Equipment[]; count: number; next: string | null; previous: string | null }> {
+  async getAll(page: number = 1): Promise<{ results: Equipment[]; count: number; next: string | null; previous: string | null; pagination?: PaginationInfo }> {
     const endpoint = API_ROUTES.Lab_MANAGERS.ALL_EQUIPMENTS
     const response = await api.get(endpoint, {
       searchParams: {
@@ -27,7 +35,8 @@ export const equipmentService = {
       results: validated.data,
       count: validated.pagination.total_records,
       next: validated.pagination.has_next ? 'next' : null,
-      previous: validated.pagination.current_page > 1 ? 'prev' : null
+      previous: validated.pagination.current_page > 1 ? 'prev' : null,
+      pagination: validated.pagination
     }
   },
 
@@ -63,7 +72,7 @@ export const equipmentService = {
     await api.delete(endpoint)
   },
 
-  async search(query: string, page: number = 1): Promise<{ results: Equipment[]; count: number; next: string | null; previous: string | null }> {
+  async search(query: string, page: number = 1): Promise<{ results: Equipment[]; count: number; next: string | null; previous: string | null; pagination?: PaginationInfo }> {
     const endpoint = API_ROUTES.Lab_MANAGERS.SEARCH_EQUIPMENTS.replace(/^\//, "")
     const response = await api.get(endpoint, {
       searchParams: { equipment_name: query, page: page.toString() }
@@ -74,7 +83,8 @@ export const equipmentService = {
       results: validated.data,
       count: validated.pagination.total_records,
       next: validated.pagination.has_next ? 'next' : null,
-      previous: validated.pagination.current_page > 1 ? 'prev' : null
+      previous: validated.pagination.current_page > 1 ? 'prev' : null,
+      pagination: validated.pagination
     }
   }
 }

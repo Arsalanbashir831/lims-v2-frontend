@@ -9,27 +9,26 @@ import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { ServerPagination } from "@/components/ui/server-pagination"
 import { FilterSearch } from "@/components/ui/filter-search"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
-import { equipmentService, Equipment } from "@/services/equipments.service"
+import { Equipment } from "@/services/equipments.service"
 import { toast } from "sonner"
 import { PencilIcon, TrashIcon } from "lucide-react"
 import { ROUTES } from "@/constants/routes"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { useRouter } from "next/navigation"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useEquipments, useDeleteEquipment } from "@/hooks/use-equipments"
+import { formatDateSafe } from "@/utils/hydration-fix"
 
 export default function LabEquipmentsPage() {
   const router = useRouter()
-  const queryClient = useQueryClient()
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
 
-  const { data: equipmentsData, isLoading, isFetching } = useEquipments(currentPage, searchQuery)
+  const { data: equipmentsData, isFetching } = useEquipments(currentPage, searchQuery)
   const items = equipmentsData?.results ?? []
   const totalCount = equipmentsData?.count ?? 0
-  const pageSize = 20
-  const hasNext = equipmentsData?.next !== undefined ? Boolean(equipmentsData?.next) : totalCount > currentPage * pageSize
-  const hasPrevious = equipmentsData?.previous !== undefined ? Boolean(equipmentsData?.previous) : currentPage > 1
+  const pageSize = equipmentsData?.pagination?.limit ?? 20
+  const hasNext = equipmentsData?.pagination?.has_next ?? (equipmentsData?.next !== undefined ? Boolean(equipmentsData?.next) : totalCount > currentPage * pageSize)
+  const hasPrevious = currentPage > 1
 
   const deleteMutation = useDeleteEquipment()
   const doDelete = useCallback((id: string) => {
@@ -49,8 +48,21 @@ export default function LabEquipmentsPage() {
     { accessorKey: "equipment_name", header: ({ column }) => <DataTableColumnHeader column={column} title="Equipment Name" /> },
     { accessorKey: "equipment_serial", header: ({ column }) => <DataTableColumnHeader column={column} title="Equipment Serial" /> },
     { accessorKey: "status", header: ({ column }) => <DataTableColumnHeader column={column} title="Status" /> },
-    { accessorKey: "last_verification", header: ({ column }) => <DataTableColumnHeader column={column} title="Last Verification" /> },
-    { accessorKey: "verification_due", header: ({ column }) => <DataTableColumnHeader column={column} title="Verification Due" /> },
+    { accessorKey: "last_verification", header: ({ column }) => <DataTableColumnHeader column={column} title="Last Verification" />,
+      cell: ({ row }) => {
+        const lastVerification = row.original.last_verification
+        if (!lastVerification) return <span className="text-muted-foreground">N/A</span>
+        return <span>{formatDateSafe(lastVerification)}</span>
+      }
+    },
+    {
+      accessorKey: "verification_due", header: ({ column }) => <DataTableColumnHeader column={column} title="Verification Due" />,
+      cell: ({ row }) => {
+        const verificationDue = row.original.verification_due
+        if (!verificationDue) return <span className="text-muted-foreground">N/A</span>
+        return <span>{formatDateSafe(verificationDue)}</span>
+      }
+    },
     { accessorKey: "created_by", header: ({ column }) => <DataTableColumnHeader column={column} title="Created By" /> },
     { accessorKey: "updated_by", header: ({ column }) => <DataTableColumnHeader column={column} title="Updated By" /> },
     { accessorKey: "remarks", header: ({ column }) => <DataTableColumnHeader column={column} title="Remarks" /> },
@@ -111,7 +123,7 @@ export default function LabEquipmentsPage() {
           onPageChange={setCurrentPage}
           isLoading={isFetching}
         />
-      ), [currentPage, totalCount, hasNext, hasPrevious, isFetching])}
+      ), [currentPage, totalCount, pageSize, hasNext, hasPrevious, isFetching])}
     />
 
   )

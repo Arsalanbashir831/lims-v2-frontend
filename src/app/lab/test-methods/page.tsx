@@ -28,9 +28,9 @@ export default function TestMethodsPage() {
 
     const items = tmData?.results ?? []
     const totalCount = tmData?.count ?? 0
-    const pageSize = 20
-    const hasNext = tmData?.next !== undefined ? Boolean(tmData?.next) : totalCount > currentPage * pageSize
-    const hasPrevious = tmData?.previous !== undefined ? Boolean(tmData?.previous) : currentPage > 1
+    const pageSize = tmData?.pagination?.limit ?? 20
+    const hasNext = tmData?.pagination?.has_next ?? false
+    const hasPrevious = currentPage > 1
 
     const deleteMutation = useDeleteTestMethod()
     const doDelete = useCallback((id: string) => { 
@@ -67,7 +67,7 @@ export default function TestMethodsPage() {
         {
             accessorKey: "test_description",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Description" />,
-            cell: ({ row }) => <span className="text-muted-foreground">{truncateText(row.original.test_description || "", 96)}</span>,
+            cell: ({ row }) => <span className="text-muted-foreground truncate !max-w-[12ch]">{truncateText(row.original.test_description || "", 60)}</span>,
         },
         {
             id: "columns",
@@ -116,7 +116,7 @@ export default function TestMethodsPage() {
             columns={columns}
             data={items}
             empty={<span className="text-muted-foreground">No test methods yet</span>}
-            pageSize={20}
+            pageSize={pageSize}
             tableKey="test-methods"
             onRowClick={(row) => router.push(ROUTES.APP.TEST_METHODS.EDIT(String(row.original.id)))}
             toolbar={useCallback((table: TanstackTable<TestMethodResponse>) => {
@@ -142,13 +142,13 @@ export default function TestMethodsPage() {
                 <ServerPagination
                     currentPage={currentPage}
                     totalCount={totalCount}
-                    pageSize={20}
+                    pageSize={pageSize}
                     hasNext={hasNext}
                     hasPrevious={hasPrevious}
                     onPageChange={setCurrentPage}
                     isLoading={isFetching}
                 />
-            ), [currentPage, totalCount, hasNext, hasPrevious, isFetching])}
+            ), [currentPage, totalCount, pageSize, hasNext, hasPrevious, isFetching])}
         />
     )
 }

@@ -29,7 +29,8 @@ export const testMethodService = {
         results: response.data,
         count: response.pagination.total_records,
         next: response.pagination.has_next ? `page=${page + 1}` : null,
-        previous: page > 1 ? `page=${page - 1}` : null
+        previous: page > 1 ? `page=${page - 1}` : null,
+        pagination: response.pagination
       }
     }
     

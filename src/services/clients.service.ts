@@ -14,7 +14,7 @@ export type CreateClientData = CreateClientDataType
 export type UpdateClientData = UpdateClientDataType
 
 export const clientService = {
-  async getAll(page: number = 1): Promise<{ results: Client[]; count: number; next: string | null; previous: string | null }> {
+  async getAll(page: number = 1): Promise<ClientListResponse> {
     const endpoint = API_ROUTES.Lab_MANAGERS.ALL_CLIENTS
     const response = await api.get(endpoint, {
       searchParams: {
@@ -24,6 +24,13 @@ export const clientService = {
       status: string
       data: Client[]
       total: number
+      pagination?: {
+        current_page: number
+        limit: number
+        total_records: number
+        total_pages: number
+        has_next: boolean
+      }
     }>()
 
     // Extract the data field from Django response
@@ -51,7 +58,8 @@ export const clientService = {
         results: clients,
         count: response.total,
         next: null, // Django doesn't provide pagination URLs in this format
-        previous: null
+        previous: null,
+        pagination: response.pagination
       }
     }
     
@@ -65,8 +73,8 @@ export const clientService = {
       message: string
       data: {
         id: string
-        client_id: number
         client_name: string
+        company_name?: string
         email: string
         phone?: string
         contact_person?: string
@@ -85,7 +93,34 @@ export const clientService = {
 
     // Extract the data field from Django response
     if (response.status === "success" && response.data) {
-      return ClientResponseSchema.parse(response.data)
+      // Map the API response to our schema format
+      const clientData = {
+        id: response.data.id,
+        client_name: response.data.client_name,
+        company_name: response.data.company_name || null,
+        email: response.data.email || null,
+        phone: response.data.phone || null,
+        contact_person: response.data.contact_person || null,
+        address: response.data.address,
+        city: response.data.city || null,
+        state: response.data.state || null,
+        postal_code: response.data.postal_code || null,
+        country: response.data.country || null,
+        is_active: response.data.is_active,
+        created_at: response.data.created_at,
+        updated_at: response.data.updated_at,
+        created_by: response.data.created_by || undefined,
+        updated_by: response.data.updated_by || undefined
+      }
+      
+      try {
+        const parsedClient = ClientResponseSchema.parse(clientData)
+        return parsedClient
+      } catch (error) {
+        console.error("Zod parsing error:", error)
+        console.error("Failed to parse client data:", clientData)
+        throw error
+      }
     }
     
     throw new Error(response.message || "Failed to get client")
@@ -214,7 +249,7 @@ export const clientService = {
         results: clients,
         count: response.total,
         next: null, // Django doesn't provide pagination URLs in this format
-        previous: null
+        previous: null,
       }
     }
     

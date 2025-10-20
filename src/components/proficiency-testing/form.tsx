@@ -44,12 +44,6 @@ export function ProficiencyTestingForm({ initial, readOnly = false }: Props) {
       return
     }
     
-    // Validate status if provided
-    if (status.trim() && !['Scheduled', 'In Progress', 'Completed', 'Cancelled', 'Overdue'].includes(status.trim())) {
-      toast.error("Status must be one of: Scheduled, In Progress, Completed, Cancelled, Overdue")
-      return
-    }
-    
     const payload: CreateProficiencyTestingData = {
       description: description.trim(),
       provider1: provider1.trim() || undefined,

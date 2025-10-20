@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { ClientForm } from "@/components/clients/client-form"
-import { clientService, Client, UpdateClientData } from "@/services/clients.service"
+import { clientService, UpdateClientData } from "@/services/clients.service"
 import { ROUTES } from "@/constants/routes"
 import { toast } from "sonner"
 import { FormHeader } from "@/components/common/form-header"
@@ -12,13 +12,14 @@ import { PencilIcon, XIcon } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
 export default function EditClientPage() {
-  const params = useParams()
+  const params = useParams<{ id: string }>()
+  const id = params.id
+
   const router = useRouter()
   const queryClient = useQueryClient()
   const [isEditing, setIsEditing] = useState(false)
 
-  const id = params.id as string
-
+  
   const { data: client, isLoading: loading, error } = useQuery({
     queryKey: ['clients', id],
     queryFn: () => {

@@ -8,10 +8,7 @@ export const ProficiencyTestingSchema = z.object({
   last_test_date: z.union([z.string(), z.date()]).nullable().optional(),
   next_scheduled_date: z.union([z.string(), z.date()]).nullable().optional(),
   due_date: z.union([z.string(), z.date()]).nullable().optional(),
-  status: z.string().refine(
-    (val) => !val || ['Scheduled', 'In Progress', 'Completed', 'Cancelled', 'Overdue'].includes(val),
-    { message: 'Status must be one of: Scheduled, In Progress, Completed, Cancelled, Overdue' }
-  ).nullable().optional(),
+  status: z.string().nullable().optional(),
   remarks: z.string().nullable().optional(),
   is_active: z.boolean().default(true),
   created_at: z.union([z.string(), z.date()]).optional(),

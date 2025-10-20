@@ -3,6 +3,7 @@ import { z } from 'zod'
 export const ClientSchema = z.object({
   id: z.string().optional(),
   client_name: z.string().min(1, "Name is required"),
+  company_name: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
   contact_person: z.string().nullable().optional(),
   email: z.string().email().nullable().optional(),
@@ -33,6 +34,13 @@ export const ClientListResponseSchema = z.object({
   next: z.union([z.number(), z.string()]).nullable(),
   previous: z.union([z.number(), z.string()]).nullable(),
   results: z.array(ClientResponseSchema),
+  pagination: z.object({
+    current_page: z.number(),
+    limit: z.number(),
+    total_records: z.number(),
+    total_pages: z.number(),
+    has_next: z.boolean(),
+  }).optional(),
 })
 
 export type ClientListResponse = z.infer<typeof ClientListResponseSchema>

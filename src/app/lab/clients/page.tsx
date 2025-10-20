@@ -26,10 +26,10 @@ export default function ClientsPage() {
 
     const clients = clientsData?.results || []
     const totalCount = clientsData?.count || 0
-    const pageSize = 20
+    const pageSize = clientsData?.pagination?.limit ?? 20
     // Some endpoints (e.g., search) may omit next/previous. Fallback to count-based logic.
-    const hasNext = clientsData?.next !== undefined ? !!clientsData?.next : totalCount > currentPage * pageSize
-    const hasPrevious = clientsData?.previous !== undefined ? !!clientsData?.previous : currentPage > 1
+    const hasNext = clientsData?.pagination?.has_next ?? (clientsData?.next !== undefined ? !!clientsData?.next : totalCount > currentPage * pageSize)
+    const hasPrevious = currentPage > 1
 
     const deleteMutation = useDeleteClient()
 
@@ -107,13 +107,13 @@ export default function ClientsPage() {
         <ServerPagination
             currentPage={currentPage}
             totalCount={totalCount}
-            pageSize={20}
+            pageSize={pageSize}
             hasNext={hasNext}
             hasPrevious={hasPrevious}
             onPageChange={handlePageChange}
             isLoading={isFetching}
         />
-    ), [currentPage, totalCount, hasNext, hasPrevious, isFetching, handlePageChange])
+    ), [currentPage, totalCount, pageSize, hasNext, hasPrevious, isFetching, handlePageChange])
 
     const columns: ColumnDef<Client>[] = useMemo(() => [
         {
@@ -221,7 +221,7 @@ export default function ClientsPage() {
                         ? <span className="text-muted-foreground">No clients found matching "{searchQuery}". Try a different search term.</span>
                         : <span className="text-muted-foreground">No clients found. Create your first client to get started.</span>
                 }
-                pageSize={10}
+                pageSize={pageSize}
                 tableKey="clients"
                 onRowClick={(row) => router.push(ROUTES.APP.CLIENTS.EDIT(row.original.id))}
                 toolbar={toolbar}

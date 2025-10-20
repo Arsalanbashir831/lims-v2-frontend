@@ -33,9 +33,9 @@ export default function CalibrationTestingingPage() {
 
   const items = ctData?.results ?? []
   const totalCount = ctData?.count ?? 0
-  const pageSize = 20
-  const hasNext = ctData?.next !== undefined ? Boolean(ctData?.next) : totalCount > currentPage * pageSize
-  const hasPrevious = ctData?.previous !== undefined ? Boolean(ctData?.previous) : currentPage > 1
+  const pageSize = ctData?.pagination?.limit ?? 20
+  const hasNext = ctData?.pagination?.has_next ?? (ctData?.next !== undefined ? Boolean(ctData?.next) : totalCount > currentPage * pageSize)
+  const hasPrevious = currentPage > 1
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => calibrationTestingService.delete(id),
@@ -108,13 +108,13 @@ export default function CalibrationTestingingPage() {
         <ServerPagination
           currentPage={currentPage}
           totalCount={totalCount}
-          pageSize={20}
+          pageSize={pageSize}
           hasNext={hasNext}
           hasPrevious={hasPrevious}
           onPageChange={setCurrentPage}
           isLoading={isFetching}
         />
-      ), [currentPage, totalCount, hasNext, hasPrevious, isFetching])}
+      ), [currentPage, totalCount, pageSize, hasNext, hasPrevious, isFetching])}
     />
   )
 }

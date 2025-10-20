@@ -24,6 +24,13 @@ export const TestMethodListResponseSchema = z.object({
   next: z.union([z.number(), z.string()]).nullable(),
   previous: z.union([z.number(), z.string()]).nullable(),
   results: z.array(TestMethodResponseSchema),
+  pagination: z.object({
+    current_page: z.number(),
+    limit: z.number(),
+    total_records: z.number(),
+    total_pages: z.number(),
+    has_next: z.boolean(),
+  }).optional(),
 })
 export type TestMethodListResponse = z.infer<typeof TestMethodListResponseSchema>
 

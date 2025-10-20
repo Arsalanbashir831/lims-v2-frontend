@@ -16,6 +16,7 @@ import { ROUTES } from "@/constants/routes"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
+import { formatDateSafe } from "@/utils/hydration-fix"
 
 export default function ProficiencyTestingPage() {
     const router = useRouter()
@@ -33,9 +34,9 @@ export default function ProficiencyTestingPage() {
 
     const items = ptData?.results ?? []
     const totalCount = ptData?.count ?? 0
-    const pageSize = 20
-    const hasNext = ptData?.next !== undefined ? Boolean(ptData?.next) : totalCount > currentPage * pageSize
-    const hasPrevious = ptData?.previous !== undefined ? Boolean(ptData?.previous) : currentPage > 1
+    const pageSize = ptData?.pagination?.limit ?? 20
+    const hasNext = ptData?.pagination?.has_next ?? (ptData?.next !== undefined ? Boolean(ptData?.next) : totalCount > currentPage * pageSize)
+    const hasPrevious = currentPage > 1
 
     const deleteMutation = useMutation({
         mutationFn: (id: string) => proficiencyTestingService.delete(id),
@@ -64,9 +65,30 @@ export default function ProficiencyTestingPage() {
         },
         { accessorKey: "provider1", header: ({ column }) => <DataTableColumnHeader column={column} title="PT Provider 1" /> },
         { accessorKey: "provider2", header: ({ column }) => <DataTableColumnHeader column={column} title="PT Provider 2" /> },
-        { accessorKey: "last_test_date", header: ({ column }) => <DataTableColumnHeader column={column} title="Last Test Date" /> },
-        { accessorKey: "due_date", header: ({ column }) => <DataTableColumnHeader column={column} title="Due Date" /> },
-        { accessorKey: "next_scheduled_date", header: ({ column }) => <DataTableColumnHeader column={column} title="Next Scheduled Date" /> },
+        {
+            accessorKey: "last_test_date", header: ({ column }) => <DataTableColumnHeader column={column} title="Last Test Date" />,
+            cell: ({ row }) => {
+                const lastTestDate = row.original.last_test_date
+                if (!lastTestDate) return <span className="text-muted-foreground">N/A</span>
+                return <span>{formatDateSafe(lastTestDate)}</span>
+            }
+        },
+        {
+            accessorKey: "due_date", header: ({ column }) => <DataTableColumnHeader column={column} title="Due Date" />,
+            cell: ({ row }) => {
+                const dueDate = row.original.due_date
+                if (!dueDate) return <span className="text-muted-foreground">N/A</span>
+                return <span>{formatDateSafe(dueDate)}</span>
+            }
+        },
+        {
+            accessorKey: "next_scheduled_date", header: ({ column }) => <DataTableColumnHeader column={column} title="Next Scheduled Date" />,
+            cell: ({ row }) => {
+                const nextScheduledDate = row.original.next_scheduled_date
+                if (!nextScheduledDate) return <span className="text-muted-foreground">N/A</span>
+                return <span>{formatDateSafe(nextScheduledDate)}</span>
+            }
+        },
         { accessorKey: "status", header: ({ column }) => <DataTableColumnHeader column={column} title="Status" /> },
         { accessorKey: "remarks", header: ({ column }) => <DataTableColumnHeader column={column} title="Remarks" /> },
         {
@@ -126,13 +148,13 @@ export default function ProficiencyTestingPage() {
                 <ServerPagination
                     currentPage={currentPage}
                     totalCount={totalCount}
-                    pageSize={20}
+                    pageSize={pageSize}
                     hasNext={hasNext}
                     hasPrevious={hasPrevious}
                     onPageChange={setCurrentPage}
                     isLoading={isFetching}
                 />
-            ), [currentPage, totalCount, hasNext, hasPrevious, isFetching])}
+            ), [currentPage, totalCount, pageSize, hasNext, hasPrevious, isFetching])}
         />
 
     )
