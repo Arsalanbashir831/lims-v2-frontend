@@ -78,7 +78,7 @@ export async function uploadWithFormData<T>(
 ): Promise<T> {
   try {
     // Create a new request without the base API client to avoid JSON parsing issues
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
+    const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL+'/api' || "http://localhost:8000/api"
     const fullUrl = `${API_BASE_URL}/${endpoint}`
     
     // Get the access token

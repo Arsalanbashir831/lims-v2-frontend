@@ -240,7 +240,7 @@ export const testReportsService = {
     if (!accessToken) {
       throw new Error('No access token available. Please log in again.')
     }
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || "http://192.168.1.2:8000/api"}/${API_ROUTES.Lab_MANAGERS.UPLOAD_CERTIFICATE_ITEM_IMAGE}`
+    const apiUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL+'/api' || "http://192.168.1.2:8000/api"}/${API_ROUTES.Lab_MANAGERS.UPLOAD_CERTIFICATE_ITEM_IMAGE}`
     
     const response = await fetch(apiUrl, {
       method: 'POST',

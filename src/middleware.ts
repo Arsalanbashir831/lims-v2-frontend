@@ -84,7 +84,7 @@ export function middleware(request: NextRequest) {
   // Allow access to static files
   if (pathname.startsWith('/_next/') || 
       pathname.startsWith('/favicon.ico') ||
-      pathname.startsWith('/gripco-logo.webp')) {
+      pathname.match(/\.(png|jpg|jpeg|gif|svg|webp|ico)$/)) {
     return NextResponse.next()
   }
 

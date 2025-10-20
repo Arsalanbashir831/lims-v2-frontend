@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com",
       },
       {
+        protocol: "https",
+        hostname: "v2.gripcolims.com",
+       
+      },
+      {
+        protocol: "https",
+        hostname: "api.gripcolims.com",
+      },
+      {
         protocol: "http",
         hostname: "192.168.1.2",
       },
@@ -26,7 +35,8 @@ const nextConfig: NextConfig = {
         protocol: "http",
         hostname: "localhost",
         port: "3000",
-      }
+      },
+     
     ],
   },
 };

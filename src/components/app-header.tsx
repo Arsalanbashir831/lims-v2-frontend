@@ -131,9 +131,9 @@ export function AppHeader() {
             </BreadcrumbList>
           </Breadcrumb>
         </div>
-        <div className="flex items-center gap-2">
-          <Image src="/ias-logo.webp" alt="IAS" width={120} height={28} className="h-8 w-auto object-contain" />
-        </div>
+          <div className="flex items-center gap-2">
+            <img src="/iaslogo.png" alt="IAS" width="120" height="28" className="h-8 w-auto object-contain" />
+          </div>
       </div>
     </div>
   )
