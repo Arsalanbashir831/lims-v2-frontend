@@ -17,7 +17,7 @@ import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { useEquipments, useDeleteEquipment } from "@/hooks/use-equipments";
 import { formatDateSafe } from "@/utils/hydration-fix";
-import ExportExcelButton from "@/components/common/ExportExcelButton";
+import ExportExcelButton from "@/components/common/export-excel-button";
 
 export default function LabEquipmentsPage() {
   const router = useRouter();

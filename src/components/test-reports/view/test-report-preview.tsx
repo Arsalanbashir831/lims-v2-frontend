@@ -4,15 +4,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import QRCode from "qrcode";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
     Table,
     TableBody,
@@ -23,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { ROUTES } from "@/constants/routes";
 import { BackButton } from "@/components/ui/back-button";
-import { ChevronDown, FileTextIcon, FileTypeIcon } from "lucide-react";
+import { ExportDropdownButton, EXPORT_OPTIONS } from "@/components/common";
 import { useTestReportDetail, useTestReportItems } from "@/hooks/use-test-reports";
 import { useWordExport } from "@/hooks/use-word-export";
 import { toast } from "sonner";
@@ -349,22 +342,14 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
                 )}
                 {showButton && (
                     <div className="space-x-2 flex items-center print:hidden">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" disabled={isExporting}>
-                                    {isExporting ? 'Exporting...' : 'Export'}
-                                    <ChevronDown className="ml-2 h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={exportToWord}>
-                                    <FileTypeIcon/> Export as Word
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={exportPdf}>
-                                    <FileTextIcon/> Export as PDF
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        <ExportDropdownButton
+                            options={[
+                                EXPORT_OPTIONS.WORD(exportToWord),
+                                EXPORT_OPTIONS.PDF(exportPdf)
+                            ]}
+                            loading={isExporting}
+                            loadingText="Exporting..."
+                        />
                         <BackButton variant="default" label="Back to List" href={ROUTES.APP.TEST_REPORTS.ROOT} />
                     </div>
                 )}

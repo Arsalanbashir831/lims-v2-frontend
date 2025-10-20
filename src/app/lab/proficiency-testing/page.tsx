@@ -20,7 +20,7 @@ import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { formatDateSafe } from "@/utils/hydration-fix";
-import ExportExcelButton from "@/components/common/ExportExcelButton";
+import ExportExcelButton from "@/components/common/export-excel-button";
 
 export default function ProficiencyTestingPage() {
   const router = useRouter();

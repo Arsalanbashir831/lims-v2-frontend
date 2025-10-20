@@ -7,9 +7,7 @@ import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ROUTES } from "@/constants/routes";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, FileTypeIcon, FileTextIcon } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ExportDropdownButton, EXPORT_OPTIONS } from "@/components/common";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -179,22 +177,12 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
         )}
         {showButton && (
           <div className="space-x-2 flex items-center print:hidden">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  Export
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleExportWord}>
-                  <FileTypeIcon className="mr-2 h-4 w-4"/> Export as Word
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleGeneratePdf}>
-                  <FileTextIcon className="mr-2 h-4 w-4"/> Export as PDF
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <ExportDropdownButton
+              options={[
+                EXPORT_OPTIONS.WORD(handleExportWord),
+                EXPORT_OPTIONS.PDF(handleGeneratePdf)
+              ]}
+            />
             <BackButton variant="default" label="Back to List" href={ROUTES.APP.WELDERS.PQR.ROOT} />
           </div>
         )}

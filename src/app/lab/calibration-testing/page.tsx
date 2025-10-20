@@ -16,7 +16,7 @@ import { ROUTES } from "@/constants/routes"
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
-import ExportExcelButton from "@/components/common/ExportExcelButton"
+import ExportExcelButton from "@/components/common/export-excel-button"
 
 export default function CalibrationTestingingPage() {
   const router = useRouter()
