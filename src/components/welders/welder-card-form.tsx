@@ -10,6 +10,7 @@ import { ROUTES } from "@/constants/routes"
 import QRCode from "qrcode"
 import { WelderCard } from "@/lib/schemas/welder"
 import { WelderSelector } from "@/components/common/welder-selector"
+import { cn } from "@/lib/utils"
 
 interface WelderVariable {
   id: string
@@ -66,13 +67,15 @@ interface WelderCardFormProps {
   }) => void
   onCancel: () => void
   readOnly?: boolean
+  forceEagerImages?: boolean
 }
 
 export function WelderCardForm({
   initialData,
   onSubmit,
   onCancel,
-  readOnly = false
+  readOnly = false,
+  forceEagerImages = false
 }: WelderCardFormProps) {
   const createInitialFormData = (): WelderCardFormData => {
     const attributes = initialData?.attributes as Record<string, unknown> || {}
@@ -199,7 +202,17 @@ export function WelderCardForm({
         <div className="flex items-center justify-between mb-6">
           {/* Left - Gripco Logo Image */}
           <div className="flex-1">
-            <Image src="/gripco-logo.webp" alt="Gripco" width={100} height={80} className="object-contain h-16 w-auto" />
+            {forceEagerImages ?
+              <img
+                src='/gripco-logo.webp'
+                alt="Gripco"
+                cross-origin="anonymous"
+                loading="eager"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                className="h-full w-full"
+              />
+              :
+              <Image src="/gripco-logo.webp" alt="Gripco" width={100} height={80} className="object-contain h-16 w-auto" />}
           </div>
 
           {/* Center - Title */}
@@ -224,21 +237,34 @@ export function WelderCardForm({
         </div>
 
         {/* Welder Information */}
-        <div className="border mb-8">
+        <div className="border mb-4">
           <div className=" grid grid-cols-[1fr_2fr]">
             {/* Image */}
             <div className="flex-1 flex justify-end">
               <div className="w-full h-full border-2 overflow-hidden bg-gray-100 dark:bg-sidebar print:bg-white">
-                <div className="w-full h-full flex items-center justify-center print:bg-white relative">
+                <div className={cn("flex items-center justify-center print:bg-white relative", forceEagerImages ? 'h-[160px] w-[220px]' : 'w-full h-full')}>
                   {formData.welder_id ? (
                     <div className="">
                       {formData.profile_image_url ? (
-                        <Image
-                          src={`${process.env.NEXT_PUBLIC_BACKEND_URL}${formData.profile_image_url}`}
-                          alt={formData.welder_name || "Welder"}
-                          fill
-                          className="w-full h-full object-cover"
-                        />
+                        forceEagerImages ? (
+                          <img
+                            src={`${process.env.NEXT_PUBLIC_BACKEND_URL}${formData.profile_image_url}`}
+                            alt={formData.welder_name || "Welder"}
+                            cross-origin="anonymous"
+                            loading="eager"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                            className="h-full w-full"
+                          />
+                        ) : (
+                          <Image
+                            src={`${process.env.NEXT_PUBLIC_BACKEND_URL}${formData.profile_image_url}`}
+                            alt={formData.welder_name || "Welder"}
+                            fill
+                            className="w-full h-full object-cover"
+                            priority
+                            unoptimized
+                          />
+                        )
                       ) : (
                         <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                           <span className="text-gray-500 text-xs print:!text-black">No Photo</span>
@@ -257,8 +283,8 @@ export function WelderCardForm({
             <div className="print:bg-white">
               {/* Row 1 */}
               <div className="grid grid-cols-2 border">
-                <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Company</div>
-                <div className="p-3 border">
+                <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Company</div>
+                <div className="px-3 py-2 border">
                   {readOnly ? (
                     <span className="text-sm print:!text-black">{formData.company}</span>
                   ) : (
@@ -274,8 +300,8 @@ export function WelderCardForm({
 
               {/* Row 2 - Welder Selection */}
               <div className="grid grid-cols-2 border">
-                <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Welder</div>
-                <div className="p-3 border">
+                <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Welder</div>
+                <div className="px-3 py-2 border">
                   {readOnly ? (
                     <span className="text-sm print:!text-black">{formData.welder_name}</span>
                   ) : (
@@ -292,17 +318,17 @@ export function WelderCardForm({
 
               {/* Row 3 - Iqama No (Read-only) */}
               <div className="grid grid-cols-2 border ">
-                <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Iqama No.</div>
-                <div className="p-3 border">
+                <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Iqama No.</div>
+                <div className="px-3 py-2 border">
                   <span className="text-sm white print:!text-black">{formData.iqama_no || "Select a welder first"}</span>
                 </div>
               </div>
 
               {/* Row 4 - Welder ID (Read-only) */}
               <div className="grid grid-cols-2 border">
-                <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Welder ID</div>
-                <div className="p-3 border">
-                  <span className="text-sm text-black print:!text-black">{formData.operator_id || "Select a welder first"}</span>
+                <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Welder ID</div>
+                <div className="px-3 py-2 border">
+                  <span className="text-sm print:!text-black">{formData.operator_id || "Select a welder first"}</span>
                 </div>
               </div>
             </div>
@@ -311,7 +337,7 @@ export function WelderCardForm({
           {/* Authorization */}
           <div className="border grid grid-cols-2">
             <div>
-              <div className="p-3 pb-0">
+              <div className="px-3 py-2 pb-0">
                 {readOnly ? (
                   <span className="text-sm print:text-black">{formData.authorized_by}</span>
                 ) : (
@@ -323,11 +349,11 @@ export function WelderCardForm({
                   />
                 )}
               </div>
-              <div className="p-3 font-semibold text-sm print:!text-black">Authorized By</div>
+              <div className="px-3 py-2 font-semibold text-sm print:!text-black">Authorized By</div>
             </div>
 
             <div>
-              <div className="p-3 pb-0 text-right">
+              <div className="px-3 py-2 pb-0 text-right">
                 {readOnly ? (
                   <span className="text-sm print:!text-black">{formData.welding_inspector}</span>
                 ) : (
@@ -339,12 +365,12 @@ export function WelderCardForm({
                   />
                 )}
               </div>
-              <div className="p-3 font-semibold text-sm text-right print:!text-black">Welding Inspector</div>
+              <div className="px-3 py-2 font-semibold text-sm text-right print:!text-black">Welding Inspector</div>
             </div>
           </div>
 
           {/* Certification Statement */}
-          <div className="border bg-background dark:bg-sidebar p-4 print:!bg-gray-200">
+          <div className="border bg-background dark:bg-sidebar px-3 py-2 print:!bg-gray-200">
             <p className="text-sm text-gray-700 dark:text-gray-300 print:!text-black ">
               This is to certify that this person has been tested in accordance with requirements of{" "}
               {readOnly ? (
@@ -365,8 +391,8 @@ export function WelderCardForm({
         <div className="border">
           {/* Row 1 */}
           <div className="grid grid-cols-4 border">
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Card No</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Card No</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.card_no}</span>
               ) : (
@@ -378,8 +404,8 @@ export function WelderCardForm({
                 />
               )}
             </div>
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">WPS/PQR No.</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">WPS/PQR No.</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.wpsNo}</span>
               ) : (
@@ -395,8 +421,8 @@ export function WelderCardForm({
 
           {/* Row 2 */}
           <div className="grid grid-cols-4 border">
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Process</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Process</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.process}</span>
               ) : (
@@ -408,8 +434,8 @@ export function WelderCardForm({
                 />
               )}
             </div>
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Joint Type</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Joint Type</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.jointType}</span>
               ) : (
@@ -425,8 +451,8 @@ export function WelderCardForm({
 
           {/* Row 3 */}
           <div className="grid grid-cols-4 border ">
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Test Position</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Test Position</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.positionQualified}</span>
               ) : (
@@ -438,8 +464,8 @@ export function WelderCardForm({
                 />
               )}
             </div>
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Position Qualified</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Position Qualified</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.positionQualified}</span>
               ) : (
@@ -455,8 +481,8 @@ export function WelderCardForm({
 
           {/* Row 4 */}
           <div className="grid grid-cols-4 border">
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Test Dia</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Test Dia</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.testDia}</span>
               ) : (
@@ -468,8 +494,8 @@ export function WelderCardForm({
                 />
               )}
             </div>
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Thickness Qualified</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Thickness Qualified</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.thicknessQualified}</span>
               ) : (
@@ -485,8 +511,8 @@ export function WelderCardForm({
 
           {/* Row 5 */}
           <div className="grid grid-cols-4 border">
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Vertical Progression</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Vertical Progression</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.verticalProgression}</span>
               ) : (
@@ -498,8 +524,8 @@ export function WelderCardForm({
                 />
               )}
             </div>
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Test Thickness</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Test Thickness</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.testThickness}</span>
               ) : (
@@ -515,8 +541,8 @@ export function WelderCardForm({
 
           {/* Row 6 */}
           <div className="grid grid-cols-4 border">
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">P No Qualified</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">P No Qualified</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.pNoQualified}</span>
               ) : (
@@ -528,8 +554,8 @@ export function WelderCardForm({
                 />
               )}
             </div>
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Diameter Qualified</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Diameter Qualified</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.diameterQualified}</span>
               ) : (
@@ -545,8 +571,8 @@ export function WelderCardForm({
 
           {/* Row 7 */}
           <div className="grid grid-cols-4 border">
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">F No Qualified</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">F No Qualified</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.fNoQualified}</span>
               ) : (
@@ -558,8 +584,8 @@ export function WelderCardForm({
                 />
               )}
             </div>
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Filler Metal/Electrode Class Used</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Filler Metal/Electrode Class Used</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.fillerMetalElectrodeClassUsed}</span>
               ) : (
@@ -575,8 +601,8 @@ export function WelderCardForm({
 
           {/* Row 8 */}
           <div className="grid grid-cols-4 border">
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Place of Issue</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Place of Issue</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.placeOfIssue}</span>
               ) : (
@@ -588,8 +614,8 @@ export function WelderCardForm({
                 />
               )}
             </div>
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Test Method</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Test Method</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.testMethod}</span>
               ) : (
@@ -605,8 +631,8 @@ export function WelderCardForm({
 
           {/* Row 9 */}
           <div className="grid grid-cols-4">
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Date of Test</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Date of Test</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.dateOfTest}</span>
               ) : (
@@ -619,8 +645,8 @@ export function WelderCardForm({
                 />
               )}
             </div>
-            <div className="p-3 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Date of Exp	</div>
-            <div className="p-3 border">
+            <div className="px-3 py-2 bg-background dark:bg-sidebar font-medium text-sm border print:!bg-white print:!text-black">Date of Exp	</div>
+            <div className="px-3 py-2 border">
               {readOnly ? (
                 <span className="text-sm print:text-black">{formData.dateOfExp}</span>
               ) : (
@@ -637,7 +663,7 @@ export function WelderCardForm({
         </div>
         {/* Statement */}
         <div className="mb-6">
-          <div className="border  bg-background dark:bg-sidebar print:!bg-gray-200 p-4">
+          <div className="border  bg-background dark:bg-sidebar print:!bg-gray-200 px-3 py-2">
             <p className="text-sm text-gray-700 dark:text-gray-300 print:!text-black ">
               This card, on its own qualifies the welder for 6 months from the Date of test. Beyond this date, welding continuity records shall be consulted to ensure the welder's qualification has been maintained.
             </p>

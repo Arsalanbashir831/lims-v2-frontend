@@ -28,18 +28,18 @@ export default function WelderCardPreview({
   // Use React Query hook to fetch welder card data
   const { data: welderCard, isLoading, error } = useWelderCard(id)
 
-  // Send ready message for PDF generation when in print mode
+  // Send ready message for PDF generation when in print mode (after images load)
   useEffect(() => {
-    if (isPrint && welderCard && !isLoading) {
-      // Send message that the document is ready for printing
+    const run = async () => {
+      if (!(isPrint && welderCard && !isLoading)) return
+      // small layout settle delay since images are eager-loaded now
+      await new Promise(r => setTimeout(r, 100))
       if (typeof window !== "undefined") {
-        window.parent.postMessage({
-          type: 'DOCUMENT_READY',
-          id: id
-        }, '*');
+        window.parent.postMessage({ type: 'DOCUMENT_READY', id }, '*')
       }
     }
-  }, [isPrint, welderCard, isLoading, id]);
+    run()
+  }, [isPrint, welderCard, isLoading, id])
 
   // Generate QR code for public view
   useEffect(() => {
@@ -170,6 +170,7 @@ export default function WelderCardPreview({
         onSubmit={() => { }} // No-op for readonly mode
         onCancel={() => { }} // No-op for readonly mode
         readOnly={true}
+        forceEagerImages={isPrint}
       />
     </div>
   )
