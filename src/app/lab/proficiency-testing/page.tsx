@@ -211,7 +211,7 @@ export default function ProficiencyTestingPage() {
               <div className="flex items-center gap-2 w-full md:w-auto">
                 <ExportExcelButton
                   table={table}
-                  fileName="Proficiency_testing.xlsx"
+                  fileName="Proficiency_Testing.xlsx"
                   logos={{
                     imagePath: "/gripco-logo.webp",
                     rightImagePath: "/ias-logo.webp",

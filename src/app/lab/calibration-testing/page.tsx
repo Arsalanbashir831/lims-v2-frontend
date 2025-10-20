@@ -99,7 +99,7 @@ export default function CalibrationTestingingPage() {
             <div className="flex items-center gap-2 w-full md:w-auto">
             <ExportExcelButton
                   table={table}
-                  fileName="Calibration_testing.xlsx"
+                  fileName="Calibration_Testing.xlsx"
                   logos={{
                     imagePath: "/gripco-logo.webp",
                     rightImagePath: "/ias-logo.webp",

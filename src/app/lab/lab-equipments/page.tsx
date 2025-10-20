@@ -185,7 +185,7 @@ export default function LabEquipmentsPage() {
                   fileName="Lab_Equipments.xlsx"
                   logos={{
                     imagePath: "/gripco-logo.webp",
-                    rightImagePath: "/ias-logo-vertical.webp",
+                    rightImagePath: "/ias-logo.webp",
                   }}
                 />
                 <DataTableViewOptions table={table} />
