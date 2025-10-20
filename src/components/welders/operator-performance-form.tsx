@@ -1168,11 +1168,16 @@ export function OperatorPerformanceForm({
               <div className="p-1 border-r">
                 {readOnly ? (
                   <div className="flex items-center justify-center gap-2">
+                    {/* On-screen */}
                     <Checkbox
                       checked={test.testPerformed}
                       disabled
-                      className="w-4 h-4"
+                      className="w-4 h-4 print:hidden"
                     />
+                    {/* Print fallback */}
+                    <span className="hidden print:inline-block text-lg leading-none select-none">
+                      {test.testPerformed ? "☑" : "☐"}
+                    </span>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center gap-2">
@@ -1181,8 +1186,12 @@ export function OperatorPerformanceForm({
                       onCheckedChange={(checked) =>
                         updateTestConducted(test.id, "testPerformed", checked)
                       }
-                      className="w-4 h-4"
+                      className="w-4 h-4 print:hidden"
                     />
+                    {/* Print fallback for editable state */}
+                    <span className="hidden print:inline-block text-lg leading-none select-none">
+                      {test.testPerformed ? "☑" : "☐"}
+                    </span>
                   </div>
                 )}
               </div>

@@ -149,13 +149,6 @@ export default function EditTestReportPage() {
         }
       }
 
-      // Debug logging for hasImage property
-      console.log(`Specimen ${specimenName}:`, {
-        testMethodInfo,
-        hasImage: testMethodInfo?.hasImage,
-        testMethodName: testMethodInfo?.test_name
-      })
-
       return {
         id: item._id,
         specimenId: specimenName,

@@ -30,36 +30,30 @@ export default function WelderQualificationPreview({
   const { data: welderCertificateResponse, isLoading, error } = useWelderCertificate(id)
   const welderCertificate = welderCertificateResponse?.data
 
-  // Send ready message for PDF generation when in print mode
+  // Send ready message for PDF generation when in print mode after small settle delay
   useEffect(() => {
-    if (isPrint && welderCertificate && !isLoading) {
-      // If there's no image or image is already loaded, send ready message immediately
-      if (!welderCertificate.welder_card_info?.welder_info?.profile_image || imageLoaded) {
-        if (typeof window !== "undefined") {
-          window.parent.postMessage({
-            type: 'DOCUMENT_READY',
-            id: id
-          }, '*');
-        }
+    const run = async () => {
+      if (!(isPrint && welderCertificate && !isLoading)) return
+      // if there is a profile image, wait until it's loaded or fallback below handles it
+      if (welderCertificate.welder_card_info?.welder_info?.profile_image && !imageLoaded) return
+      await new Promise(r => setTimeout(r, 100))
+      if (typeof window !== "undefined") {
+        window.parent.postMessage({ type: 'DOCUMENT_READY', id }, '*')
       }
     }
-  }, [isPrint, welderCertificate, isLoading, imageLoaded, id]);
+    run()
+  }, [isPrint, welderCertificate, isLoading, imageLoaded, id])
 
   // Fallback timeout to ensure message is sent even if image doesn't load
   useEffect(() => {
-    if (isPrint && welderCertificate && !isLoading) {
-      const timeout = setTimeout(() => {
+    if (!(isPrint && welderCertificate && !isLoading)) return
+    const timeout = setTimeout(() => {
       if (typeof window !== "undefined") {
-        window.parent.postMessage({
-          type: 'DOCUMENT_READY',
-            id: id
-        }, '*');
+        window.parent.postMessage({ type: 'DOCUMENT_READY', id }, '*')
       }
-      }, 3000); // 3 second timeout
-
-      return () => clearTimeout(timeout);
-    }
-  }, [isPrint, welderCertificate, isLoading, id]);
+    }, 3000)
+    return () => clearTimeout(timeout)
+  }, [isPrint, welderCertificate, isLoading, id])
 
   // Generate QR code for public view
   useEffect(() => {

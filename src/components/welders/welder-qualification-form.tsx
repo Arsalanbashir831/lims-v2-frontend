@@ -879,11 +879,16 @@ export function WelderQualificationForm({
               <div className="p-1 border-r ">
                 {readOnly ? (
                   <div className="flex items-center justify-center gap-2">
+                    {/* On-screen */}
                     <Checkbox
                       checked={test.isReportChecked}
                       disabled
-                      className="w-4 h-4"
+                      className="w-4 h-4 print:hidden"
                     />
+                    {/* Print fallback */}
+                    <span className="hidden print:inline-block text-lg leading-none select-none">
+                      {test.isReportChecked ? "☑" : "☐"}
+                    </span>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center gap-2">
@@ -892,8 +897,12 @@ export function WelderQualificationForm({
                       onCheckedChange={(checked) =>
                         updateTestConducted(test.id, "isReportChecked", checked)
                       }
-                      className="w-4 h-4"
+                      className="w-4 h-4 print:hidden"
                     />
+                    {/* Print fallback for editable state */}
+                    <span className="hidden print:inline-block text-lg leading-none select-none">
+                      {test.isReportChecked ? "☑" : "☐"}
+                    </span>
                   </div>
                 )}
               </div>

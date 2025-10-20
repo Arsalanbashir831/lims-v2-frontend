@@ -170,13 +170,6 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
     }
   }, [])
 
-  // Debug logging for hasImage property
-  useEffect(() => {
-    formData.items.forEach(item => {
-      console.log(`Item ${item.id} (${item.testMethodName}): hasImage = ${item.hasImage}`)
-    })
-  }, [formData.items])
-
   // Handle request selection
   const handleRequestSelect = async (requestId: string | undefined, request: {
     id: string;
