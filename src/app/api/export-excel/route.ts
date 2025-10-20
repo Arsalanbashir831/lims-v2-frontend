@@ -83,20 +83,20 @@ export async function POST(req: Request) {
 
     /* logos */
     const LEFT_MAX_H = 100;
-    const RIGHT_MAX_H = 90;
+    const RIGHT_MAX_H = 100;
 
     const leftImg = await loadImageAsPng(imagePath, logoBase64, LEFT_MAX_H);
     if (leftImg) {
-      const id = wb.addImage({ buffer: leftImg.buf, extension: "png" });
+      const id = wb.addImage({ base64: leftImg.buf.toString('base64'), extension: "png" });
       ws.addImage(id, { tl: { col: 0, row: 0 }, ext: { width: leftImg.w, height: leftImg.h } });
       ws.getRow(1).height = Math.max(ws.getRow(1).height ?? 0, pxToPt(leftImg.h) + 6);
     }
 
     const rightImg = await loadImageAsPng(rightImagePath, rightLogoBase64, RIGHT_MAX_H);
     if (rightImg) {
-      const startCol = Math.max(totalCols - 2, 1);
-      const id = wb.addImage({ buffer: rightImg.buf, extension: "png" });
-      ws.addImage(id, { tl: { col: startCol, row: 0 }, ext: { width: rightImg.w, height: rightImg.h } });
+      const lastColIndex = Math.max(totalCols - 1, 0); // always anchor to last column
+      const id = wb.addImage({ base64: rightImg.buf.toString('base64'), extension: "png" });
+      ws.addImage(id, { tl: { col: lastColIndex, row: 0 }, ext: { width: rightImg.w, height: rightImg.h } });
       ws.getRow(1).height = Math.max(ws.getRow(1).height ?? 0, pxToPt(rightImg.h) + 6);
     }
 
@@ -143,7 +143,11 @@ export async function POST(req: Request) {
     const header = ws.getRow(r);
     columns.forEach((c, i) => {
       const cell = header.getCell(i + 1);
-      cell.value = c.label;
+      const parts = (c.label ?? "").toString().split(/\s+/);
+      const titleCase = parts
+        .map((w) => (w.length ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w))
+        .join(" ");
+      cell.value = titleCase;
       cell.font = { name: "Calibri", bold: true, size: 11, color: { argb: "FFFFFFFF" } };
       cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFBFBFBF" } };
@@ -193,8 +197,8 @@ export async function POST(req: Request) {
     /* footer */
     const foot = {
       font: { name: "Calibri", bold: true, size: 10, color: { argb: "FF000000" } },
-      fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FFF2F2F2" } },
-      border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } },
+      fill: { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: "FFF2F2F2" } },
+      border: { top: { style: "thin" as const }, bottom: { style: "thin" as const }, left: { style: "thin" as const }, right: { style: "thin" as const } },
     };
     r += 2;
     ws.mergeCells(`A${r}:${lastCol}${r}`);

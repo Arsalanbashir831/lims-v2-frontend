@@ -180,19 +180,19 @@ export default function LabEquipmentsPage() {
                 inputClassName="max-w-md"
               />
               <div className="flex items-center gap-2 w-full md:w-auto">
+                <DataTableViewOptions table={table} />
                 <ExportExcelButton
                   table={table}
                   fileName="Lab_Equipments.xlsx"
                   logos={{
                     imagePath: "/gripco-logo.webp",
-                    rightImagePath: "/ias-logo.webp",
+                    rightImagePath: "/ias-logo-vertical.webp",
                   }}
                 />
-                <DataTableViewOptions table={table} />
+              </div>
                 <Button asChild size="sm">
                   <Link href={ROUTES.APP.LAB_EQUIPMENTS.NEW}>New Record</Link>
                 </Button>
-              </div>
             </div>
           );
         },

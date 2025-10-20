@@ -209,15 +209,15 @@ export default function ProficiencyTestingPage() {
               />
 
               <div className="flex items-center gap-2 w-full md:w-auto">
+                <DataTableViewOptions table={table} />
                 <ExportExcelButton
                   table={table}
                   fileName="Proficiency_Testing.xlsx"
                   logos={{
                     imagePath: "/gripco-logo.webp",
-                    rightImagePath: "/ias-logo.webp",
+                    rightImagePath: "/ias-logo-vertical.webp",
                   }}
                 />
-                <DataTableViewOptions table={table} />
                 <Button asChild size="sm">
                   <Link href={ROUTES.APP.PROFICIENCY_TESTING.NEW}>
                     New Record

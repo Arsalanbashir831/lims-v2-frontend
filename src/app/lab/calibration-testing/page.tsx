@@ -97,15 +97,15 @@ export default function CalibrationTestingingPage() {
               inputClassName="max-w-md"
             />
             <div className="flex items-center gap-2 w-full md:w-auto">
+              <DataTableViewOptions table={table} />
             <ExportExcelButton
                   table={table}
                   fileName="Calibration_Testing.xlsx"
                   logos={{
                     imagePath: "/gripco-logo.webp",
-                    rightImagePath: "/ias-logo.webp",
+                    rightImagePath: "/ias-logo-vertical.webp",
                   }}
                 />
-              <DataTableViewOptions table={table} />
               <Button asChild size="sm">
                 <Link href={ROUTES.APP.CALIBRATION_TESTING.NEW}>New Record</Link>
               </Button>

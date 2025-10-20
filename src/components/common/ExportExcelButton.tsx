@@ -5,6 +5,7 @@ import { FileSpreadsheetIcon } from "lucide-react"
 import type { Table as TanstackTable } from "@tanstack/react-table"
 import { exportExcelViaApi, type ExcelExportLogos } from "@/lib/excel-export"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 type Props<T> = {
   table: TanstackTable<T>
@@ -21,7 +22,8 @@ export default function ExportExcelButton<T>({
   return (
     <Button
       size="sm"
-      className={className}
+      variant="outline"
+      className={cn("!border-primary text-primary !text-sm !font-normal !bg-primary/10 hover:!bg-primary/20 hover:!text-primary hover:!border-primary", className)}
       onClick={async () => {
         try {
           await exportExcelViaApi(table, { fileName, apiPath, logos })
