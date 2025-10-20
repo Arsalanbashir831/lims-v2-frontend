@@ -60,11 +60,20 @@ export const generateQRCodeDataURI = async (text: string, options?: {
 }
 
 // Helper function to create Word document blob
-export const createWordDocument = (htmlContent: string, filename: string, assets?: {
-  gripcoLogoBase64: string
-  iasLogoBase64: string
-  qrCodeBase64: string
-}): void => {
+export const createWordDocument = (
+  htmlContent: string,
+  filename: string,
+  assets?: {
+    gripcoLogoBase64: string
+    iasLogoBase64: string
+    qrCodeBase64: string
+  },
+  options?: {
+    headerHTML?: string
+    footerHTML?: string
+    extraStyles?: string
+  }
+): void => {
   const wordHTML = `
     <html xmlns:o="urn:schemas-microsoft-com:office:office" 
           xmlns:w="urn:schemas-microsoft-com:office:word" 
@@ -98,47 +107,58 @@ export const createWordDocument = (htmlContent: string, filename: string, assets
             margin: 0; 
             line-height: 1.15; 
           }
-          table { border-collapse: collapse; width: 100%; }
+          table { border-collapse: collapse; width: 100%; margin: 0; }
+          /* Ensure borders show up in Word */
+          table, th, td { border: 1pt solid #cfcfcf; mso-border-alt: solid #cfcfcf 1pt; }
+          thead tr { background-color: #f3f4f6; } /* Light gray header background */
+          thead th { border-bottom: 1pt solid #cfcfcf; }
+          tbody td { border-top: none; }
+          /* Force borders for standalone tbody tables */
+          .standalone-tbody { border: 1pt solid #cfcfcf !important; }
+          .standalone-tbody tbody { border: 1pt solid #cfcfcf !important; }
+          .standalone-tbody td { border: 1pt solid #cfcfcf !important; }
           td, th { vertical-align: top; }
           p { margin: 3pt 0; line-height: 1.2; }
           h1, h2, h3 { font-weight: bold; margin: 8pt 0 4pt 0; }
           img { max-width: 100%; height: auto; }
           .page-break { page-break-before: always; }
           .avoid-break { page-break-inside: avoid; }
-          table#hrdftrtbl { position: absolute; top: -1000px; left: -1000px; margin: 0in 0in 0in 900in; width: 1px; height: 1px; overflow: hidden; }
+          table#hrdftrtbl { display: none !important; position: absolute; top: -1000px; left: -1000px; margin: 0 !important; width: 1px; height: 1px; overflow: hidden; visibility: hidden; }
           div.mso-element\\:header { mso-element: header; }
           p.MsoHeader { margin: 0in; margin-bottom: .0001pt; mso-pagination: widow-orphan; tab-stops: center 3.0in right 6.0in; font-size: 10.0pt; font-family: "Arial", sans-serif; }
           div.mso-element\\:footer { mso-element: footer; }
           p.MsoFooter { margin: 0in; margin-bottom: .0001pt; mso-pagination: widow-orphan; tab-stops: center 3.0in right 6.0in; font-size: 10.0pt; font-family: "Arial", sans-serif; }
+          ${options?.extraStyles ?? ''}
         </style>
       </head>
       <body>
         <div class="Section1">
           ${htmlContent}
           
-          <!-- Hidden table for header/footer definitions -->
-          <table id='hrdftrtbl' border='0' cellspacing='0' cellpadding='0'>
+          <!-- Hidden table for header/footer definitions - MUST be invisible but present -->
+          <table id='hrdftrtbl' border='0' cellspacing='0' cellpadding='0' style='position: absolute; top: -9999px; left: -9999px; width: 0; height: 0; opacity: 0; visibility: hidden; overflow: hidden; z-index: -9999; mso-displayed: none;'>
             <tr>
               <td>
                 <div style='mso-element:header' id='h1'>
+                  ${options?.headerHTML ?? `
                   <table style="width: 100%; border: none; border-collapse: collapse;">
                     <tr>
                       <td style="width: 40%; vertical-align: middle; border: none; padding: 0; text-align: left;">
                         ${assets?.gripcoLogoBase64 ? `<img src="${assets.gripcoLogoBase64}" style="height: 12pt; width: auto;" alt="Gripco Logo">` : '<span style="font-weight: bold; font-size: 12pt;">GRIPCO</span>'}
                       </td>
-                      <td style="width: 20%; vertical-align: middle; border: none; padding: 0; text-align: center;">
-                        <!-- Empty space for balance -->
-                      </td>
+                      <td style="width: 20%; vertical-align: middle; border: none; padding: 0; text-align: center;"></td>
                       <td style="width: 40%; vertical-align: middle; border: none; padding: 0; text-align: right;">
-                        ${assets?.iasLogoBase64 ? `<img src="${assets.iasLogoBase64}" style="height: 18pt; width: auto; margin-right: 10pt;" alt="IAS Logo">` : '<span style="font-weight: bold; margin-right: 10pt;">IAS</span>'}
-                        ${assets?.qrCodeBase64 ? `<img src="${assets.qrCodeBase64}" style="height: 18pt; width: auto;" alt="QR Code">` : '<span style="border: 1pt solid black; padding: 6pt;">QR</span>'}
+                        ${assets?.iasLogoBase64 ? `<img src="${assets.iasLogoBase64}" style="height: 18pt; width: auto; margin-right: 10pt;" alt="IAS Logo">` : ''}
+                        ${assets?.qrCodeBase64 ? `<img src="${assets.qrCodeBase64}" style="height: 18pt; width: auto;" alt="QR Code">` : ''}
                       </td>
                     </tr>
                   </table>
+                  `}
                 </div>
               </td>
               <td>
                 <div style='mso-element:footer' id='f1'>
+                  ${options?.footerHTML ?? `
                   <table style="width: 100%; border: none; border-collapse: collapse;">
                     <tr>
                       <td style="width: 100%; vertical-align: top; border: none; padding: 0;">
@@ -150,6 +170,7 @@ export const createWordDocument = (htmlContent: string, filename: string, assets
                       </td>
                     </tr>
                   </table>
+                  `}
                 </div>
               </td>
             </tr>

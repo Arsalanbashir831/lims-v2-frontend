@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import NextJSImage from "next/image";
 import { useParams } from "next/navigation";
 import { AlertCircle } from "lucide-react";
-import QRCode from "qrcode";
 import { toast } from "sonner";
 import { ROUTES } from "@/constants/routes";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { ChevronDown, FileTypeIcon, FileTextIcon } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -35,7 +36,9 @@ import { usePQR } from "@/hooks/use-pqr";
 
 
 import { buildPqrView } from "@/utils/pqr-preview-handlers";
+import { PqrWordGenerator } from "@/lib/word-export/pqr-word-generator";
 import { PqrDataToView } from "@/types/pqr";
+import QRCode from "qrcode";
 export default function PQRReportPreview({ showButton = true, isPublic = false }) {
   const params = useParams<{ id: string }>();
   const pqrId = params?.id;
@@ -89,6 +92,21 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
     } catch (e) {
       console.error("PDF generation failed:", e);
       toast.error("Failed to prepare the document. Please try again.");
+    }
+  };
+
+  const handleExportWord = async () => {
+    try {
+      if (!pqrDataToView || !pqrId) {
+        toast.error('PQR data not loaded.');
+        return;
+      }
+      toast.info('Generating Word document, please wait...');
+      const gen = new PqrWordGenerator(pqrId, pqrDataToView as any)
+      await gen.generate()
+    } catch (e: any) {
+      console.error('Failed to export Word:', e);
+      toast.error(`Failed to generate Word document: ${e?.message || 'Unknown error'}`);
     }
   };
 
@@ -161,7 +179,22 @@ export default function PQRReportPreview({ showButton = true, isPublic = false }
         )}
         {showButton && (
           <div className="space-x-2 flex items-center print:hidden">
-            <Button onClick={handleGeneratePdf} variant="outline">Export PDF</Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  Export
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportWord}>
+                  <FileTypeIcon className="mr-2 h-4 w-4"/> Export as Word
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleGeneratePdf}>
+                  <FileTextIcon className="mr-2 h-4 w-4"/> Export as PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <BackButton variant="default" label="Back to List" href={ROUTES.APP.WELDERS.PQR.ROOT} />
           </div>
         )}

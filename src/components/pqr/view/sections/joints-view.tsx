@@ -49,20 +49,24 @@ export const JointsView = ({ jointsData, isAsme }: { jointsData: JointsData; isA
   }
 
   return (
-    <div className="mt-4 overflow-hidden border">
-      <div className="dark:bg-sidebar  p-2">
-        <h3 className="text-left font-semibold">
-          JOINTS {isAsme && '(QW-402)'}
-        </h3>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-        {/* Left side - Table */}
-        <div className="overflow-x-auto ">
-          <table className="w-full text-sm border">
+    <div className="mt-4 overflow-hidden border pqr-joints-section">
+      <table className="w-full border-collapse">
+        <tbody>
+          <tr>
+            <td className="align-top w-1/2 border-y">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border">
             {/* Show column headers for multi-column tables */}
             {columns.length > 0 && (
               <thead>
+                <tr className="dark:bg-sidebar border-y">
+                  <th
+                    colSpan={columns.length}
+                    className="p-2 text-left font-semibold"
+                  >
+                    JOINTS {isAsme && '(QW-402)'}
+                  </th>
+                </tr>
                 <tr className="border-y dark:bg-sidebar">
                   {columns.map((col: JointColumn) => (
                     <th
@@ -75,25 +79,20 @@ export const JointsView = ({ jointsData, isAsme }: { jointsData: JointsData; isA
                 </tr>
               </thead>
             )}
-            <tbody >
+            <tbody>
               {hasData ? (
-                (data || []).map((item: JointRow | JointItem) => {
-                  return (
-                    <tr key={item.id} className="border-b">
-                      {columns.map((col: JointColumn) => (
-                        <td key={col.id} className="border-r p-3 last:border-r-0">
-                          {getSectionDataByAccessor(item, col.accessorKey) || '-'}
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                })
+                (data || []).map((item: JointRow | JointItem) => (
+                  <tr key={item.id} className="border-b">
+                    {columns.map((col: JointColumn) => (
+                      <td key={col.id} className="border-r p-3 last:border-r-0">
+                        {getSectionDataByAccessor(item, col.accessorKey) || '-'}
+                      </td>
+                    ))}
+                  </tr>
+                ))
               ) : (
                 <tr>
-                  <td
-                    colSpan={(columns && columns.length) || 2}
-                    className="p-4 text-center text-gray-500"
-                  >
+                  <td colSpan={(columns && columns.length) || 2} className="p-4 text-center text-gray-500">
                     No joints data available.
                   </td>
                 </tr>
@@ -101,22 +100,23 @@ export const JointsView = ({ jointsData, isAsme }: { jointsData: JointsData; isA
             </tbody>
           </table>
         </div>
-        
-        {/* Right side - Image */}
-        <div className="flex items-center justify-center">
-          {designPhotoUrl ? (
-            <img
-              src={designPhotoUrl}
-              alt="Joint Design Sketch"
-              className="max-h-64 w-full object-contain p-2"
-            />
-          ) : (
-            <div className="text-center text-gray-400 p-4">
-              No joint design sketch available
-            </div>
-          )}
-        </div>
-      </div>
+            </td>
+            <td className="align-top w-1/2">
+              <div className="flex items-center justify-center">
+                {designPhotoUrl ? (
+                  <img
+                    src={designPhotoUrl}
+                    alt="Joint Design Sketch"
+                    className="max-h-60 w-full object-contain p-2 pqr-joints-image"
+                  />
+                ) : (
+                  <div className="text-center text-gray-400 p-4">No joint design sketch available</div>
+                )}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 };
