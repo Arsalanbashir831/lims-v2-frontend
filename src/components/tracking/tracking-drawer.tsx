@@ -101,13 +101,30 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                 <div className="text-sm font-medium">Summary</div>
               </header>
               <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                <Field label="Client" value={row?.clientName} />
-                <Field label="Project" value={row?.projectName} />
-                <Field label="Items" value={String(sampleLotsData?.total ?? row?.itemsCount ?? 0)} />
-                <Field label="End User" value={(sampleLotsData?.job_info as Record<string, unknown>)?.end_user as string ?? row?.endUser} />
-                <Field label="Received By" value={(sampleLotsData?.job_info as Record<string, unknown>)?.received_by as string ?? row?.receivedBy} />
-                <Field label="Received Date" value={(sampleLotsData?.job_info as Record<string, unknown>)?.receive_date ? new Date((sampleLotsData?.job_info as Record<string, unknown>).receive_date as string).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : row?.receivedDate} />
-                <Field label="Remarks" value={(sampleLotsData?.job_info as Record<string, unknown>)?.remarks as string ?? row?.remarks} />
+                <Field label="Client" value={row?.clientName ?? "N/A"} />
+                <Field label="Project" value={row?.projectName ?? "N/A"} />
+                <Field label="Items" value={String(sampleLotsData?.total ?? row?.itemsCount ?? 0) ?? "N/A"} />
+                <Field label="End User" value={(() => {
+                  const value = (sampleLotsData?.job_info as Record<string, unknown>)?.end_user as string ?? row?.endUser
+                  return value && value.trim() !== "" ? value : "N/A"
+                })()} />
+                <Field label="Received By" value={(() => {
+                  const value = (sampleLotsData?.job_info as Record<string, unknown>)?.received_by as string ?? row?.receivedBy
+                  return value && value.trim() !== "" ? value : "N/A"
+                })()} />
+                <Field label="Received Date" value={(() => {
+                  const dateValue = (sampleLotsData?.job_info as Record<string, unknown>)?.receive_date as string ?? row?.receivedDate
+                  if (!dateValue || dateValue.trim() === "") return "N/A"
+                  try {
+                    return new Date(dateValue).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
+                  } catch {
+                    return "N/A"
+                  }
+                })()} />
+                <Field label="Remarks" value={(() => {
+                  const value = (sampleLotsData?.job_info as Record<string, unknown>)?.remarks as string ?? row?.remarks
+                  return value && value.trim() !== "" ? value : "N/A"
+                })()} />
               </div>
             </section>
 
@@ -396,6 +413,7 @@ function Field({ label, value }: { label: string; value?: string }) {
     </div>
   )
 }
+
 
 
 

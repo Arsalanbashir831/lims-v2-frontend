@@ -153,46 +153,9 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
   // Update form when initialData changes
   useEffect(() => {
     if (initialData) {
-      // In edit mode, we need to map specimen OIDs to specimen names for the Select component
-      if (isEditing && initialData.items && initialData.selectedRequest) {
-        const updatedItems = initialData.items.map(item => {
-          // Find the specimen name from the selectedRequest data
-          let specimenName = item.specimenId
-          
-          if (item.specimenOid && initialData.selectedRequest) {
-            // Look for the specimen in the request data
-            for (const sampleLot of initialData.selectedRequest.sample_lots || []) {
-              const specimen = sampleLot.specimens?.find((spec: { specimen_oid: string; specimen_id: string }) => spec.specimen_oid === item.specimenOid)
-              if (specimen && specimen.specimen_id) {
-                specimenName = specimen.specimen_id
-                break
-              }
-            }
-            
-            // Also check in global specimens if available
-            if (!specimenName || specimenName === item.specimenId) {
-              const globalSpecimen = initialData.selectedRequest.specimens?.find((spec: { specimen_oid: string; specimen_id: string }) => spec.specimen_oid === item.specimenOid)
-              if (globalSpecimen && globalSpecimen.specimen_id) {
-                specimenName = globalSpecimen.specimen_id
-              }
-            }
-          }   
-          return {
-            ...item,
-            specimenId: specimenName || item.specimenId
-          }
-        })
-        
-        setFormData(prev => ({ 
-          ...prev, 
-          ...initialData,
-          items: updatedItems
-        }))
-      } else {
-        setFormData(prev => ({ ...prev, ...initialData }))
-      }
+      setFormData(prev => ({ ...prev, ...initialData }))
     }
-  }, [initialData, isEditing])
+  }, [initialData])
 
   // Cleanup temporary URLs on unmount
   useEffect(() => {
@@ -206,6 +169,13 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
       })
     }
   }, [])
+
+  // Debug logging for hasImage property
+  useEffect(() => {
+    formData.items.forEach(item => {
+      console.log(`Item ${item.id} (${item.testMethodName}): hasImage = ${item.hasImage}`)
+    })
+  }, [formData.items])
 
   // Handle request selection
   const handleRequestSelect = async (requestId: string | undefined, request: {
@@ -735,10 +705,29 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
                       value={item.specimenId || ""} 
                       onValueChange={(value) => {
                         if (value && value !== "no-specimens") {
-                          const selectedRow = item.data.find(row => row.label === value)
+                          // Find the specimen OID from the selectedRequest data
+                          let specimenOid = ""
+                          if (formData.selectedRequest) {
+                            for (const sampleLot of formData.selectedRequest.sample_lots || []) {
+                              const specimen = sampleLot.specimens?.find((spec: { specimen_oid: string; specimen_id: string }) => spec.specimen_id === value)
+                              if (specimen) {
+                                specimenOid = specimen.specimen_oid
+                                break
+                              }
+                            }
+                            
+                            // Also check in global specimens if available
+                            if (!specimenOid) {
+                              const globalSpecimen = formData.selectedRequest.specimens?.find((spec: { specimen_oid: string; specimen_id: string }) => spec.specimen_id === value)
+                              if (globalSpecimen) {
+                                specimenOid = globalSpecimen.specimen_oid
+                              }
+                            }
+                          }
+                          
                           updateItem(item.id, { 
                             specimenId: value,
-                            specimenOid: String(selectedRow?.specimen_oid || "")
+                            specimenOid: specimenOid
                           })
                         }
                       }}
@@ -748,14 +737,14 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
                         <SelectValue placeholder="Select specimen" />
                       </SelectTrigger>
                       <SelectContent>
-                        {item.data
-                          .filter((row) => row.label && String(row.label).trim() !== "")
-                          .map((row) => (
-                            <SelectItem key={row.id} value={String(row.label)}>
-                              {row.label}
+                        {formData.selectedRequest?.specimens
+                          ?.filter((spec: { specimen_oid: string; specimen_id: string }) => spec.specimen_id && String(spec.specimen_id).trim() !== "")
+                          .map((spec: { specimen_oid: string; specimen_id: string }) => (
+                            <SelectItem key={spec.specimen_oid} value={String(spec.specimen_id)}>
+                              {spec.specimen_id}
                             </SelectItem>
                           ))}
-                        {item.data.filter((row) => row.label && String(row.label).trim() !== "").length === 0 && (
+                        {(!formData.selectedRequest?.specimens || formData.selectedRequest.specimens.length === 0) && (
                           <SelectItem value="no-specimens" disabled>
                             No specimens available
                           </SelectItem>

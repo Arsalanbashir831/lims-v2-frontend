@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { toast } from "sonner"
 import { TestReportForm } from "@/components/test-reports/test-report-form"
 import { Button } from "@/components/ui/button"
 import { PencilIcon, XIcon } from "lucide-react"
@@ -136,31 +135,40 @@ export default function EditTestReportPage() {
         return row
       }) || [{ id: "row-1", label: "Row 1", "col-0": "", "col-1": "", "col-2": "" }]
 
-      // Find specimen name from request_info
+      // Get specimen info from certificate items (primary source)
       const specimenOid = item.specimen_sections?.[0]?.specimen_id || ""
-      
-      // Look for specimen in both global specimens and sample lot specimens
-      let specimenInfo = report.request_info?.specimens?.find((spec: { specimen_oid: string; specimen_id: string }) => spec.specimen_oid === specimenOid)
-      
-      if (!specimenInfo) {
-        // Also check in sample lots specimens
-        for (const lot of report.request_info?.sample_lots || []) {
-          specimenInfo = lot.specimens?.find((spec: { specimen_oid: string; specimen_id: string }) => spec.specimen_oid === specimenOid)
-          if (specimenInfo) break
+      const specimenName = (item.specimen_sections?.[0] as any)?.specimen_name || "Unknown Specimen"
+
+      // Find the corresponding test method from the first API based on specimen name
+      let testMethodInfo = null
+      for (const lot of report.request_info?.sample_lots || []) {
+        const specimen = lot.specimens?.find((spec: { specimen_oid: string; specimen_id: string }) => spec.specimen_id === specimenName)
+        if (specimen) {
+          testMethodInfo = lot.test_method
+          break
         }
       }
-      
-      const specimenName = specimenInfo?.specimen_id || "Unknown Specimen"
+
+      // Debug logging for hasImage property
+      console.log(`Specimen ${specimenName}:`, {
+        testMethodInfo,
+        hasImage: testMethodInfo?.hasImage,
+        testMethodName: testMethodInfo?.test_name
+      })
 
       return {
         id: item._id,
         specimenId: specimenName,
         specimenOid: specimenOid,
-        testMethodId: report.request_info?.sample_lots?.[0]?.test_method?.test_method_oid || "",
-        testMethodName: report.request_info?.sample_lots?.[0]?.test_method?.test_name || "",
+        testMethodId: testMethodInfo?.test_method_oid || "",
+        testMethodName: testMethodInfo?.test_name || "",
         testEquipment: item.equipment_name || "",
         samplePrepMethod: item.sample_preparation_method || "",
-        sampleDescription: report.request_info?.sample_lots?.[0]?.item_description || "",
+        sampleDescription: testMethodInfo ? 
+          report.request_info?.sample_lots?.find((lot: any) => 
+            lot.specimens?.some((spec: any) => spec.specimen_id === specimenName)
+          )?.item_description || "" : 
+          report.request_info?.sample_lots?.[0]?.item_description || "",
         materialGrade: item.material_grade || "",
         heatNo: item.heat_no || "",
         temperature: item.temperature || "",
@@ -168,7 +176,7 @@ export default function EditTestReportPage() {
         comments: item.comments || "",
         columns: dynamicColumns,
         data: dynamicData,
-        hasImage: report.request_info?.sample_lots?.[0]?.test_method?.hasImage || false,
+        hasImage: testMethodInfo?.hasImage || false,
         images: item.specimen_sections?.[0]?.images_list?.map((img: { image_url: string; caption: string }) => ({
           image_url: img.image_url,
           caption: img.caption || ""

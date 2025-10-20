@@ -8,6 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
     Table,
     TableBody,
     TableCell,
@@ -17,7 +23,9 @@ import {
 } from "@/components/ui/table";
 import { ROUTES } from "@/constants/routes";
 import { BackButton } from "@/components/ui/back-button";
+import { ChevronDown, FileTextIcon, FileTypeIcon } from "lucide-react";
 import { useTestReportDetail, useTestReportItems } from "@/hooks/use-test-reports";
+import { useWordExport } from "@/hooks/use-word-export";
 import { toast } from "sonner";
 
 // Helper function to get full image URL
@@ -76,6 +84,12 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
     const { data: certificateItems, isLoading: itemsLoading, error: itemsError } = useTestReportItems(id || "", !!id);
 
     const loading = certificateLoading || itemsLoading;
+
+    // Word export functionality
+    const { exportToWord, isExporting } = useWordExport({
+        certificateData: certificate?.data,
+        certificateItems: certificateItems?.data || []
+    });
     
     useEffect(() => {
         const url = (process.env.NEXT_PUBLIC_FRONTEND_URL as string | undefined) ||
@@ -176,10 +190,16 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
                 };
             });
 
+            // Collect all non-empty comments from certificate items
+            const allComments = items
+                .map(item => item.comments)
+                .filter(comment => comment && comment.trim() !== "")
+                .map(comment => comment.trim());
+
             const transformedData: TestReportData = {
                 certificate: certificateInfo,
                 sections,
-                comments: items.length > 0 ? [items[0].comments || "N/A"] : [],
+                comments: allComments.length > 0 ? allComments : undefined,
                 testedBy: cert.tested_by || "N/A",
                 reviewedBy: cert.reviewed_by || "N/A",
             };
@@ -329,9 +349,22 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
                 )}
                 {showButton && (
                     <div className="space-x-2 flex items-center print:hidden">
-                        <Button variant="outline" onClick={exportPdf}>
-                            Export PDF
-                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" disabled={isExporting}>
+                                    {isExporting ? 'Exporting...' : 'Export'}
+                                    <ChevronDown className="ml-2 h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={exportToWord}>
+                                    <FileTypeIcon/> Export as Word
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={exportPdf}>
+                                    <FileTextIcon/> Export as PDF
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                         <BackButton variant="default" label="Back to List" href={ROUTES.APP.TEST_REPORTS.ROOT} />
                     </div>
                 )}
@@ -444,7 +477,11 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
             {data.comments && data.comments.length > 0 && (
                 <section className="mt-10 print:mt-6">
                     <div className="mb-2 text-xl font-semibold print:text-lg">Certificate Comments:</div>
-                    <pre className="whitespace-pre-wrap text-xs leading-6 text-center print:text-[10px]">{data.comments.join("\n")}</pre>
+                    <div className="max-w-2xl mx-auto">
+                        <pre className="whitespace-pre-wrap text-xs leading-6 text-left print:text-[10px] font-mono">
+                            {data.comments.join("\n")}
+                        </pre>
+                    </div>
                 </section>
             )}
 

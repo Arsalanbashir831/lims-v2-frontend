@@ -135,10 +135,8 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
   const [sampleIdMap, setSampleIdMap] = useState<Record<number, string>>({})
   const [itemDescriptionByRow, setItemDescriptionByRow] = useState<Record<string, string>>({})
   const [deletedSpecimenOids, setDeletedSpecimenOids] = useState<string[]>([])
-  const [testMethodNames, setTestMethodNames] = useState<Record<string, string>>({})
-  const [loadingTestMethodNames, setLoadingTestMethodNames] = useState(false)
   const [itemsInitialized, setItemsInitialized] = useState(false)
-
+  
   // Helper function to get consistent row ID - always use the row's ID
   const getRowId = useCallback((row: PreparationItem, index: number): string => {
     // Always use the row's ID, which should be stable
@@ -167,7 +165,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
         sample.test_methods.forEach((methodId: string) => allTestMethodIds.add(methodId))
       })
     }
-  }, [completeJob, items, testMethodNames])
+  }, [completeJob, items])
 
   // Helper available via old lib for UI rows
 
@@ -271,6 +269,7 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
     )
     const newItem = createPreparationItem({
       test_method: selectedSampleLot?.test_methods[0] || "",
+      item_description: selectedSampleLot?.description || "",
       no_of_specimens: 1,
       specimens: [],
     })
@@ -356,17 +355,17 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
     }
 
     // Validate required fields (using existing UI fields)
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i]
-      if (!String(item.dimensions || '').trim()) {
-        toast.error(`Dimensions are required for row ${i + 1}`)
-        return
-      }
-      if (!String(item.requested_by || '').trim()) {
-        toast.error(`Requested by is required for row ${i + 1}`)
-        return
-      }
-    }
+    // for (let i = 0; i < items.length; i++) {
+    //   const item = items[i]
+      // if (!String(item.dimensions || '').trim()) {
+      //   toast.error(`Dimensions are required for row ${i + 1}`)
+      //   return
+      // }
+      // if (!String(item.requested_by || '').trim()) {
+      //   toast.error(`Requested by is required for row ${i + 1}`)
+      //   return
+      // }
+    // }
 
     try {
       // Step 1: Handle specimen creation for new specimens (existing specimens are already handled in real-time)
@@ -415,9 +414,13 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
       }
 
       // Step 3: Create sample preparation payload
+      const selectedSampleLot = completeJob?.samples.find((s: SampleSummary) => 
+        String(sampleIdMap[s.id] || s.id) === requestId
+      )
+      
       const payload: NewSamplePreparation = {
         sample_lots: items.map((item) => ({
-          item_description: item.item_description || "",
+          item_description: selectedSampleLot?.description || "",
           sample_lot_id: requestId,
           test_method_oid: item.test_method || "",
           specimen_oids: item.specimens
@@ -574,24 +577,22 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                           >
                             <SelectTrigger className="w-56 h-10" disabled={readOnly}>
                               <SelectValue placeholder={
-                                loadingTestMethodNames 
-                                  ? "Loading names..." 
-                                  : availableMethods.length > 0 
-                                    ? "Select method" 
-                                    : "Loading methods..."
+                                availableMethods.length > 0 
+                                  ? "Select method" 
+                                  : "No methods available"
                               } />
                             </SelectTrigger>
                             <SelectContent>
                               {availableMethods.length > 0 ? (
                                 availableMethods.map((method: { id: string; name: string }) => {
-                                  const methodName = testMethodNames[method.id] || method.name || method.id
+                                  const methodName = method.name || method.id
                                   return (
                                     <SelectItem key={method.id} value={method.id}>{methodName}</SelectItem>
                                   )
                                 })
                                 ) : (
                                 <div className="px-2 py-1 text-sm text-muted-foreground">
-                                  {completeJob ? "No methods available" : "Loading methods..."}
+                                  No methods available
                                 </div>
                               )}
                             </SelectContent>
@@ -609,10 +610,10 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                         <TableCell>
                           <Input
                             placeholder="Item description"
-                            value={row.item_description || ""}
-                                onChange={(e) => updateItemField(rowId, "item_description" as any, e.target.value)}
-                            disabled={readOnly}
-                            className="w-[280px]"
+                            value={selectedSampleLot?.description || ""}
+                            disabled={true}
+                            className="w-[280px] bg-muted"
+                            readOnly
                           />
                         </TableCell>
                         

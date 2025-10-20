@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { SampleDetailForm } from "@/components/sample-details/form"
 import { sampleLotService } from "@/services/sample-lots.service"
 import { Skeleton } from "@/components/ui/skeleton"
+import { SampleLotApiResponse, TestMethod } from "@/types/sample-lots"
 
 export default function EditSampleDetailPage() {
   const params = useParams()
@@ -67,10 +68,14 @@ export default function EditSampleDetailPage() {
       updated_at: "", // Not available in API response
       sample_lots_count: data?.total || 0,
     },
-    lots: (data?.data || []).map(lot => ({
-      ...lot,
-      job_id: data?.job_info?.job_id || "",
-    })),
+    lots: (data?.data || []).map((lot) => {
+      const apiLot = lot as unknown as SampleLotApiResponse
+      return {
+        ...lot,
+        job_id: data?.job_info?.job_id || "",
+        test_method_oids: apiLot.test_methods?.map((tm: TestMethod) => tm.id) || [],
+      }
+    }),
   }
 
   return (
