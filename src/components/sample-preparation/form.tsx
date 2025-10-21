@@ -477,7 +477,8 @@ export function SamplePreparationForm({ initialData, readOnly = false }: Props) 
                 setRequestId("") // Clear sample lot when job changes
               }}
               placeholder="Select a job..."
-              disabled={readOnly || isEditing}
+              disabled={readOnly || isEditing} 
+              onlyJobsWithSampleDetails={true}
             />
           </div>
           {jobId && completeJob && (

@@ -246,6 +246,7 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
         Promise.all([...updates, ...creates, ...deletions])
           .then(() => {
              queryClient.invalidateQueries({ queryKey: ['sample-lots', jobDocumentId] })
+             queryClient.invalidateQueries({ queryKey: ['sample-information'] })
             toast.success("Sample lots updated")
             router.push(ROUTES.APP.SAMPLE_INFORMATION.ROOT)
           })
@@ -258,6 +259,7 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
         Promise.all(toCreate.map((payload) => sampleLotService.create(payload)))
           .then(() => {
             queryClient.invalidateQueries({ queryKey: ['sample-lots'] })
+            queryClient.invalidateQueries({ queryKey: ['sample-information'] })
             toast.success("Sample lots created")
             router.push(ROUTES.APP.SAMPLE_INFORMATION.ROOT)
           })
@@ -304,6 +306,7 @@ export function SampleDetailForm({ initial, readOnly = false }: Props) {
               placeholder="Select job..."
               disabled={readOnly || isEditingLotsForJob}
               selectedJob={selectedJob}
+              excludeJobsWithSampleDetails={true}
             />
           </div>
         </CardContent>

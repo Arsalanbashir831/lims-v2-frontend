@@ -36,7 +36,6 @@ export default function SampleInformationPage() {
     }, [error])
 
     const sampleData = data as SampleInformationListLike | undefined
-    console.log("Data:", data);
     // Check if data has 'data' property (new API structure) or 'results' (old structure)
     const items = (sampleData?.data ?? sampleData?.results ?? []) as Record<string, unknown>[]
     const totalCount = sampleData?.count ?? 0
