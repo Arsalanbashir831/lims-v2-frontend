@@ -2,11 +2,10 @@
 
 import Link from "next/link"
 import { useCallback, useMemo, useState, useEffect } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { useSampleInformation, useDeleteSampleInformation } from "@/hooks/use-sample-information"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/button"
-import { sampleInformationService } from "@/services/sample-information.service"
 import { ROUTES } from "@/constants/routes"
 import { toast } from "sonner"
 import { ServerPagination } from "@/components/ui/server-pagination"
@@ -19,16 +18,7 @@ import { PencilIcon, TrashIcon } from "lucide-react"
 import CompleteDetailsSidebar from "@/components/sample-information/complete-details-sidebar"
 import type { SampleInformationListLike } from "@/services/sample-information.service"
 
-// interface SampleInformationResponse {
-//   results?: unknown[]
-//   data?: unknown[]
-//   count: number
-//   next: string | null
-//   previous: string | null
-// }
-
 export default function SampleInformationPage() {
-    const queryClient = useQueryClient()
     const [currentPage, setCurrentPage] = useState(1)
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
@@ -95,13 +85,13 @@ export default function SampleInformationPage() {
             cell: ({ row }) => <div className="font-medium truncate max-w-[28ch]">{String(row.original.client_name ?? '')}</div>,
         },
         {
-            accessorKey: "end_user",
+            accessorKey: "received_by",
             header: ({ column }) => <DataTableColumnHeader column={column} title="End User" />,
             cell: ({ row }) => {
-                const endUser = (row.original as any).end_user ?? (row.original as any).received_by
+                const receivedBy = (row.original as any).received_by
                 return (
                     <div className="font-medium truncate max-w-[28ch]">
-                        {endUser ? String(endUser) : "N/A"}
+                        {receivedBy ? String(receivedBy) : "N/A"}
                     </div>
                 );
             },

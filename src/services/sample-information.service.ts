@@ -1,8 +1,6 @@
 import { API_ROUTES } from "@/constants/api-routes"
 import { api } from "@/lib/api/api"
 import {
-  SampleInformationResponseSchema,
-  SampleInformationListResponseSchema,
   SampleInformationResponse,
   CreateSampleInformationData,
   UpdateSampleInformationData,
@@ -20,9 +18,7 @@ function mapToUi(item: SampleInformationResponse): SampleInformation {
     project_name: (item as any).project_name ?? null,
     client_id: (item as any).client_id ?? "",
     client_name: (item as any).client_info?.client_name ?? (item as any).client_name ?? "",
-    // received_by in API represents the end user in UI context
-    end_user: (item as any).end_user ?? (item as any).received_by ?? null,
-    // received_by: (item as any).received_by ?? (item as any).end_user ?? null,
+    received_by: (item as any).received_by ?? (item as any).end_user ?? null,
     receive_date: (item as any).receive_date ?? null,
     remarks: (item as any).remarks ?? null,
     sample_lots_count: (item as any).sample_lots_count ?? 0,
@@ -86,7 +82,6 @@ export const sampleInformationService = {
           phone: string
         }
         project_name: string
-        end_user: string
         receive_date: string
         received_by: string
         remarks: string
@@ -105,9 +100,8 @@ export const sampleInformationService = {
         client_id: response.data.client_id,
         client_name: response.data.client_info.client_name,
         project_name: response.data.project_name,
-        end_user: response.data.received_by,
         receive_date: response.data.receive_date,
-        // received_by: response.data.received_by,
+        received_by: response.data.received_by,
         remarks: response.data.remarks,
         is_active: true,
         created_at: response.data.created_at,
@@ -142,7 +136,7 @@ export const sampleInformationService = {
         project_name: response.data.project_name,
         client_id: "", // Not provided in create response
         client_name: response.data.client_name,
-        end_user: undefined,
+        received_by: undefined,
         receive_date: undefined,
         remarks: undefined,
         sample_lots_count: 0,
@@ -178,7 +172,7 @@ export const sampleInformationService = {
         project_name: response.data.project_name,
         client_id: "", // Not provided in update response
         client_name: response.data.client_name,
-        end_user: undefined,
+        received_by: undefined,
         receive_date: undefined,
         remarks: undefined,
         sample_lots_count: 0,
