@@ -39,6 +39,10 @@ const nextConfig: NextConfig = {
      
     ],
   },
+  // Font optimization settings
+  experimental: {
+    // optimizeFonts: true, // This option doesn't exist in current Next.js version
+  },
 };
 
 export default nextConfig;

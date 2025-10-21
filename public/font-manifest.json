@@ -1,0 +1,12 @@
+{
+  "fonts": [
+    {
+      "family": "Geist",
+      "fallback": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif"
+    },
+    {
+      "family": "Geist Mono",
+      "fallback": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace"
+    }
+  ]
+}

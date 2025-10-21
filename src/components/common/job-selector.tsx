@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useSampleInformation, useSampleInformationWithoutDetails, useSampleInformationWithDetails } from "@/hooks/use-sample-information"
-import { SampleInformationResponse } from "@/services/sample-information.service"
 
 interface Job {
   job_id: string
@@ -53,15 +52,15 @@ export function JobSelector({
 
   // Use the optimized useSampleInformation hook - only load when popover is open
   // Choose the right hook based on filtering requirements
-  const { data: jobsData, isLoading: loading } = (() => {
-    if (excludeJobsWithSampleDetails) {
-      return useSampleInformationWithoutDetails(1, debouncedSearchQuery.trim() || undefined, open)
-    } else if (onlyJobsWithSampleDetails) {
-      return useSampleInformationWithDetails(1, debouncedSearchQuery.trim() || undefined, open)
-    } else {
-      return useSampleInformation(1, debouncedSearchQuery.trim() || undefined, open)
-    }
-  })()
+  const withoutDetailsQuery = useSampleInformationWithoutDetails(1, debouncedSearchQuery.trim() || undefined, open && excludeJobsWithSampleDetails)
+  const withDetailsQuery = useSampleInformationWithDetails(1, debouncedSearchQuery.trim() || undefined, open && onlyJobsWithSampleDetails)
+  const allJobsQuery = useSampleInformation(1, debouncedSearchQuery.trim() || undefined, open && !excludeJobsWithSampleDetails && !onlyJobsWithSampleDetails)
+  
+  const { data: jobsData, isLoading: loading } = excludeJobsWithSampleDetails 
+    ? withoutDetailsQuery 
+    : onlyJobsWithSampleDetails 
+    ? withDetailsQuery 
+    : allJobsQuery
   
   const jobs: Array<{
     id: string;

@@ -26,7 +26,6 @@ export function SampleInformationForm({ initial, readOnly = false }: Props) {
   const [projectName, setProjectName] = useState(initial?.project_name ?? "")
   const [clientId, setClientId] = useState("")
   const [selectedClient, setSelectedClient] = useState<Client | undefined>()
-  const [endUser, setEndUser] = useState(initial?.end_user ?? "")
   const [receiveDate, setReceiveDate] = useState(
     initial?.receive_date ? new Date(initial.receive_date).toISOString().split('T')[0] : ""
   )
@@ -83,7 +82,6 @@ export function SampleInformationForm({ initial, readOnly = false }: Props) {
     const payload: CreateSampleInformationData = {
       project_name: projectName.trim(),
       client_id: clientId.trim(),
-      end_user: endUser.trim() || undefined,
       receive_date: new Date(receiveDate.trim()).toISOString(),
       received_by: receivedBy.trim() || undefined,
       remarks: remarks.trim() || undefined,
@@ -157,11 +155,7 @@ export function SampleInformationForm({ initial, readOnly = false }: Props) {
            </div>
           <div className="grid gap-2">
             <Label>End User</Label>
-            <Input placeholder="End user organization" value={endUser} onChange={(e) => setEndUser(e.target.value)} disabled={readOnly} />
-          </div>
-          <div className="grid gap-2">
-            <Label>Received By</Label>
-            <Input placeholder="Receiver name" value={receivedBy} onChange={(e) => setReceivedBy(e.target.value)} disabled={readOnly} />
+            <Input placeholder="End user organization" value={receivedBy} onChange={(e) => setReceivedBy(e.target.value)} disabled={readOnly} />
           </div>
           <div className="grid gap-2">
             <Label>Receive Date</Label>

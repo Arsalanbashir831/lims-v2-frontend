@@ -40,9 +40,9 @@ export default function EditSamplePreparationPage() {
           try {
             // Search for the job by business ID to get the document ID
             const jobSearchResponse = await sampleInformationService.search(businessJobId, 1)
-            const matchingJob = jobSearchResponse.results.find((job: { job_id: string; id: string }) => job.job_id === businessJobId)
+            const matchingJob = jobSearchResponse.results?.find((job: Record<string, unknown>) => job.job_id === businessJobId)
             if (matchingJob) {
-              jobDocumentId = matchingJob.id
+              jobDocumentId = String(matchingJob.id)
             }
           } catch (error) {
             console.error('Failed to find job document ID:', error)

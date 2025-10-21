@@ -87,17 +87,16 @@ export function transformJobToTrackingRow(job: Job): TrackingRow {
     itemsCount: job.sample_lots_count,
     specimensCount: 0, // Will be calculated from sample lots if needed
     latestStatus: status,
-    endUser: job.end_user,
-    receivedBy: job.received_by,
-    remarks: job.remarks,
-    jobCreatedAt: job.job_created_at,
+    receivedBy: job.received_by || undefined,
+    remarks: job.remarks || undefined,
+    jobCreatedAt: job.job_created_at || undefined,
     // Default values for fields not in jobs API
     sampleType: "Unknown",
     materialGrade: "Unknown", 
     testMethods: [],
     equipmentUsed: [],
     operatorName: job.received_by || "Unknown",
-    notes: job.remarks,
+    notes: job.remarks || undefined,
     // Add dummy detailed data for now
     items: job.sample_lots_count > 0 ? [
       {
