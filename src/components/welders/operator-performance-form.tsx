@@ -1127,7 +1127,7 @@ export function OperatorPerformanceForm({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={addAutomaticWeldingEquipmentVariable}
+                onClick={addMachineWeldingEquipmentVariable}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Welder Variable
@@ -1197,11 +1197,9 @@ export function OperatorPerformanceForm({
               </div>
               <div className="p-1 border-r ">
                 {readOnly ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-sm">
-                      {test.testPerformed ? "N/A" : test.reportNo}
-                    </span>
-                  </div>
+                  <span className="text-sm text-center">
+                    {test.reportNo}
+                  </span>
                 ) : (
                   <Input
                     value={test.reportNo}
