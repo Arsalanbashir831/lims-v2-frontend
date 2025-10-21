@@ -909,7 +909,7 @@ export function WelderQualificationForm({
               <div className="p-1 border-r ">
                 {readOnly ? (
                   <span className="text-sm text-center">
-                    {test.isReportChecked ? "N/A" : test.reportNo}
+                    {test.reportNo}
                   </span>
                 ) : (
                   <Input
