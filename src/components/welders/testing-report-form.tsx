@@ -14,10 +14,32 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Plus, Trash2, ChevronDown, ChevronUp, Check, ChevronsUpDown } from "lucide-react";
 import { useCreateWelderTestReportBatch, useUpdateWelderTestReportBatch } from "@/hooks/use-welder-test-reports";
+import { useWelderCards } from "@/hooks/use-welder-cards";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 export type TestingReportRow = {
   welderId: string;
@@ -117,6 +139,10 @@ export function TestingReportForm({
     contractDetails: initialData?.contractDetails ?? "",
     client: initialData?.client ?? "",
   });
+
+  // Get welder cards for the selector
+  const { data: welderCardsData } = useWelderCards(1, "", 100);
+  const [openPopovers, setOpenPopovers] = useState<Record<number, boolean>>({});
 
   // Mutation for creating welder test reports
   const createWelderTestReportBatchMutation = useCreateWelderTestReportBatch();
@@ -225,6 +251,18 @@ export function TestingReportForm({
   };
 
   const appendRow = () => insertRow(formData.rows.length);
+
+  const handleWelderSelect = (rowIndex: number, welderCard: any) => {
+    setCell(rowIndex, "welderId", welderCard.welder_info?.operator_id || "");
+    setCell(rowIndex, "welderName", welderCard.welder_info?.operator_name || "");
+    setCell(rowIndex, "iqamaNumber", welderCard.welder_info?.iqama || "");
+    setOpenPopovers(prev => ({ ...prev, [rowIndex]: false }));
+    toast.success(`Welder ${welderCard.welder_info?.operator_name} selected`);
+  };
+
+  const setOpenPopover = (rowIndex: number, open: boolean) => {
+    setOpenPopovers(prev => ({ ...prev, [rowIndex]: open }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -375,7 +413,83 @@ export function TestingReportForm({
                   <TableRow key={`row-${rowIndex}`}>
                     {columns.map((col) => (
                       <TableCell key={`${rowIndex}-${col.key as string}`}>
-                        {col.type === "date" ? (
+                        {col.key === "welderId" ? (
+                          <Popover 
+                            open={openPopovers[rowIndex] || false} 
+                            onOpenChange={(open) => setOpenPopover(rowIndex, open)}
+                          >
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={openPopovers[rowIndex] || false}
+                                className="w-full justify-between text-sm"
+                                disabled={readOnly}
+                              >
+                                {row.welderId || "Select welder..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-full p-0">
+                              <Command>
+                                <CommandInput placeholder="Search welders..." />
+                                <CommandList>
+                                  <CommandEmpty>No welder found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {welderCardsData?.results?.map((card) => (
+                                      <CommandItem
+                                        key={card.id}
+                                        value={`${card.welder_info?.operator_name} ${card.welder_info?.operator_id} ${card.card_no}`}
+                                        onSelect={() => handleWelderSelect(rowIndex, card)}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            row.welderId === card.welder_info?.operator_id
+                                              ? "opacity-100"
+                                              : "opacity-0"
+                                          )}
+                                        />
+                                        <div className="flex flex-col">
+                                          <span className="font-medium">
+                                            {card.welder_info?.operator_name}
+                                          </span>
+                                          <span className="text-sm text-muted-foreground">
+                                            ID: {card.welder_info?.operator_id} | Card: {card.card_no}
+                                          </span>
+                                        </div>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        ) : col.key === "resultStatus" ? (
+                          <Select
+                            value={row.resultStatus}
+                            onValueChange={(value) => setCell(rowIndex, "resultStatus", value)}
+                            disabled={readOnly}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Completed">
+                                <div className="flex items-center gap-2">
+                                
+                                  <span>Completed</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="Rejected">
+                                <div className="flex items-center gap-2">
+                                 
+                                  <span>Rejected</span>
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : col.type === "date" ? (
                           <Input
                             type="date"
                             value={row[col.key as keyof TestingReportRow] as string}

@@ -62,7 +62,7 @@ export default function TestingReportPage() {
       id: string
       client_name?: string
       prepared_by?: string
-      welders_info?: Array<{
+      results?: Array<{
         welder_id: string
         welder_name: string
         iqama_number: string
@@ -70,20 +70,28 @@ export default function TestingReportPage() {
         date_of_inspection?: string
         result_status: string
       }>
+      welders_info?: Array<{
+        welder_id: string
+        welder_name: string
+        iqama_number: string
+        test_coupon_id?: string
+        result_status: string
+      }>
       welders_count?: number
       created_at: string
       updated_at?: string
     }) => {
-      if (batchReport.welders_info && Array.isArray(batchReport.welders_info)) {
-        batchReport.welders_info.forEach((welder) => {
+      // Use the results array which contains the complete data including date_of_inspection
+      if (batchReport.results && Array.isArray(batchReport.results)) {
+        batchReport.results.forEach((result) => {
           flattenedData.push({
-            id: `${batchReport.id}-${welder.welder_id}`, // Create unique ID
-            welder_id: welder.welder_id,
-            welder_name: welder.welder_name,
-            iqama_number: welder.iqama_number,
-            test_coupon_id: welder.test_coupon_id || '',
-            date_of_inspection: welder.date_of_inspection || '',
-            result_status: welder.result_status,
+            id: `${batchReport.id}-${result.welder_id}`, // Create unique ID
+            welder_id: result.welder_id,
+            welder_name: result.welder_name,
+            iqama_number: result.iqama_number,
+            test_coupon_id: result.test_coupon_id || '',
+            date_of_inspection: result.date_of_inspection || '',
+            result_status: result.result_status,
             created_at: batchReport.created_at,
             updated_at: batchReport.updated_at || batchReport.created_at,
           })
@@ -206,8 +214,12 @@ export default function TestingReportPage() {
             return <div className="font-medium text-muted-foreground">Invalid Date</div>
           }
           
-          // Use a consistent date format to avoid hydration issues
-          const formattedDate = date.toISOString().split('T')[0] // YYYY-MM-DD format
+          // Format the date as DD-MM-YYYY
+          const day = String(date.getDate()).padStart(2, '0')
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const year = date.getFullYear()
+          const formattedDate = `${day}-${month}-${year}`
+          
           return <div className="font-medium">{formattedDate}</div>
         } catch (error) {
           return <div className="font-medium text-muted-foreground">Invalid Date</div>
@@ -229,7 +241,7 @@ export default function TestingReportPage() {
           )
         }
         
-        const isPass = resultStatus.toLowerCase() === 'pass'
+        const isPass = resultStatus.toLowerCase() === 'completed'
         return (
           <div className={`px-2 py-1 rounded-full text-xs font-medium ${
             isPass
