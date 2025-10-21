@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { 
@@ -27,76 +26,112 @@ function getBreadcrumbs(pathname: string): Array<{ label: string; href?: string 
     return [{ label: "Dashboard" }]
   }
 
-  // Dynamic route mapping for automatic breadcrumb generation
-  const routeMappings: Record<string, { label: string; root: string }> = {
-    "test-methods": { label: "Test Methods", root: ROUTES.APP.TEST_METHODS.ROOT },
-    "proficiency-testing": { label: "Proficiency Testing", root: ROUTES.APP.PROFICIENCY_TESTING.ROOT },
-    "pqr": { label: "PQR", root: ROUTES.APP.WELDERS.PQR.ROOT },
-    "test-reports": { label: "Test Reports", root: ROUTES.APP.TEST_REPORTS.ROOT },
-    "sample-receiving": { label: "Sample Receiving", root: ROUTES.APP.SAMPLE_RECEIVING.ROOT },
-    "sample-preparation": { label: "Sample Preparation", root: ROUTES.APP.SAMPLE_PREPARATION.ROOT },
-    "lab-equipments": { label: "Lab Equipments", root: ROUTES.APP.LAB_EQUIPMENTS.ROOT },
-    "calibration-testing": { label: "Calibration Testing", root: ROUTES.APP.CALIBRATION_TESTING.ROOT },
-    "discarded-materials": { label: "Material Discards", root: ROUTES.APP.MATERIAL_DISCARDS.ROOT },
-    "tracking-database": { label: "Tracking Database", root: ROUTES.APP.TRACKING_DATABASE },
-  }
-
   // Split pathname into segments
   const segments = pathname.split("/").filter(Boolean)
   
-  // Check if this is a known route
-  const firstSegment = segments[0]
+  // Check if this is a lab or welders dashboard context
+  const isLabContext = segments[0] === "lab"
+  const isWeldersContext = segments[0] === "welders"
+  
+  // Remove the context segment (lab/welders) from processing
+  const processedSegments = (isLabContext || isWeldersContext) ? segments.slice(1) : segments
+  
+  // Handle dashboard routes specifically
+  if (processedSegments.length === 1 && processedSegments[0] === "dashboard") {
+    return [{ label: "Dashboard" }]
+  }
+
+  // Dynamic route mapping for automatic breadcrumb generation
+  const routeMappings: Record<string, { label: string; root?: string }> = {
+    // Lab routes
+    "clients": { label: "Clients" },
+    "test-methods": { label: "Test Methods" },
+    "proficiency-testing": { label: "Proficiency Testing" },
+    "test-reports": { label: "Test Reports" },
+    "sample-receiving": { label: "Sample Receiving" },
+    "sample-preparation": { label: "Sample Preparation" },
+    "sample-details": { label: "Sample Details" },
+    "sample-information": { label: "Sample Information" },
+    "lab-equipments": { label: "Lab Equipments" },
+    "calibration-testing": { label: "Calibration Testing" },
+    "discarded-materials": { label: "Material Discards" },
+    "tracking-database": { label: "Tracking Database" },
+    
+    // Welder routes
+    "welders": { label: "Welders" },
+    "welder-cards": { label: "Welder Cards" },
+    "welder-qualification": { label: "Welder Qualification" },
+    "operator-performance": { label: "Operator Performance" },
+    "testing-reports": { label: "Testing Reports" },
+    "pqr": { label: "PQR" },
+  }
+
+  // Build breadcrumbs based on processed segments
+  const breadcrumbs: Array<{ label: string; href?: string }> = [{ label: "Dashboard", href: isLabContext ? "/lab/dashboard" : isWeldersContext ? "/welders/dashboard" : ROUTES.APP.DASHBOARD }]
+  
+  if (processedSegments.length === 0) {
+    return breadcrumbs
+  }
+
+  const firstSegment = processedSegments[0]
   const routeMapping = routeMappings[firstSegment]
   
   if (routeMapping) {
-    const breadcrumbs: Array<{ label: string; href?: string }> = [{ label: "Dashboard", href: ROUTES.APP.DASHBOARD }]
+    // Build the root path with context
+    const contextPrefix = isLabContext ? "/lab" : isWeldersContext ? "/welders" : ""
+    const rootPath = `${contextPrefix}/${firstSegment}`
     
-    // Add the main section
-    if (segments.length === 1) {
-      // Just the main route (e.g., /test-methods)
+    if (processedSegments.length === 1) {
+      // Just the main route (e.g., /lab/clients, /welders/pqr)
       breadcrumbs.push({ label: routeMapping.label })
-    } else if (segments.length === 2) {
-      // Main route + action (e.g., /test-methods/new, /test-methods/123)
-      breadcrumbs.push({ label: routeMapping.label, href: routeMapping.root })
+    } else if (processedSegments.length === 2) {
+      // Main route + action (e.g., /lab/clients/new, /welders/pqr/123)
+      breadcrumbs.push({ label: routeMapping.label, href: rootPath })
       
-      if (segments[1] === "new") {
-        breadcrumbs.push({ label: `New ${routeMapping.label.slice(0, -1)}` })
+      if (processedSegments[1] === "new") {
+        breadcrumbs.push({ label: `New ${routeMapping.label.endsWith('s') ? routeMapping.label.slice(0, -1) : routeMapping.label}` })
       } else {
         // It's likely an ID, show a generic label
         breadcrumbs.push({ label: "Details" })
       }
-    } else if (segments.length === 3) {
-      // Main route + ID + action (e.g., /test-methods/123/edit, /test-methods/123/view)
-      breadcrumbs.push({ label: routeMapping.label, href: routeMapping.root })
-      breadcrumbs.push({ label: "Details" })
+    } else if (processedSegments.length === 3) {
+      // Main route + ID + action (e.g., /lab/clients/123/edit, /welders/pqr/123/view)
+      breadcrumbs.push({ label: routeMapping.label, href: rootPath })
+      breadcrumbs.push({ label: "Details" }) // No href - not clickable
       
-      const action = segments[2]
+      const action = processedSegments[2]
       if (action === "edit") {
-        breadcrumbs.push({ label: `Edit ${routeMapping.label}` })
+        breadcrumbs.push({ label: `Edit ${routeMapping.label.endsWith('s') ? routeMapping.label.slice(0, -1) : routeMapping.label}` })
       } else if (action === "view") {
-        breadcrumbs.push({ label: `View ${routeMapping.label}` })
+        breadcrumbs.push({ label: `View ${routeMapping.label.endsWith('s') ? routeMapping.label.slice(0, -1) : routeMapping.label}` })
       } else {
         breadcrumbs.push({ label: toTitle(action) })
       }
+    } else if (processedSegments.length === 4) {
+      // Main route + ID + sub-action + action (e.g., /lab/clients/123/sub/edit)
+      breadcrumbs.push({ label: routeMapping.label, href: rootPath })
+      breadcrumbs.push({ label: "Details" }) // No href - not clickable
+      breadcrumbs.push({ label: toTitle(processedSegments[2]) })
+      breadcrumbs.push({ label: toTitle(processedSegments[3]) })
     }
     
     return breadcrumbs
   }
 
-  // Fallback: generate breadcrumbs dynamically from path segments
-  const breadcrumbs: Array<{ label: string; href?: string }> = [{ label: "Dashboard", href: ROUTES.APP.DASHBOARD }]
-  let currentPath = ""
+  // Fallback: generate breadcrumbs dynamically from processed segments
+  const contextPrefix = isLabContext ? "/lab" : isWeldersContext ? "/welders" : ""
+  let currentPath = contextPrefix
   
-  for (let i = 0; i < segments.length; i++) {
-    currentPath += `/${segments[i]}`
-    const isLast = i === segments.length - 1
+  for (let i = 0; i < processedSegments.length; i++) {
+    currentPath += `/${processedSegments[i]}`
+    const isLast = i === processedSegments.length - 1
     
     if (isLast) {
       // Last segment - no href, just label
-      breadcrumbs.push({ label: toTitle(segments[i]) })
+      breadcrumbs.push({ label: toTitle(processedSegments[i]) })
     } else {
       // Middle segments - have href for navigation
-      breadcrumbs.push({ label: toTitle(segments[i]), href: currentPath })
+      breadcrumbs.push({ label: toTitle(processedSegments[i]), href: currentPath })
     }
   }
   
