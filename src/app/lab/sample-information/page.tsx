@@ -19,7 +19,8 @@ import { PencilIcon, TrashIcon } from "lucide-react"
 import CompleteDetailsSidebar from "@/components/sample-information/complete-details-sidebar"
 
 interface SampleInformationResponse {
-  results: unknown[]
+  results?: unknown[]
+  data?: unknown[]
   count: number
   next: string | null
   previous: string | null
@@ -44,7 +45,9 @@ export default function SampleInformationPage() {
     }, [error])
 
     const sampleData = data as SampleInformationResponse | undefined
-    const items = (sampleData?.results ?? []) as Record<string, unknown>[]
+    console.log("Data:", data);
+    // Check if data has 'data' property (new API structure) or 'results' (old structure)
+    const items = (sampleData?.data ?? sampleData?.results ?? []) as Record<string, unknown>[]
     const totalCount = sampleData?.count ?? 0
     const pageSize = 20
     const hasNext = sampleData?.next !== undefined ? Boolean(sampleData?.next) : totalCount > currentPage * pageSize
@@ -91,9 +94,17 @@ export default function SampleInformationPage() {
             cell: ({ row }) => <div className="font-medium truncate max-w-[28ch]">{String(row.original.client_name ?? '')}</div>,
         },
         {
-            accessorKey: "end_user",
+            accessorKey: "received_by",
             header: ({ column }) => <DataTableColumnHeader column={column} title="End User" />,
-            cell: ({ row }) => <div className="font-medium truncate max-w-[28ch]">{String(row.original.end_user ?? '') || "N/A"}</div>,
+            cell: ({ row }) => {
+                const receivedBy = row.original.received_by;
+                // console.log(receivedBy);
+                return (
+                    <div className="font-medium truncate max-w-[28ch]">
+                        {receivedBy ? String(receivedBy) : "N/A"}
+                    </div>
+                );
+            },
         },
         {
             accessorKey: "receive_date",
