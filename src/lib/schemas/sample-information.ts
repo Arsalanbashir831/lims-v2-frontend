@@ -6,7 +6,7 @@ export const SampleInformationSchema = z.object({
   client_id: z.string(),
   end_user: z.string().nullable().optional(),
   receive_date: z.union([z.string(), z.date()]).nullable().optional(),
-  received_by: z.string().nullable().optional(),
+  // received_by: z.string().nullable().optional(),
   project_name: z.string(),
   remarks: z.string().nullable().optional(),
   is_active: z.boolean().default(true),
@@ -14,7 +14,7 @@ export const SampleInformationSchema = z.object({
   updated_at: z.union([z.string(), z.date()]).optional(),
 })
 
-export type SampleInformation = z.infer<typeof SampleInformationSchema>
+// export type SampleInformation = z.infer<typeof SampleInformationSchema>
 
 export const SampleInformationResponseSchema = SampleInformationSchema.extend({
   id: z.string(),
@@ -44,5 +44,19 @@ export type CreateSampleInformationData = z.infer<typeof CreateSampleInformation
 
 export const UpdateSampleInformationSchema = CreateSampleInformationSchema.partial()
 export type UpdateSampleInformationData = z.infer<typeof UpdateSampleInformationSchema>
+
+
+export type SampleInformation = {
+  job_id: string
+  project_name: string | null | undefined
+  client_id: string
+  client_name?: string
+  end_user: string | null | undefined
+  // received_by?: string | null | undefined
+  receive_date: string | null | undefined
+  remarks?: string | null | undefined
+  sample_lots_count?: number
+  is_active: boolean
+}
 
 

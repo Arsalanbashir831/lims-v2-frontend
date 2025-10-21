@@ -17,14 +17,15 @@ import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { PencilIcon, TrashIcon } from "lucide-react"
 import CompleteDetailsSidebar from "@/components/sample-information/complete-details-sidebar"
+import type { SampleInformationListLike } from "@/services/sample-information.service"
 
-interface SampleInformationResponse {
-  results?: unknown[]
-  data?: unknown[]
-  count: number
-  next: string | null
-  previous: string | null
-}
+// interface SampleInformationResponse {
+//   results?: unknown[]
+//   data?: unknown[]
+//   count: number
+//   next: string | null
+//   previous: string | null
+// }
 
 export default function SampleInformationPage() {
     const queryClient = useQueryClient()
@@ -44,7 +45,7 @@ export default function SampleInformationPage() {
         }
     }, [error])
 
-    const sampleData = data as SampleInformationResponse | undefined
+    const sampleData = data as SampleInformationListLike | undefined
     console.log("Data:", data);
     // Check if data has 'data' property (new API structure) or 'results' (old structure)
     const items = (sampleData?.data ?? sampleData?.results ?? []) as Record<string, unknown>[]
@@ -94,14 +95,13 @@ export default function SampleInformationPage() {
             cell: ({ row }) => <div className="font-medium truncate max-w-[28ch]">{String(row.original.client_name ?? '')}</div>,
         },
         {
-            accessorKey: "received_by",
+            accessorKey: "end_user",
             header: ({ column }) => <DataTableColumnHeader column={column} title="End User" />,
             cell: ({ row }) => {
-                const receivedBy = row.original.received_by;
-                // console.log(receivedBy);
+                const endUser = (row.original as any).end_user ?? (row.original as any).received_by
                 return (
                     <div className="font-medium truncate max-w-[28ch]">
-                        {receivedBy ? String(receivedBy) : "N/A"}
+                        {endUser ? String(endUser) : "N/A"}
                     </div>
                 );
             },

@@ -8,10 +8,10 @@ export interface Job {
   client_id: string
   client_name: string
   project_name: string
-  end_user: string
+  end_user: string | null
   receive_date: string
-  received_by: string
-  remarks: string
+  // received_by: string | null
+  remarks: string | null
   sample_lots_count: number
   job_created_at: string
   created_at: string

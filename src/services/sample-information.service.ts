@@ -6,19 +6,10 @@ import {
   SampleInformationResponse,
   CreateSampleInformationData,
   UpdateSampleInformationData,
+  SampleInformation,
 } from "@/lib/schemas/sample-information"
 
-export type SampleInformation = {
-  job_id: string
-  project_name: string | null | undefined
-  client_id: string
-  client_name?: string
-  end_user: string | null | undefined
-  receive_date: string | null | undefined
-  remarks?: string | null | undefined
-  sample_lots_count?: number
-  is_active: boolean
-}
+
 
 // Re-export types from schema
 export type { SampleInformationResponse }
@@ -29,7 +20,9 @@ function mapToUi(item: SampleInformationResponse): SampleInformation {
     project_name: (item as any).project_name ?? null,
     client_id: (item as any).client_id ?? "",
     client_name: (item as any).client_info?.client_name ?? (item as any).client_name ?? "",
-    end_user: (item as any).end_user ?? null,
+    // received_by in API represents the end user in UI context
+    end_user: (item as any).end_user ?? (item as any).received_by ?? null,
+    // received_by: (item as any).received_by ?? (item as any).end_user ?? null,
     receive_date: (item as any).receive_date ?? null,
     remarks: (item as any).remarks ?? null,
     sample_lots_count: (item as any).sample_lots_count ?? 0,
@@ -37,8 +30,17 @@ function mapToUi(item: SampleInformationResponse): SampleInformation {
   }
 }
 
+// Shared list-like type for pages that need to handle either `results` or `data`
+export type SampleInformationListLike = {
+  results?: Record<string, unknown>[]
+  data?: Record<string, unknown>[]
+  count: number
+  next: string | null
+  previous: string | null
+}
+
 export const sampleInformationService = {
-  async getAll(page: number = 1): Promise<{ results: SampleInformation[]; count: number; next: string | null; previous: string | null }> {
+  async getAll(page: number = 1): Promise<SampleInformationListLike> {
     const endpoint = API_ROUTES.Lab_MANAGERS.ALL_SAMPLE_INFORMATION
     const response = await api.get(endpoint, { searchParams: { page: page.toString() } }).json<{
       status: string
@@ -103,9 +105,9 @@ export const sampleInformationService = {
         client_id: response.data.client_id,
         client_name: response.data.client_info.client_name,
         project_name: response.data.project_name,
-        end_user: response.data.end_user,
+        end_user: response.data.received_by,
         receive_date: response.data.receive_date,
-        received_by: response.data.received_by,
+        // received_by: response.data.received_by,
         remarks: response.data.remarks,
         is_active: true,
         created_at: response.data.created_at,
@@ -195,18 +197,7 @@ export const sampleInformationService = {
     await api.delete(endpoint)
   },
 
-  async search(query: string, page: number = 1): Promise<{ results: Array<{
-    id: string;
-    job_id: string;
-    client_name: string;
-    project_name: string;
-    sample_count: number;
-    is_active: boolean;
-    created_at: string;
-    updated_at: string;
-    created_by: string;
-    updated_by: string;
-  }>; count: number; next: string | null; previous: string | null }> {
+  async search(query: string, page: number = 1): Promise<SampleInformationListLike> {
     const endpoint = API_ROUTES.Lab_MANAGERS.SEARCH_SAMPLE_INFORMATION
     const response = await api.get(endpoint, { searchParams: { job_id: query, page: page.toString() } }).json<{
       status: string
