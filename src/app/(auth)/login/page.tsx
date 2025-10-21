@@ -8,8 +8,6 @@ import { useRouter } from "next/navigation"
 import { Eye, EyeOff, Lock, UserRound } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
-import { getHomeRouteForRole } from "@/lib/auth/roles"
-import { UserRole } from "@/lib/schemas/user"
 import { ROUTES } from "@/constants/routes"
 import { useAuth } from "@/hooks/use-auth"
 import { RedirectIfAuthenticated } from "@/components/auth/redirect-if-auth"
@@ -45,9 +43,9 @@ export default function LoginPage() {
     <RedirectIfAuthenticated>
       <div className="w-full">
         {/* Form Header */}
-        <div className="mb-6 text-left">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Sign In</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Enter your credentials to access your account</p>
+        <div className="mb-8 text-left">
+          <h1 className="text-3xl font-bold tracking-wide text-foreground mb-2">Sign In</h1>
+          <p className="text-sm text-muted-foreground">Enter your credentials to access your account</p>
         </div>
 
         {/* Login Form */}
@@ -57,7 +55,7 @@ export default function LoginPage() {
           <Label htmlFor="email" className="text-sm font-medium">Email</Label>
           <div className="relative">
             <UserRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input id="email" name="email" type="email" placeholder="Enter your Email" className="h-11 pl-10" required />
+            <Input id="email" name="email" type="email" placeholder="Enter your Email" className="h-12 pl-10" required />
           </div>
         </div>
 
@@ -70,14 +68,14 @@ export default function LoginPage() {
               name="password"
               type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
-              className="h-11 pl-10 pr-10"
+              className="h-12 pl-10 pr-10"
               required
             />
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="absolute right-0 top-0 h-11 px-3 py-2 hover:bg-transparent"
+              className="absolute right-0 top-0 h-12 px-3 py-2 hover:bg-transparent"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? (
@@ -91,7 +89,7 @@ export default function LoginPage() {
 
         <Button
           type="submit"
-          className="h-11 w-full text-base font-medium"
+          className="h-12 w-full text-base font-medium"
           disabled={isLoading}
         >
           {isLoading ? (
@@ -103,13 +101,6 @@ export default function LoginPage() {
             "Sign In"
           )}
         </Button>
-
-        <div className="text-center text-sm">
-          Don't have an account?{' '}
-          <Link href={ROUTES.AUTH.REGISTER} className="text-primary hover:underline">
-            Create account
-          </Link>
-        </div>
       </form>
     </div>
     </RedirectIfAuthenticated>
