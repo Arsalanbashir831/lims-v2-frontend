@@ -324,7 +324,7 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                           })}
                         </TableCell>
                         <TableCell>
-                          <Link href={ROUTES.APP.TEST_REPORTS.EDIT(certificate.id)}>
+                          <Link href={ROUTES.APP.TEST_REPORTS.VIEW(certificate.id)}>
                           <Button
                             variant="outline"
                             size="sm"
