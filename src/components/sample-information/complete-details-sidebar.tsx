@@ -217,7 +217,17 @@ export default function CompleteDetailsSidebar({
 
                                                                         <div>
                                                                             <span className="text-muted-foreground">Test Methods Name: </span>
-                                                                            <span className="font-medium">{lot.test_methods?.map((testMethod: { test_name: string }) => testMethod.test_name).join(", ") ?? "N/A"}</span>
+                                                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                                                {lot.test_methods?.length > 0 ? (
+                                                                                    lot.test_methods.map((testMethod: { test_name: string }, index: number) => (
+                                                                                        <Badge key={index} variant="outline" className="text-xs">
+                                                                                            {testMethod.test_name}
+                                                                                        </Badge>
+                                                                                    ))
+                                                                                ) : (
+                                                                                    <span className="text-sm text-muted-foreground">N/A</span>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
 
                                                                         <div>
