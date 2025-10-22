@@ -178,22 +178,7 @@ export default function CompleteDetailsSidebar({
                                             </div>
                                         ) : (
                                             <div className="space-y-3">
-                                                {(sidebarData?.data ?? []).map((lot: {
-                                                  id: string;
-                                                  item_no: string;
-                                                  description: string;
-                                                  sample_type: string;
-                                                  material_type: string;
-                                                  heat_no: string;
-                                                  mtc_no: string;
-                                                  storage_location: string;
-                                                  test_method_oids: string[];
-                                                  is_active: boolean;
-                                                  created_at: string;
-                                                  updated_at: string;
-                                                  created_by: string;
-                                                  updated_by: string;
-                                                }) => (
+                                                {(sidebarData?.data ?? []).map((lot: any) => (
                                                     <Card key={lot.id} className="border-l-4 border-l-primary">
                                                         <CardContent className="p-4">
                                                             <div className="flex items-start justify-between">
@@ -231,11 +216,23 @@ export default function CompleteDetailsSidebar({
                                                                         </div>
 
                                                                         <div>
+                                                                            <span className="text-muted-foreground">Test Methods Name: </span>
+                                                                            <span className="font-medium">{lot.test_methods?.map((testMethod: { test_name: string }) => testMethod.test_name).join(", ") ?? "N/A"}</span>
+                                                                        </div>
+
+                                                                        <div>
                                                                             <span className="text-muted-foreground">Test Methods Count: </span>
                                                                             <Badge variant="outline" className="text-xs">
-                                                                                {(lot as any).test_methods_count ?? 0}
+                                                                                {lot.test_methods_count ?? 0}
                                                                             </Badge>
                                                                         </div>
+
+                                                                        <div>
+                                                                            <span className="text-muted-foreground">Condition: </span>
+                                                                            <span className="font-medium">{lot.condition ?? "N/A"}</span>
+                                                                        </div>
+
+
                                                                         <div>
                                                                             <span className="text-muted-foreground">Created: </span>
                                                                             <span className="font-medium">{new Date(lot.created_at).toLocaleDateString()}</span>
