@@ -118,14 +118,12 @@ export default function CompleteDetailsSidebar({
                                         </div>
                                         <div className="text-sm font-medium">{sidebarData.job_info.client_name ?? "N/A"}</div>
                                     </div>
+                                    
                                     <div className="space-y-1">
                                         <div className="text-sm font-medium text-muted-foreground">End User</div>
-                                        <div className="text-sm">{(sidebarData.job_info as any).end_user ?? "N/A"}</div>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <div className="text-sm font-medium text-muted-foreground">Received By</div>
                                         <div className="text-sm">{(sidebarData.job_info as any).received_by ?? "N/A"}</div>
                                     </div>
+                                    
                                     <div className="space-y-1">
                                         <div className="text-sm font-medium text-muted-foreground">Remarks</div>
                                         <div className="text-sm">{(sidebarData.job_info as any).remarks ?? "N/A"}</div>
