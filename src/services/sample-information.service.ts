@@ -81,7 +81,7 @@ export const sampleInformationService = {
           email: string
           phone: string
         }
-        project_name: string
+        project: string
         receive_date: string
         received_by: string
         remarks: string
@@ -99,7 +99,7 @@ export const sampleInformationService = {
         job_id: response.data.job_id,
         client_id: response.data.client_id,
         client_name: response.data.client_info.client_name,
-        project_name: response.data.project_name,
+        project_name: response.data.project,
         receive_date: response.data.receive_date,
         received_by: response.data.received_by,
         remarks: response.data.remarks,
@@ -192,8 +192,111 @@ export const sampleInformationService = {
   },
 
   async search(query: string, page: number = 1): Promise<SampleInformationListLike> {
+    // If no query, return all data
+    if (!query.trim()) {
+      return this.getAll(page)
+    }
+    
     const endpoint = API_ROUTES.Lab_MANAGERS.SEARCH_SAMPLE_INFORMATION
-    const response = await api.get(endpoint, { searchParams: { job_id: query, page: page.toString() } }).json<{
+    
+    // Parse the combined query to extract individual search terms
+    const searchTerms = query.trim().split(/\s+/).filter(term => term.length > 0)
+    
+    // Create search parameters - try different approaches
+    const searchParams: Record<string, string> = { page: page.toString() }
+    
+    // Extract specific field searches
+    let jobId = ""
+    let projectName = ""
+    let clientName = ""
+    let endUser = ""
+    const generalTerms: string[] = []
+    
+    // Parse each term to see if it has a field prefix
+    searchTerms.forEach(term => {
+      if (term.includes(':')) {
+        const colonIndex = term.indexOf(':')
+        const field = term.substring(0, colonIndex)
+        const value = term.substring(colonIndex + 1)
+        
+        switch (field.toLowerCase()) {
+          case 'job_id':
+            jobId = value
+            break
+          case 'project':
+            projectName = value
+            break
+          case 'client':
+            clientName = value
+            break
+          case 'end_user':
+            endUser = value
+            break
+          default:
+            generalTerms.push(term)
+        }
+      } else {
+        generalTerms.push(term)
+      }
+    })
+    
+    // Try different search strategies
+    if (jobId) {
+      // If we have a specific job_id, use it
+      searchParams.job_id = jobId
+    } else if (generalTerms.length > 0) {
+      // Use the first general term as job_id (API limitation)
+      searchParams.job_id = generalTerms[0]
+    }
+    
+    // Add other search parameters if the API supports them
+    if (projectName) {
+      searchParams.project = projectName
+    }
+    if (clientName) {
+      searchParams.client_name = clientName
+    }
+    if (endUser) {
+      searchParams.received_by = endUser
+    }
+    
+    // Debug: Log the search parameters being sent
+    console.log('Search parameters being sent:', searchParams)
+    console.log('Original query:', query)
+    console.log('Extracted fields:', { jobId, projectName, clientName, endUser, generalTerms })
+    
+    // If we only have client/project/end_user filters but no job_id, get all data and filter client-side
+    if (!jobId && !generalTerms.length && (projectName || clientName || endUser)) {
+      console.log('Using client-side filtering for non-job_id searches')
+      const allData = await this.getAll(page)
+      
+      // Filter the results client-side
+      const filteredResults = allData.results?.filter((item: any) => {
+        let matches = true
+        
+        if (projectName && matches) {
+          matches = item.project_name?.toLowerCase().includes(projectName.toLowerCase()) || false
+        }
+        
+        if (clientName && matches) {
+          matches = item.client_name?.toLowerCase().includes(clientName.toLowerCase()) || false
+        }
+        
+        if (endUser && matches) {
+          matches = item.received_by?.toLowerCase().includes(endUser.toLowerCase()) || false
+        }
+        
+        return matches
+      }) || []
+      
+      return {
+        ...allData,
+        results: filteredResults,
+        count: filteredResults.length
+      }
+    }
+    
+    const response = await api.get(endpoint, { searchParams }).json<{
       status: string
       data: Record<string, unknown>[]
       total: number
@@ -202,12 +305,35 @@ export const sampleInformationService = {
     
     // Extract the data field from Django response
     if (response.status === "success" && response.data) {
+      // If we have additional filters (project, client, end_user), filter the results client-side
+      let filteredData = response.data
+      
+      if (projectName || clientName || endUser) {
+        filteredData = response.data.filter((item: any) => {
+          let matches = true
+          
+        if (projectName && matches) {
+          matches = item.project_name?.toLowerCase().includes(projectName.toLowerCase()) || false
+        }
+          
+          if (clientName && matches) {
+            matches = item.client_name?.toLowerCase().includes(clientName.toLowerCase()) || false
+          }
+          
+          if (endUser && matches) {
+            matches = item.received_by?.toLowerCase().includes(endUser.toLowerCase()) || false
+          }
+          
+          return matches
+        })
+      }
+      
       return {
-        results: response.data.map((item: Record<string, unknown>) => ({
+        results: filteredData.map((item: Record<string, unknown>) => ({
           ...mapToUi(item as any),
           id: (item.id || item._id) as string, // Ensure id field is included
         })) as any,
-        count: response.total,
+        count: filteredData.length,
         next: null, // Simplified for now
         previous: null, // Simplified for now
       }
