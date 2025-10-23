@@ -11,6 +11,7 @@ import { useTestReportDetail, useTestReportItems } from "@/hooks/use-test-report
 import { type DynamicColumn, type DynamicRow } from "@/components/pqr/form/dynamic-table"
 
 interface TestReportFormData {
+  certificate_id: string
   date_of_sampling: string
   date_of_testing: string
   issue_date: string
@@ -241,6 +242,7 @@ export default function EditTestReportPage() {
 
     // Set form data
     const mappedFormData: TestReportFormData = {
+      certificate_id: report.certificate_id || "",
       date_of_sampling: report.date_of_sampling,
       date_of_testing: report.date_of_testing,
       issue_date: report.issue_date,

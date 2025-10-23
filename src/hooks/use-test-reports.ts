@@ -82,8 +82,9 @@ export function useUpdateTestReport() {
         TEST_REPORTS_QUERY_KEYS.detail(id),
         updatedTestReport
       )
-      // Invalidate lists to ensure consistency
+      // Invalidate all test reports queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: TEST_REPORTS_QUERY_KEYS.lists() })
+      queryClient.invalidateQueries({ queryKey: TEST_REPORTS_QUERY_KEYS.all })
     },
   })
 }

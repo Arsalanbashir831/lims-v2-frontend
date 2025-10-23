@@ -97,6 +97,7 @@ export interface TestReportItem {
 
 export interface CreateTestReportData {
   request_id: string
+  certificate_id: string
   date_of_sampling: string
   date_of_testing: string
   issue_date: string

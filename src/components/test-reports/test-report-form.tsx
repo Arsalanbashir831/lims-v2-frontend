@@ -17,6 +17,7 @@ import { toast } from "sonner"
 // Types
 interface TestReportFormData {
   // Certificate Details
+  certificate_id: string
   date_of_sampling: string
   date_of_testing: string
   issue_date: string
@@ -129,6 +130,7 @@ function createDefaultRow(): DynamicRow {
 export function TestReportForm({ initialData, onSubmit, readOnly = false, isEditing = false, certificateId }: Props) {
   // Form State
   const [formData, setFormData] = useState<TestReportFormData>({
+    certificate_id: "",
     date_of_sampling: "",
     date_of_testing: "",
     issue_date: "",
@@ -289,7 +291,10 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
 
   // Update form field
   const updateField = (field: keyof TestReportFormData, value: string | TestReportFormData['selectedRequest'] | TestReportItem[]) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    setFormData(prev => ({ 
+      ...prev, 
+      [field]: field === 'certificate_id' ? (value as string || "") : value 
+    }))
   }
 
   // Update test item
@@ -439,6 +444,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
       if (isEditing && certificateId) {
         // Edit Mode: Update existing certificate
         const certificateUpdateData = {
+          certificate_id: formData.certificate_id,
           date_of_sampling: formData.date_of_sampling,
           date_of_testing: formData.date_of_testing,
           issue_date: formData.issue_date,
@@ -495,6 +501,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
         // Create Mode: Create new certificate
         const certificateData = {
           request_id: formData.selectedRequest.id,
+          certificate_id: formData.certificate_id,
           date_of_sampling: formData.date_of_sampling,
           date_of_testing: formData.date_of_testing,
           issue_date: formData.issue_date,
@@ -583,10 +590,19 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <div className="grid gap-2">
+              <Label>Test Certificate ID</Label>
+              <Input 
+                value={formData.certificate_id || ""}
+                onChange={(e) => updateField('certificate_id', e.target.value)}
+                disabled={readOnly}
+                placeholder="Enter certificate ID"
+              />
+            </div>
+            <div className="grid gap-2">
               <Label>Date of Sampling</Label>
               <Input 
                 type="date" 
-                value={formData.date_of_sampling}
+                value={formData.date_of_sampling || ""}
                 onChange={(e) => updateField('date_of_sampling', e.target.value)}
                 disabled={readOnly}
               />
@@ -595,7 +611,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
               <Label>Date of Testing</Label>
               <Input 
                 type="date" 
-                value={formData.date_of_testing}
+                value={formData.date_of_testing || ""}
                 onChange={(e) => updateField('date_of_testing', e.target.value)}
                 disabled={readOnly}
               />
@@ -604,7 +620,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
               <Label>Issue Date</Label>
               <Input 
                 type="date" 
-                value={formData.issue_date}
+                value={formData.issue_date || ""}
                 onChange={(e) => updateField('issue_date', e.target.value)}
                 disabled={readOnly}
               />
@@ -612,7 +628,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
             <div className="grid gap-2">
               <Label>Revision No</Label>
               <Input 
-                value={formData.revision_no}
+                value={formData.revision_no || ""}
                 onChange={(e) => updateField('revision_no', e.target.value)}
                 disabled={readOnly}
               />
@@ -620,7 +636,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
             <div className="grid gap-2">
               <Label>Customer Name & No</Label>
               <Input 
-                value={formData.customers_name_no}
+                value={formData.customers_name_no || ""}
                 onChange={(e) => updateField('customers_name_no', e.target.value)}
                 disabled={readOnly}
               />
@@ -628,7 +644,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
             <div className="grid gap-2">
               <Label>Attention</Label>
               <Input 
-                value={formData.atten}
+                value={formData.atten || ""}
                 onChange={(e) => updateField('atten', e.target.value)}
                 disabled={readOnly}
               />
@@ -636,7 +652,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
             <div className="grid gap-2">
               <Label>Customer PO</Label>
               <Input 
-                value={formData.customer_po}
+                value={formData.customer_po || ""}
                 onChange={(e) => updateField('customer_po', e.target.value)}
                 disabled={readOnly}
               />
@@ -644,7 +660,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
             <div className="grid gap-2">
               <Label>Tested By</Label>
               <Input 
-                value={formData.tested_by}
+                value={formData.tested_by || ""}
                 onChange={(e) => updateField('tested_by', e.target.value)}
                 disabled={readOnly}
               />
@@ -652,7 +668,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
             <div className="grid gap-2">
               <Label>Reviewed By</Label>
               <Input 
-                value={formData.reviewed_by}
+                value={formData.reviewed_by || ""}
                 onChange={(e) => updateField('reviewed_by', e.target.value)}
                 disabled={readOnly}
               />
@@ -753,7 +769,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
                     <div className="grid gap-2">
                       <Label>Test Equipment</Label>
                       <Input 
-                        value={item.testEquipment}
+                        value={item.testEquipment || ""}
                         onChange={(e) => updateItem(item.id, { testEquipment: e.target.value })}
                         disabled={readOnly}
                       />
@@ -761,7 +777,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
                     <div className="grid gap-2">
                       <Label>Sample Prep Method</Label>
                       <Input 
-                        value={item.samplePrepMethod}
+                        value={item.samplePrepMethod || ""}
                         onChange={(e) => updateItem(item.id, { samplePrepMethod: e.target.value })}
                         disabled={readOnly}
                       />
@@ -769,7 +785,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
                     <div className="grid gap-2">
                       <Label>Material Grade</Label>
                       <Input 
-                        value={item.materialGrade}
+                        value={item.materialGrade || ""}
                         onChange={(e) => updateItem(item.id, { materialGrade: e.target.value })}
                         disabled={readOnly}
                       />
@@ -777,7 +793,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
                     <div className="grid gap-2">
                       <Label>Heat No</Label>
                       <Input 
-                        value={item.heatNo}
+                        value={item.heatNo || ""}
                         onChange={(e) => updateItem(item.id, { heatNo: e.target.value })}
                         disabled={readOnly}
                       />
@@ -785,7 +801,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
                     <div className="grid gap-2">
                       <Label>Temperature</Label>
                       <Input 
-                        value={item.temperature}
+                        value={item.temperature || ""}
                         onChange={(e) => updateItem(item.id, { temperature: e.target.value })}
                         disabled={readOnly}
                       />
@@ -793,7 +809,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
                     <div className="grid gap-2">
                       <Label>Humidity</Label>
                       <Input 
-                        value={item.humidity}
+                        value={item.humidity || ""}
                         onChange={(e) => updateItem(item.id, { humidity: e.target.value })}
                         disabled={readOnly}
                       />
@@ -819,7 +835,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
                   <div className="grid gap-2">
                     <Label>Comments</Label>
                     <Textarea
-                      value={item.comments}
+                      value={item.comments || ""}
                       onChange={(e) => updateItem(item.id, { comments: e.target.value })}
                       disabled={readOnly}
                       rows={3}
@@ -874,7 +890,7 @@ export function TestReportForm({ initialData, onSubmit, readOnly = false, isEdit
                               </div>
                               <Input
                                 placeholder="Image caption..."
-                                value={image.caption}
+                                value={image.caption || ""}
                                 onChange={(e) => {
                                   const updatedImages = [...item.images]
                                   updatedImages[imageIndex] = { ...updatedImages[imageIndex], caption: e.target.value }
