@@ -9,6 +9,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { DataTablePagination } from "@/components/ui/data-table-pagination"
 import { FilterSearch } from "@/components/ui/filter-search"
+import { AdvancedSearch } from "@/components/test-reports/advanced-search"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { useTestReports, useDeleteTestReport } from "@/hooks/use-test-reports"
 import { type TestReport } from "@/services/test-reports.service"
@@ -155,6 +156,11 @@ export default function TestReportsPage() {
     setCurrentPage(1)
   }, [])
 
+  const handleAdvancedSearch = useCallback((query: string) => {
+    setSearchQuery(query)
+    setCurrentPage(1)
+  }, [])
+
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page)
   }, [])
@@ -187,13 +193,10 @@ export default function TestReportsPage() {
         }
         
         return (
-          <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
-            <FilterSearch
-              placeholder="Search by certificate ID, customer, PO, or request no..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="w-full"
-              inputClassName="max-w-md"
+          <div className="flex flex-col md:flex-row items-center gap-10 w-full">
+            <AdvancedSearch
+              onSearch={handleAdvancedSearch}
+              isLoading={isFetching}
             />
             <div className="flex items-center gap-2 w-full md:w-auto">
               <DataTableViewOptions table={table} />
@@ -215,7 +218,7 @@ export default function TestReportsPage() {
             </div>
           </div>
         )
-      }, [deleteMutation, searchQuery, handleSearchChange])}
+      }, [deleteMutation, handleAdvancedSearch, isFetching])}
       footer={useCallback((table: TanstackTable<TestReport>) => <DataTablePagination table={table} />, [])}
     />
   )

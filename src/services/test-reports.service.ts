@@ -169,8 +169,48 @@ export const testReportsService = {
   },
 
   async search(query: string, page: number = 1): Promise<TestReportListResponse> {
-    const response = await api.get(`${API_ROUTES.Lab_MANAGERS.ALL_CERTIFICATES}?search=${encodeURIComponent(query)}&page=${page}`).json()
-    return response as TestReportListResponse
+    // If no query, return all data
+    if (!query.trim()) {
+      return this.getAll(page)
+    }
+
+    // For simple search, get all data and filter client-side
+    const allData = await this.getAll(page)
+
+    // Filter the results client-side across all fields
+    const filteredResults = allData.data?.filter((item: TestReport) => {
+      const searchTerm = query.toLowerCase()
+
+      // Search across multiple fields
+      const certificateMatch = item.certificate_id?.toLowerCase().includes(searchTerm) || false
+      const requestMatch = item.request_info?.request_no?.toLowerCase().includes(searchTerm) || false
+      const customerMatch = item.customers_name_no?.toLowerCase().includes(searchTerm) || false
+      const poMatch = item.customer_po?.toLowerCase().includes(searchTerm) || false
+
+      // Also try searching for individual words in the query
+      const searchWords = searchTerm.split(/\s+/).filter(word => word.length > 0)
+      let wordMatch = false
+
+      if (searchWords.length > 1) {
+        // If multiple words, check if any word matches any field
+        wordMatch = searchWords.some(word => 
+          item.certificate_id?.toLowerCase().includes(word) ||
+          item.request_info?.request_no?.toLowerCase().includes(word) ||
+          item.customers_name_no?.toLowerCase().includes(word) ||
+          item.customer_po?.toLowerCase().includes(word)
+        )
+      }
+
+      const isMatch = certificateMatch || requestMatch || customerMatch || poMatch || wordMatch
+
+      return isMatch
+    }) || []
+
+    return {
+      status: allData.status,
+      data: filteredResults,
+      total: filteredResults.length,
+    }
   },
 
   async getById(id: string): Promise<TestReportResponse> {
