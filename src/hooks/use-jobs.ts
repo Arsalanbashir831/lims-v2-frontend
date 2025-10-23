@@ -49,3 +49,13 @@ export function useJobsWithCertificates(params: JobsSearchParams = {}) {
     placeholderData: (previousData) => previousData,
   })
 }
+
+export function useJobsSearchWithCertificates(query: string, params: JobsSearchParams = {}) {
+  return useQuery({
+    queryKey: [...JOBS_QUERY_KEYS.list({ ...params, search: query }), 'with-certificates'],
+    queryFn: () => jobsService.searchWithCertificates(query, params),
+    enabled: !!query.trim(),
+    staleTime: 2 * 60 * 1000, // 2 minutes for search results
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  })
+}

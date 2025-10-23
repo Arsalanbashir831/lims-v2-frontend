@@ -104,11 +104,8 @@ export function TrackingDrawer({ open, onOpenChange, row }: Props) {
                 <Field label="Client" value={row?.clientName ?? "N/A"} />
                 <Field label="Project" value={row?.projectName ?? "N/A"} />
                 <Field label="Items" value={String(sampleLotsData?.total ?? row?.itemsCount ?? 0) ?? "N/A"} />
+                
                 <Field label="End User" value={(() => {
-                  const value = (sampleLotsData?.job_info as Record<string, unknown>)?.end_user as string ?? row?.endUser
-                  return value && value.trim() !== "" ? value : "N/A"
-                })()} />
-                <Field label="Received By" value={(() => {
                   const value = (sampleLotsData?.job_info as Record<string, unknown>)?.received_by as string ?? row?.receivedBy
                   return value && value.trim() !== "" ? value : "N/A"
                 })()} />
