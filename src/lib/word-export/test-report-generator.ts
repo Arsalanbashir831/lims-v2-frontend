@@ -68,14 +68,23 @@ export class TestReportWordGenerator {
 
   async generateWordDocument(): Promise<void> {
     try {
+      console.log('Starting Word document generation...')
+      
       // Pre-load required assets
       const assets = await this.loadAssets()
+      console.log('Assets loaded:', {
+        gripcoLogo: assets.gripcoLogoBase64 ? 'Yes' : 'No',
+        qrCode: assets.qrCodeBase64 ? 'Yes' : 'No',
+        gripcoLength: assets.gripcoLogoBase64?.length || 0,
+        qrCodeLength: assets.qrCodeBase64?.length || 0
+      })
       
       // Generate document content
       const documentHTML = await this.generateDocumentHTML(assets)
       
       // Create and download Word document
       const filename = `Test-Report-${this.certificateData.certificate_id}`
+      console.log('Creating Word document with filename:', filename)
       createWordDocument(documentHTML, filename, assets)
     } catch (error) {
       console.error('Error generating Word document:', error)
@@ -85,36 +94,46 @@ export class TestReportWordGenerator {
 
   private async loadAssets(): Promise<{
     gripcoLogoBase64: string
-    iasLogoBase64: string
     qrCodeBase64: string
   }> {
     const assets = {
       gripcoLogoBase64: '',
-      iasLogoBase64: '',
       qrCodeBase64: ''
     }
 
     try {
-      // Load logos
+      // Load logos with retry mechanism
       try {
-        assets.gripcoLogoBase64 = await fetchAsDataURI('/gripco-logo.webp')
+        // Load Gripco logo PNG directly (Word compatible format)
+        try {
+          const logoData = await fetchAsDataURI('/gripco-logo.png')
+          if (logoData && logoData.startsWith('data:image/')) {
+            assets.gripcoLogoBase64 = logoData
+            console.log('Gripco logo loaded successfully from PNG')
+            console.log(`Gripco logo data length: ${logoData.length}`)
+          } else {
+            console.warn('Invalid logo data')
+          }
+        } catch (e) {
+          console.warn('Failed to load Gripco logo:', e)
+        }
       } catch (e) {
-        console.warn('Failed to load Gripco logo:', e)
+        console.warn('Gripco logo loading failed:', e)
       }
 
       try {
-        assets.iasLogoBase64 = await fetchAsDataURI('/ias-logo.webp')
-      } catch (e) {
-        console.warn('Failed to load IAS logo:', e)
-      }
-
-      // Generate QR code
-      try {
-        const livePreviewUrl = `${process.env.NEXT_PUBLIC_FRONTEND_URL}/public/test-report/${this.certificateData.id}`
-        assets.qrCodeBase64 = await generateQRCodeDataURI(livePreviewUrl, { width: 90, margin: 1 })
+        // Generate QR code for the certificate
+        const qrCodeText = `Certificate ID: ${this.certificateData.certificate_id}\nJob ID: ${this.certificateData.job_id}\nDate: ${this.certificateData.issue_date}`
+        assets.qrCodeBase64 = await generateQRCodeDataURI(qrCodeText, {
+          width: 100,
+          margin: 2
+        })
+        console.log('QR code generated successfully')
       } catch (e) {
         console.warn('Failed to generate QR code:', e)
       }
+
+      // QR code removed - only using logos in header
     } catch (error) {
       console.error('Error loading assets:', error)
     }
@@ -124,10 +143,11 @@ export class TestReportWordGenerator {
 
   private async generateDocumentHTML(assets: {
     gripcoLogoBase64: string
-    iasLogoBase64: string
     qrCodeBase64: string
   }): Promise<string> {
-    let documentHTML = ''
+    let documentHTML = `
+      <div style="font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.4; color: #333; max-width: 100%; margin: 0; padding: 0;">
+    `
 
     // Add header
     documentHTML += this.generateHeader()
@@ -140,15 +160,21 @@ export class TestReportWordGenerator {
     
     // Add signatures
     documentHTML += this.generateSignatures()
+    
+    // Add footer
+    documentHTML += this.generateFooter(assets)
 
+    documentHTML += `</div>`
     return documentHTML
   }
 
   private generateHeader(): string {
     return `
-      <h1 style="text-align: center; font-weight: bold; margin: 12pt 0; text-transform: uppercase; font-size: 16pt;">
-        Test Certificate
-      </h1>
+      <div style="text-align: center; margin: 12pt 0;">
+        <h1 style="font-weight: bold; margin: 0; text-transform: uppercase; font-size: 18pt; color: #333;">
+          TEST CERTIFICATE
+        </h1>
+      </div>
     `
   }
 
@@ -156,20 +182,21 @@ export class TestReportWordGenerator {
     return `
       <table style="width: 100%; border: none; margin: 12pt 0;">
         <tr>
-          <td style="width: 50%; vertical-align: top; border: none; padding: 4pt;">
-            <p style="margin: 3pt 0; font-size: 10pt;"><b>Client Name:</b> ${safeValue(this.certificateData.client_name)}</p>
-            <p style="margin: 3pt 0; font-size: 10pt;"><b>PO #:</b> ${safeValue(this.certificateData.customer_po)}</p>
-            <p style="margin: 3pt 0; font-size: 10pt;"><b>Customer Name:</b> ${safeValue(this.certificateData.customers_name_no)}</p>
-            <p style="margin: 3pt 0; font-size: 10pt;"><b>Attn:</b> ${safeValue(this.certificateData.atten)}</p>
-            <p style="margin: 3pt 0; font-size: 10pt;"><b>Project Name:</b> ${safeValue(this.certificateData.project_name)}</p>
-            <p style="margin: 3pt 0; font-size: 10pt;"><b>Job ID:</b> ${safeValue(this.certificateData.job_id)}</p>
+          <td style="width: 60%; vertical-align: top; border: none; padding: 4pt;">
+            <p style="margin: 3pt 0; font-size: 11pt;"><b>Client Name:</b> ${safeValue(this.certificateData.client_name)}</p>
+            <p style="margin: 3pt 0; font-size: 11pt;"><b>PO #:</b> ${safeValue(this.certificateData.customer_po)}</p>
+            <p style="margin: 3pt 0; font-size: 11pt;"><b>Customer Name:</b> ${safeValue(this.certificateData.customers_name_no)}</p>
+            <p style="margin: 3pt 0; font-size: 11pt;"><b>Attn:</b> ${safeValue(this.certificateData.atten)}</p>
+            <p style="margin: 3pt 0; font-size: 11pt;"><b>Project Name:</b> ${safeValue(this.certificateData.project_name)}</p>
+            <p style="margin: 3pt 0; font-size: 11pt;"><b>Name of Laboratory:</b> GLOBAL RESOURCE INSPECTION CONTRACTING COMPANY-DAMMAM</p>
+            <p style="margin: 3pt 0; font-size: 11pt;"><b>Address:</b> P.O. Box 100, Dammam 31411, Kingdom of Saudi Arabia</p>
           </td>
-          <td style="width: 50%; vertical-align: top; border: none; padding: 4pt; text-align: right;">
-            <p style="margin: 3pt 0; font-size: 10pt;"><b>Date of Sampling:</b> ${formatDate(this.certificateData.date_of_sampling)}</p>
-            <p style="margin: 3pt 0; font-size: 10pt;"><b>Date of Testing:</b> ${formatDate(this.certificateData.date_of_testing)}</p>
-            <p style="margin: 3pt 0; font-size: 10pt;"><b>Issue Date:</b> ${formatDate(this.certificateData.issue_date)}</p>
-            <p style="margin: 3pt 0; font-size: 10pt;"><b>Certificate ID:</b> ${safeValue(this.certificateData.certificate_id)}</p>
-            <p style="margin: 3pt 0; font-size: 10pt;"><b>Revision #:</b> ${safeValue(this.certificateData.revision_no)}</p>
+          <td style="width: 40%; vertical-align: top; border: none; padding: 4pt;">
+            <p style="margin: 3pt 0; font-size: 11pt;"><b>Date of Sampling:</b> ${formatDate(this.certificateData.date_of_sampling)}</p>
+            <p style="margin: 3pt 0; font-size: 11pt;"><b>Date of Testing:</b> ${formatDate(this.certificateData.date_of_testing)}</p>
+            <p style="margin: 3pt 0; font-size: 11pt;"><b>Issue Date:</b> ${formatDate(this.certificateData.issue_date)}</p>
+            <p style="margin: 3pt 0; font-size: 11pt;"><b>Gripco Ref No:</b> ${safeValue(this.certificateData.job_id)}</p>
+            <p style="margin: 3pt 0; font-size: 11pt;"><b>Revision #:</b> ${safeValue(this.certificateData.revision_no)}</p>
           </td>
         </tr>
       </table>
@@ -178,7 +205,6 @@ export class TestReportWordGenerator {
 
   private async generateTestResults(assets: {
     gripcoLogoBase64: string
-    iasLogoBase64: string
     qrCodeBase64: string
   }): Promise<string> {
     let testResultsHTML = ''
@@ -208,22 +234,24 @@ export class TestReportWordGenerator {
 
         // Add specimen details
         testResultsHTML += `
-          <table style="width: 100%; border: none; margin: 8pt 0;">
-            <tr>
-              <td style="width: 60%; vertical-align: top; border: none; padding: 4pt;">
-                <p style="margin: 3pt 0; font-size: 10pt;"><b>Test Equipment:</b> ${safeValue(item.equipment_name)}</p>
-                <p style="margin: 3pt 0; font-size: 10pt;"><b>Test Method:</b> ${safeValue(testMethodInfo?.test_name)}</p>
-                <p style="margin: 3pt 0; font-size: 10pt;"><b>Sample Prep Method:</b> ${safeValue(item.sample_preparation_method)}</p>
-                <p style="margin: 3pt 0; font-size: 10pt;"><b>Equipment Calibration:</b> ${safeValue(item.equipment_calibration)}</p>
-              </td>
-              <td style="width: 40%; vertical-align: top; border: none; padding: 4pt;">
-                <p style="margin: 3pt 0; font-size: 10pt;"><b>Material Grade:</b> ${safeValue(item.material_grade)}</p>
-                <p style="margin: 3pt 0; font-size: 10pt;"><b>Temperature:</b> ${safeValue(item.temperature)}</p>
-                <p style="margin: 3pt 0; font-size: 10pt;"><b>Humidity:</b> ${safeValue(item.humidity)}</p>
-                <p style="margin: 3pt 0; font-size: 10pt;"><b>Heat No:</b> ${safeValue(item.heat_no)}</p>
-              </td>
-            </tr>
-          </table>
+          <div style="margin: 8pt 0;">
+            <table style="width: 100%; border: none; border-collapse: collapse; margin: 0;">
+              <tr>
+                <td style="width: 50%; vertical-align: top; border: none !important; padding: 0 8pt 0 0;">
+                  <p style="margin: 2pt 0; font-size: 11pt;"><b>Test Equipment:</b> ${safeValue(item.equipment_name)}</p>
+                  <p style="margin: 2pt 0; font-size: 11pt;"><b>Test Method:</b> ${safeValue(testMethodInfo?.test_name)}</p>
+                  <p style="margin: 2pt 0; font-size: 11pt;"><b>Sample Prep Method:</b> ${safeValue(item.sample_preparation_method)}</p>
+                  <p style="margin: 2pt 0; font-size: 11pt;"><b>Sample Description:</b> N/A</p>
+                </td>
+                <td style="width: 50%; vertical-align: top; border: none !important; padding: 0 0 0 8pt;">
+                  <p style="margin: 2pt 0; font-size: 11pt;"><b>Material Grade:</b> ${safeValue(item.material_grade)}</p>
+                  <p style="margin: 2pt 0; font-size: 11pt;"><b>Heat No.:</b> ${safeValue(item.heat_no)}</p>
+                  <p style="margin: 2pt 0; font-size: 11pt;"><b>Temperature:</b> ${safeValue(item.temperature)}</p>
+                  <p style="margin: 2pt 0; font-size: 11pt;"><b>Humidity:</b> ${safeValue(item.humidity)}</p>
+                </td>
+              </tr>
+            </table>
+          </div>
         `
 
         // Add test results table
@@ -233,8 +261,17 @@ export class TestReportWordGenerator {
         if (specimenInfo.images_list && specimenInfo.images_list.length > 0) {
           for (const image of specimenInfo.images_list) {
             if (image.image_url && image.image_url.trim() !== '') {
+              // Convert relative URLs to full URLs
+              let fullImageUrl = image.image_url
+              if (!fullImageUrl.startsWith('http') && !fullImageUrl.startsWith('blob:')) {
+                // Try to use a proxy approach first
+                const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(fullImageUrl)}`
+                fullImageUrl = proxyUrl
+              }
+              console.log('Processing image URL:', fullImageUrl)
+              
               imagesForEnd.push({
-                imageUrl: image.image_url,
+                imageUrl: fullImageUrl,
                 note: image.caption || '',
                 reference: `${safeValue(testMethodInfo?.test_name)} - Specimen ID (${safeValue(specimenInfo.specimen_name || specimenInfo.specimen_id)})`
               })
@@ -244,23 +281,113 @@ export class TestReportWordGenerator {
       }
     }
 
-    // Render all collected images at the end
-    if (imagesForEnd.length > 0) {
-      testResultsHTML += '<div class="page-break"></div>'
-      for (const img of imagesForEnd) {
+      // Render all collected images at the end
+      if (imagesForEnd.length > 0) {
+        testResultsHTML += '<div class="page-break" style="page-break-before: always; clear: both;"></div>'
+        for (const img of imagesForEnd) {
         try {
-          const base64 = await fetchAsDataURI(img.imageUrl)
-          if (base64) {
+          console.log('Loading image:', img.imageUrl)
+          
+          // Try multiple approaches to load the image
+          let base64 = null
+          let imageLoaded = false
+          
+          // Approach 1: Direct fetch
+          try {
+            base64 = await fetchAsDataURI(img.imageUrl)
+            if (base64 && base64.startsWith('data:image/')) {
+              imageLoaded = true
+              console.log('Image loaded successfully via direct fetch')
+            }
+          } catch (e) {
+            console.warn('Direct fetch failed:', e)
+          }
+          
+          // Approach 2: Try with different URL formats
+          if (!imageLoaded) {
+            try {
+              // Try with different backend URLs
+              const possibleUrls = [
+                img.imageUrl,
+                img.imageUrl.replace('/api/proxy-image?url=', ''),
+                img.imageUrl.replace('http://192.168.1.2:8000', 'http://localhost:8000'),
+                img.imageUrl.replace('http://localhost:8000', 'http://192.168.1.2:8000'),
+                img.imageUrl.replace(/^https?:\/\/[^\/]+/, window.location.origin)
+              ]
+              
+              for (const url of possibleUrls) {
+                if (url !== img.imageUrl) {
+                  console.log('Trying alternative URL:', url)
+                  try {
+                    base64 = await fetchAsDataURI(url)
+                    if (base64 && base64.startsWith('data:image/')) {
+                      imageLoaded = true
+                      console.log('Image loaded successfully via alternative URL')
+                      break
+                    }
+                  } catch (e) {
+                    console.warn('Alternative URL failed:', e)
+                  }
+                }
+              }
+            } catch (e) {
+              console.warn('Alternative URL approach failed:', e)
+            }
+          }
+          
+          if (imageLoaded && base64) {
             testResultsHTML += `
-              <div style="text-align: center; margin: 12pt 0;" class="avoid-break">
+              <div style="text-align: center; margin: 12pt 0; page-break-inside: avoid;" class="avoid-break">
                 <p style="margin-bottom: 6pt; font-weight: bold; text-align: left;">${img.reference}</p>
-                <img src="${base64}" style="max-width: 100%; height: auto;" alt="${img.reference}">
+                   <img src="${base64}" style="width: 40pt; height: 40pt; object-fit: contain; display: block; margin: 0 auto;" alt="${img.reference}">
+                ${img.note && String(img.note).trim() !== '' ? `<p style="font-style: italic; color:#6a7282; margin: 4pt 0;">${img.note}</p>` : ''}
+              </div>
+            `
+          } else {
+            console.warn('All image loading approaches failed, using fallback')
+            // Create a simple placeholder image using SVG
+            const placeholderSvg = `data:image/svg+xml;base64,${btoa(`
+              <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+                <rect width="300" height="200" fill="#f0f0f0" stroke="#ccc" stroke-width="1"/>
+                <text x="150" y="100" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#666">
+                  Image Not Available
+                </text>
+                <text x="150" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#999">
+                  ${img.imageUrl.split('/').pop() || 'Image'}
+                </text>
+              </svg>
+            `)}`
+            
+            testResultsHTML += `
+              <div style="text-align: center; margin: 12pt 0; page-break-inside: avoid;" class="avoid-break">
+                <p style="margin-bottom: 6pt; font-weight: bold; text-align: left;">${img.reference}</p>
+                 <img src="${placeholderSvg}" style="width: 40pt; height: 40pt; object-fit: contain; display: block; margin: 0 auto;" alt="${img.reference}">
                 ${img.note && String(img.note).trim() !== '' ? `<p style="font-style: italic; color:#6a7282; margin: 4pt 0;">${img.note}</p>` : ''}
               </div>
             `
           }
         } catch (e) {
           console.error('Error adding image to Word document:', e)
+          // Create a simple placeholder image using SVG
+          const placeholderSvg = `data:image/svg+xml;base64,${btoa(`
+            <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+              <rect width="300" height="200" fill="#f0f0f0" stroke="#ccc" stroke-width="1"/>
+              <text x="150" y="100" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#666">
+                Image Not Available
+              </text>
+              <text x="150" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#999">
+                ${img.imageUrl.split('/').pop() || 'Image'}
+              </text>
+            </svg>
+          `)}`
+          
+          testResultsHTML += `
+            <div style="text-align: center; margin: 12pt 0;" class="avoid-break">
+              <p style="margin-bottom: 6pt; font-weight: bold; text-align: left;">${img.reference}</p>
+                 <img src="${placeholderSvg}" style="width: 80pt; height: 60pt; object-fit: contain; display: block; margin: 0 auto;" alt="${img.reference}">
+              ${img.note && String(img.note).trim() !== '' ? `<p style="font-style: italic; color:#6a7282; margin: 4pt 0;">${img.note}</p>` : ''}
+            </div>
+          `
         }
       }
     }
@@ -281,9 +408,6 @@ export class TestReportWordGenerator {
           <h3 style="font-weight: bold; margin: 0 0 12pt 0; font-size: 14pt; text-align: left;">Certificate Comments</h3>
           <div style="max-width: 500pt; margin: 0 auto; text-align: left;">
             <pre style="font-family: 'monospace'; font-size: 10pt; text-align: left; color: #6a7282; margin: 0; white-space: pre-wrap;">${commentsText}</pre>
-          </div>
-          <div style="width: 100%; margin: 0 auto; text-align: center; font-family: 'monospace'; color: #6a7282;">
-            <div>-------------------------End of Text-------------------------</div>
           </div>
         </div>
       `
@@ -333,34 +457,39 @@ export class TestReportWordGenerator {
 
   private generateSignatures(): string {
     return `
-      <table style="width: 100%; border: none; margin: 42pt 0;">
-        <tr>
-          <td style="width: 50%; text-align: center; border: none; padding: 12pt; vertical-align: top;">
-            <p style="border-top: 1pt solid black; padding-top: 6pt; margin: 0; font-size: 10pt;">
-              <b>Tested By:</b> ${safeValue(this.certificateData.tested_by)}
-            </p>
-          </td>
-          <td style="width: 50%; text-align: center; border: none; padding: 12pt; vertical-align: top;">
-            <p style="border-top: 1pt solid black; padding-top: 6pt; margin: 0; font-size: 10pt;">
-              <b>Reviewed By:</b> ${safeValue(this.certificateData.reviewed_by)}
-            </p>
-          </td>
-        </tr>
-      </table>
+      <div style="margin: 20pt 0;">
+        <div style="display: table; width: 100%; margin: 16pt 0;">
+          <div style="display: table-cell; width: 50%; vertical-align: top; padding: 8pt;">
+            <p style="margin: 2pt 0; font-size: 11pt;"><b>Tested By:</b> ${safeValue(this.certificateData.tested_by)}</p>
+          </div>
+          <div style="display: table-cell; width: 50%; vertical-align: top; padding: 8pt;">
+            <p style="margin: 2pt 0; font-size: 11pt;"><b>Reviewed By:</b> ${safeValue(this.certificateData.reviewed_by)}</p>
+          </div>
+        </div>
+      </div>
     `
   }
 
   private generateFooter(assets: {
     gripcoLogoBase64: string
-    iasLogoBase64: string
     qrCodeBase64: string
   }): string {
+    const currentDate = new Date().toLocaleDateString('en-GB')
+    const currentTime = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+    
     return `
       <div style="margin: 24pt 0;">
-        <div style="width: 100%; margin: 0 auto; text-align: center; font-family: 'Arial', sans-serif; color: #6a7282; font-size: 10pt;">
-          <div style="margin-bottom: 8pt; font-weight: bold;">Commercial Registration No: 2015253768</div>
-          <div style="margin-bottom: 8pt;">All Works and services carried out by GRIPCO Material Testing Saudia are subjected to and conducted with the standard terms and conditions of GRIPCO Material Testing, which are available on the GRIPCO Site or upon request.</div>
-          <div>These results relate only to the item(s) tested/sampling conducted by the organization indicated. No deviations were observed during the testing process.</div>
+        <div style="margin: 16pt 0; font-size: 9pt; color: #666; line-height: 1.4;">
+          <p style="margin: 2pt 0;"><b>Commercial Registration No:</b> 2015253768</p>
+          <p style="margin: 2pt 0;">The results shown in this certificate relate only to the sample(s) tested. This certificate shall not be reproduced except in full, without the written approval of GRIPCO Material Testing Saudia. The results shown in this certificate are based on the information provided by the client and are subject to GRIPCO Material Testing Saudia's terms and conditions.</p>
+          <p style="margin: 2pt 0;">For more information, please visit: <a href="https://gripco.com.sa" style="color: #0066cc;">https://gripco.com.sa</a></p>
+        </div>
+        
+        <div style="margin: 16pt 0; font-size: 9pt; color: #666; text-align: center;">
+          <p style="margin: 2pt 0;">${currentDate}, ${currentTime}</p>
+          <p style="margin: 2pt 0; font-weight: bold;">GRIPCO LIMS</p>
+          <p style="margin: 2pt 0;">These results relate only to the item(s) tested/sampling conducted by the organization indicated. No deviations were observed during the testing process.</p>
+          <p style="margin: 2pt 0; font-weight: bold;">1/2</p>
         </div>
       </div>
     `

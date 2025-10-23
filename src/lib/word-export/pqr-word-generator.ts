@@ -79,7 +79,7 @@ export class PqrWordGenerator {
     public async generate(): Promise<void> {
         const publicUrl = `${process.env.NEXT_PUBLIC_FRONTEND_URL}${ROUTES.PUBLIC?.PQR_PREVIEW(this.pqrId)}`
         const qrCodeBase64 = await QRCode.toDataURL(publicUrl, { width: 90, margin: 1 })
-        const gripcoLogoBase64 = await fetchAsDataURI('/gripco-logo.webp')
+        const gripcoLogoBase64 = await fetchAsDataURI('/gripco-logo.png')
         const isAsme = true
 
         let bodyHtml = ''
@@ -248,18 +248,16 @@ export class PqrWordGenerator {
         const filename = `PQR_${this.pqrId}`
         await createWordDocument(bodyHtml, filename, {
             gripcoLogoBase64,
-            iasLogoBase64: '',
             qrCodeBase64
         }, {
             headerHTML: `
         <table style="width: 100%; border: none; border-collapse: collapse;">
           <tr>
-            <td style="width: 40%; text-align: left; border: none;">
-              ${gripcoLogoBase64 ? `<img src="${gripcoLogoBase64}" style="height: 18pt; width: auto;" alt="Gripco Logo"/>` : ''}
+            <td style="width: 50%; vertical-align: middle; border: none; padding: 5pt; text-align: left;">
+              ${gripcoLogoBase64 ? `<img src="${gripcoLogoBase64}" style="height: 50pt; width: auto; max-width: 180pt; opacity: 1; filter: contrast(1.1) brightness(1);" alt="Gripco Logo"/>` : '<div style="font-weight: bold; font-size: 14pt; color: #333;">GRIPCO</div>'}
             </td>
-            <td style="width: 20%; border: none;"></td>
-            <td style="width: 40%; text-align: right; border: none;">
-              ${qrCodeBase64 ? `<img src="${qrCodeBase64}" style="height: 18pt; width: auto;" alt="QR Code"/>` : ''}
+            <td style="width: 50%; vertical-align: middle; border: none; padding: 5pt; text-align: right;">
+              ${qrCodeBase64 ? `<img src="${qrCodeBase64}" style="height: 40pt; width: 40pt; opacity: 1; filter: contrast(1.2) brightness(0.9);" alt="QR Code"/>` : '<div style="font-weight: bold; font-size: 12pt; color: #333;">QR Code</div>'}
             </td>
           </tr>
         </table>`,
