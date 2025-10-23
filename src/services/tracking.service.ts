@@ -30,6 +30,9 @@ export interface TrackingRow {
   receivedBy?: string
   remarks?: string
   jobCreatedAt?: string
+  // Additional fields for request and certificate info
+  requestNo?: string
+  certificateId?: string
   // Detailed data for tabs
   items?: Array<{
     id: string
@@ -90,6 +93,8 @@ export function transformJobToTrackingRow(job: Job): TrackingRow {
     receivedBy: job.received_by || undefined,
     remarks: job.remarks || undefined,
     jobCreatedAt: job.job_created_at || undefined,
+    // requestNo: job.request_no || undefined, // Not available in jobs API
+    // certificateId: job.certificate_id || undefined, // Not available in jobs API
     // Default values for fields not in jobs API
     sampleType: "Unknown",
     materialGrade: "Unknown", 

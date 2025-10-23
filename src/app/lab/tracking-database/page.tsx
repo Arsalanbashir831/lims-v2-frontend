@@ -59,22 +59,24 @@ export default function TrackingDatabasePage() {
     { accessorKey: "sampleId", header: ({ column }) => <DataTableColumnHeader column={column} title="Job ID" />, cell: ({ row }) => row.original.sampleId },
     { accessorKey: "projectName", header: ({ column }) => <DataTableColumnHeader column={column} title="Project" />, cell: ({ row }) => <div className="truncate max-w-[240px]" title={row.original.projectName}>{row.original.projectName}</div> },
     { accessorKey: "clientName", header: ({ column }) => <DataTableColumnHeader column={column} title="Client" />, cell: ({ row }) => row.original.clientName },
-    { accessorKey: "itemsCount", header: ({ column }) => <DataTableColumnHeader column={column} title="Items" />, cell: ({ row }) => row.original.itemsCount },
+    { accessorKey: "requestNo", header: ({ column }) => <DataTableColumnHeader column={column} title="Request No" />, cell: ({ row }) => row.original.requestNo || "N/A" },
+    { accessorKey: "certificateId", header: ({ column }) => <DataTableColumnHeader column={column} title="Certificate ID" />, cell: ({ row }) => row.original.certificateId || "N/A" },
+    { accessorKey: "itemsCount", header: ({ column }) => <DataTableColumnHeader column={column} title="Sample Lots" />, cell: ({ row }) => row.original.itemsCount },
     { accessorKey: "receivedDate", header: ({ column }) => <DataTableColumnHeader column={column} title="Received Date" />, cell: ({ row }) => row.original.receivedDate },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) => (
-        <Link href={ROUTES.APP.SAMPLE_INFORMATION.EDIT(row.original.id)}>
-        <Button
-          variant="outline"
-          size="sm"
-        >
-          View
-        </Button>
-        </Link>
-      ),
-    },
+    // {
+    //   id: "actions",
+    //   header: "Actions",
+    //   cell: ({ row }) => (
+    //     <Link href={ROUTES.APP.SAMPLE_INFORMATION.EDIT(row.original.id)}>
+    //     <Button
+    //       variant="outline"
+    //       size="sm"
+    //     >
+    //       View
+    //     </Button>
+    //     </Link>
+    //   ),
+    // },
   ]
 
   // Define toolbar and footer callbacks outside of JSX

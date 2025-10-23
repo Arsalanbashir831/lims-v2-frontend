@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useCallback, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
@@ -105,7 +106,17 @@ export default function TestReportsPage() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Test Methods" />,
       cell: ({ row }) => {
         const testMethods = row.original.request_info?.sample_lots?.map(lot => lot.test_method?.test_name).filter(Boolean) || []
-        return testMethods.length > 0 ? testMethods.join(', ') : 'N/A'
+        return testMethods.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {testMethods.map((testMethod: string, index: number) => (
+              <Badge key={index} variant="outline" className="text-xs">
+                {testMethod}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <span className="text-sm text-muted-foreground">N/A</span>
+        )
       },
       accessorFn: (row) => row.request_info?.sample_lots?.map(lot => lot.test_method?.test_name).filter(Boolean).join(', ') || 'N/A'
     },

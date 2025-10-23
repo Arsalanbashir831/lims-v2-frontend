@@ -218,7 +218,7 @@ export default function CompleteDetailsSidebar({
                                                                             <div className="flex flex-wrap gap-1 mt-1">
                                                                                 {lot.test_methods?.length > 0 ? (
                                                                                     lot.test_methods.map((testMethod: { test_name: string }, index: number) => (
-                                                                                        <Badge key={index} variant="outline" className="text-xs">
+                                                                                        <Badge key={index} variant="outline" className="text-xs bg-amber-500">
                                                                                             {testMethod.test_name}
                                                                                         </Badge>
                                                                                     ))
