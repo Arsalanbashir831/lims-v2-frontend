@@ -1,60 +1,62 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Search, X } from "lucide-react"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, X } from "lucide-react";
 
 interface AdvancedSearchProps {
-  onSearch: (query: string) => void
-  isLoading?: boolean
+  onSearch: (query: string) => void;
+  isLoading?: boolean;
 }
 
-export function AdvancedSearch({ onSearch, isLoading = false }: AdvancedSearchProps) {
-  const [searchQuery, setSearchQuery] = useState("")
+export function AdvancedSearch({
+  onSearch,
+  isLoading = false,
+}: AdvancedSearchProps) {
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = () => {
-    onSearch(searchQuery)
-  }
+    onSearch(searchQuery);
+  };
 
   const handleClear = () => {
-    setSearchQuery("")
-    onSearch("") // Trigger search with empty query to show all data
-  }
+    setSearchQuery("");
+    onSearch(""); // Trigger search with empty query to show all data
+  };
 
-  const hasActiveSearch = searchQuery.trim() !== ""
+  const hasActiveSearch = searchQuery.trim() !== "";
 
   return (
-   <>
-        <div className="flex items-center w-full gap-2">
-          <Input
-            placeholder="Search by Job ID, Project Name, Client Name, or End User..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            className="max-w-md"
-          />
-          <Button 
-            onClick={handleSearch} 
-            disabled={isLoading || !searchQuery.trim()}
+    <>
+      <div className="flex items-center w-full gap-2">
+        <Input
+          placeholder="Search by Job ID, Project Name, Client Name, or End User..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          className="max-w-md"
+        />
+        <Button
+          onClick={handleSearch}
+          disabled={isLoading || !searchQuery.trim()}
+          className="flex items-center gap-2"
+        >
+          <Search className="h-4 w-4" />
+          {isLoading ? "Searching..." : "Search"}
+        </Button>
+
+        {hasActiveSearch && (
+          <Button
+            variant="outline"
+            onClick={handleClear}
             className="flex items-center gap-2"
           >
-            <Search className="h-4 w-4" />
-            {isLoading ? "Searching..." : "Search"}
+            <X className="h-4 w-4" />
+            Clear
           </Button>
-          
-          {hasActiveSearch && (
-            <Button 
-              variant="outline" 
-              onClick={handleClear}
-              className="flex items-center gap-2"
-            >
-              <X className="h-4 w-4" />
-              Clear
-            </Button>
-          )}
-        </div>
-   </>
-   
-  )
+        )}
+      </div>
+    </>
+  );
 }
