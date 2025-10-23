@@ -15,6 +15,8 @@ export interface Job {
   job_created_at: string
   created_at: string
   updated_at: string
+  request_numbers?: string
+  certificate_numbers?: string
 }
 
 export interface JobsResponse {
@@ -58,6 +60,18 @@ class JobsService {
 
   async getById(id: string): Promise<{ status: string; data: Job }> {
     const response = await api.get(API_ROUTES.Lab_MANAGERS.SAMPLE_INFORMATION_BY_ID(id)).json<{ status: string; data: Job }>()
+    return response
+  }
+
+  async getWithCertificates(params: JobsSearchParams = {}): Promise<JobsResponse> {
+    const searchParams = new URLSearchParams()
+    
+    if (params.page) searchParams.append('page', params.page.toString())
+    if (params.limit) searchParams.append('limit', params.limit.toString())
+    if (params.job_id) searchParams.append('job_id', params.job_id)
+
+    const url = `${API_ROUTES.Lab_MANAGERS.JOBS_WITH_CERTIFICATES}?${searchParams.toString()}`
+    const response = await api.get(url).json<JobsResponse>()
     return response
   }
 }

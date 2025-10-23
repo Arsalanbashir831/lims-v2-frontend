@@ -55,6 +55,7 @@ export const API_ROUTES = {
     SAMPLE_INFORMATION_BY_ID: (id: string) => `jobs/${id}/`,
     SAMPLE_INFORMATION_COMPLETE_INFO: (id: string) => `jobs/${id}/complete-info`,
     SEARCH_SAMPLE_INFORMATION: "jobs/search/",
+    JOBS_WITH_CERTIFICATES: "jobs/with-certificates",
 
     // Sample Details
     ADD_SAMPLE_DETAIL: "sample-details/",

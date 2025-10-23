@@ -14,8 +14,10 @@ export const SAMPLE_INFORMATION_QUERY_KEYS = {
 
 // Hook for getting sample information list with pagination
 export function useSampleInformation(page: number = 1, searchQuery?: string, enabled: boolean = true) {
+  const hasSearchQuery = searchQuery && searchQuery.trim() !== ""
+  
   return useQuery({
-    queryKey: searchQuery ? SAMPLE_INFORMATION_QUERY_KEYS.search(searchQuery, page) : SAMPLE_INFORMATION_QUERY_KEYS.list(page, searchQuery),
+    queryKey: hasSearchQuery ? SAMPLE_INFORMATION_QUERY_KEYS.search(searchQuery, page) : SAMPLE_INFORMATION_QUERY_KEYS.list(page),
     queryFn: () => {
       return sampleInformationService.search(searchQuery?.trim() ?? "", page)
     },

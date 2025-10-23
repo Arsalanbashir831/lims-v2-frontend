@@ -2,7 +2,9 @@ import { listSampleReceivings, type SampleReceiving } from "@/lib/sample-receivi
 import { samplePreparationService } from "@/services/sample-preparation.service"
 import { testReportsService } from "@/services/test-reports.service"
 import { listDiscardedMaterials, type DiscardedMaterial } from "@/lib/discarded-materials"
-import { jobsService, type Job } from "@/services/jobs.service"
+import { jobsService, type Job, type JobsResponse } from "@/services/jobs.service"
+import { api } from "@/lib/api/api"
+import { API_ROUTES } from "@/constants/api-routes"
 
 export type TrackingStatus = "received" | "in_preparation" | "reported" | "discarded"
 
@@ -93,8 +95,8 @@ export function transformJobToTrackingRow(job: Job): TrackingRow {
     receivedBy: job.received_by || undefined,
     remarks: job.remarks || undefined,
     jobCreatedAt: job.job_created_at || undefined,
-    // requestNo: job.request_no || undefined, // Not available in jobs API
-    // certificateId: job.certificate_id || undefined, // Not available in jobs API
+    requestNo: job.request_numbers || undefined, 
+    certificateId: job.certificate_numbers || undefined,
     // Default values for fields not in jobs API
     sampleType: "Unknown",
     materialGrade: "Unknown", 
@@ -130,7 +132,10 @@ export function transformJobToTrackingRow(job: Job): TrackingRow {
 // Fetch real jobs data from API
 export async function fetchTrackingRowsFromAPI(): Promise<TrackingRow[]> {
   try {
-    const response = await jobsService.getAll({ limit: 100 }) // Get up to 100 jobs
+    // Use the new endpoint that includes certificates and request numbers
+    const response = await api.get(API_ROUTES.Lab_MANAGERS.JOBS_WITH_CERTIFICATES, { 
+      searchParams: { limit: '100' } 
+    }).json<JobsResponse>()
     return response.data.map(transformJobToTrackingRow)
   } catch (error) {
     console.error('Error fetching jobs data:', error)

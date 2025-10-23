@@ -9,7 +9,7 @@ import { FilterSearch } from "@/components/ui/filter-search"
 import { Button } from "@/components/ui/button"
 import { transformJobToTrackingRow, type TrackingRow } from "@/services/tracking.service"
 import { TrackingDrawer } from "@/components/tracking/tracking-drawer"
-import { useJobs, useJobsSearch } from "@/hooks/use-jobs"
+import { useJobs, useJobsSearch, useJobsWithCertificates } from "@/hooks/use-jobs"
 import { ROUTES } from "@/constants/routes"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -23,10 +23,10 @@ export default function TrackingDatabasePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const router = useRouter()
 
-  // Use jobs API with search functionality and pagination
+  // Use jobs API with certificates and request numbers
   const { data: jobsResponse, isLoading, error } = searchQuery.trim() 
     ? useJobsSearch(searchQuery.trim(), { page: currentPage, limit: 20 })
-    : useJobs({ page: currentPage, limit: 20 })
+    : useJobsWithCertificates({ page: currentPage, limit: 20 })
 
   // Handle errors with useEffect
   useEffect(() => {

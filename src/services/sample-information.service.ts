@@ -197,149 +197,45 @@ export const sampleInformationService = {
       return this.getAll(page)
     }
     
-    const endpoint = API_ROUTES.Lab_MANAGERS.SEARCH_SAMPLE_INFORMATION
+    // For simple search, get all data and filter client-side
+    const allData = await this.getAll(page)
     
-    // Parse the combined query to extract individual search terms
-    const searchTerms = query.trim().split(/\s+/).filter(term => term.length > 0)
-    
-    // Create search parameters - try different approaches
-    const searchParams: Record<string, string> = { page: page.toString() }
-    
-    // Extract specific field searches
-    let jobId = ""
-    let projectName = ""
-    let clientName = ""
-    let endUser = ""
-    const generalTerms: string[] = []
-    
-    // Parse each term to see if it has a field prefix
-    searchTerms.forEach(term => {
-      if (term.includes(':')) {
-        const colonIndex = term.indexOf(':')
-        const field = term.substring(0, colonIndex)
-        const value = term.substring(colonIndex + 1)
-        
-        switch (field.toLowerCase()) {
-          case 'job_id':
-            jobId = value
-            break
-          case 'project':
-            projectName = value
-            break
-          case 'client':
-            clientName = value
-            break
-          case 'end_user':
-            endUser = value
-            break
-          default:
-            generalTerms.push(term)
-        }
-      } else {
-        generalTerms.push(term)
-      }
-    })
-    
-    // Try different search strategies
-    if (jobId) {
-      // If we have a specific job_id, use it
-      searchParams.job_id = jobId
-    } else if (generalTerms.length > 0) {
-      // Use the first general term as job_id (API limitation)
-      searchParams.job_id = generalTerms[0]
-    }
-    
-    // Add other search parameters if the API supports them
-    if (projectName) {
-      searchParams.project = projectName
-    }
-    if (clientName) {
-      searchParams.client_name = clientName
-    }
-    if (endUser) {
-      searchParams.received_by = endUser
-    }
-    
-    // Debug: Log the search parameters being sent
-    console.log('Search parameters being sent:', searchParams)
-    console.log('Original query:', query)
-    console.log('Extracted fields:', { jobId, projectName, clientName, endUser, generalTerms })
-    
-    // If we only have client/project/end_user filters but no job_id, get all data and filter client-side
-    if (!jobId && !generalTerms.length && (projectName || clientName || endUser)) {
-      console.log('Using client-side filtering for non-job_id searches')
-      const allData = await this.getAll(page)
+    // Filter the results client-side across all fields
+    const filteredResults = allData.results?.filter((item: any) => {
+      const searchTerm = query.toLowerCase()
       
-      // Filter the results client-side
-      const filteredResults = allData.results?.filter((item: any) => {
-        let matches = true
-        
-        if (projectName && matches) {
-          matches = item.project_name?.toLowerCase().includes(projectName.toLowerCase()) || false
-        }
-        
-        if (clientName && matches) {
-          matches = item.client_name?.toLowerCase().includes(clientName.toLowerCase()) || false
-        }
-        
-        if (endUser && matches) {
-          matches = item.received_by?.toLowerCase().includes(endUser.toLowerCase()) || false
-        }
-        
-        return matches
-      }) || []
+      // Search across multiple fields
+      const jobIdMatch = item.job_id?.toLowerCase().includes(searchTerm) || false
+      const projectMatch = item.project_name?.toLowerCase().includes(searchTerm) || false
+      const clientMatch = item.client_name?.toLowerCase().includes(searchTerm) || false
+      const endUserMatch = item.received_by?.toLowerCase().includes(searchTerm) || false
       
-      return {
-        ...allData,
-        results: filteredResults,
-        count: filteredResults.length
-      }
-    }
-    
-    const response = await api.get(endpoint, { searchParams }).json<{
-      status: string
-      data: Record<string, unknown>[]
-      total: number
-      filters_applied?: Record<string, unknown>
-    }>()
-    
-    // Extract the data field from Django response
-    if (response.status === "success" && response.data) {
-      // If we have additional filters (project, client, end_user), filter the results client-side
-      let filteredData = response.data
+      // Also try searching for individual words in the query
+      const searchWords = searchTerm.split(/\s+/).filter(word => word.length > 0)
+      let wordMatch = false
       
-      if (projectName || clientName || endUser) {
-        filteredData = response.data.filter((item: any) => {
-          let matches = true
-          
-        if (projectName && matches) {
-          matches = item.project_name?.toLowerCase().includes(projectName.toLowerCase()) || false
-        }
-          
-          if (clientName && matches) {
-            matches = item.client_name?.toLowerCase().includes(clientName.toLowerCase()) || false
-          }
-          
-          if (endUser && matches) {
-            matches = item.received_by?.toLowerCase().includes(endUser.toLowerCase()) || false
-          }
-          
-          return matches
-        })
+      if (searchWords.length > 1) {
+        // If multiple words, check if any word matches any field
+        wordMatch = searchWords.some(word => 
+          item.job_id?.toLowerCase().includes(word) ||
+          item.project_name?.toLowerCase().includes(word) ||
+          item.client_name?.toLowerCase().includes(word) ||
+          item.received_by?.toLowerCase().includes(word)
+        )
       }
       
-      return {
-        results: filteredData.map((item: Record<string, unknown>) => ({
-          ...mapToUi(item as any),
-          id: (item.id || item._id) as string, // Ensure id field is included
-        })) as any,
-        count: filteredData.length,
-        next: null, // Simplified for now
-        previous: null, // Simplified for now
-      }
-    }
+      const isMatch = jobIdMatch || projectMatch || clientMatch || endUserMatch || wordMatch
+      
+      
+      return isMatch
+    }) || []
     
-    throw new Error("Failed to search sample information")
+    
+    return {
+      ...allData,
+      results: filteredResults,
+      count: filteredResults.length
+    }
   },
 
   async getCompleteSampleInformation(id: string): Promise<{ job: {

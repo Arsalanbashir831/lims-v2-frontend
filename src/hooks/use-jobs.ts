@@ -39,3 +39,13 @@ export function useJobDetail(id: string) {
     gcTime: 10 * 60 * 1000, // 10 minutes
   })
 }
+
+export function useJobsWithCertificates(params: JobsSearchParams = {}) {
+  return useQuery({
+    queryKey: [...JOBS_QUERY_KEYS.list(params), 'with-certificates'],
+    queryFn: () => jobsService.getWithCertificates(params),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
+    placeholderData: (previousData) => previousData,
+  })
+}

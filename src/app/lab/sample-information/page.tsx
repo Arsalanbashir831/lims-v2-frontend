@@ -68,92 +68,12 @@ export default function SampleInformationPage() {
         setCurrentPage(page)
     }, [])
 
-    const handleAdvancedSearch = useCallback((filters: {
-        query: string
-        jobId: string
-        projectName: string
-        clientName: string
-        endUser: string
-    }) => {
-        // Create a more structured search query that the API can understand
-        const searchTerms = []
-        
-        // Add specific field searches with prefixes to help the API understand the context
-        if (filters.jobId.trim()) {
-            searchTerms.push(`job_id:${filters.jobId.trim()}`)
-        }
-        if (filters.projectName.trim()) {
-            searchTerms.push(`project:${filters.projectName.trim()}`)
-        }
-        if (filters.clientName.trim()) {
-            searchTerms.push(`client:${filters.clientName.trim()}`)
-        }
-        if (filters.endUser.trim()) {
-            searchTerms.push(`end_user:${filters.endUser.trim()}`)
-        }
-        
-        // Add general query if provided
-        if (filters.query.trim()) {
-            searchTerms.push(filters.query.trim())
-        }
-        
-        const combinedQuery = searchTerms.join(" ")
-        setSearchQuery(combinedQuery)
+    const handleAdvancedSearch = useCallback((query: string) => {
+        setSearchQuery(query)
         setCurrentPage(1)
     }, [])
 
-    const handleClearAdvancedSearch = useCallback(() => {
-        setSearchQuery("")
-        setCurrentPage(1)
-    }, [])
-
-    const handleAdvancedSearchChange = useCallback((filters: {
-        query: string
-        jobId: string
-        projectName: string
-        clientName: string
-        endUser: string
-    }) => {
-        // Check if all fields are empty
-        const allFieldsEmpty = !filters.query.trim() && 
-                              !filters.jobId.trim() && 
-                              !filters.projectName.trim() && 
-                              !filters.clientName.trim() && 
-                              !filters.endUser.trim()
-        
-        if (allFieldsEmpty) {
-            // If all fields are empty, clear the search to show all data
-            setSearchQuery("")
-            setCurrentPage(1)
-            return
-        }
-        
-        // Create a more structured search query that the API can understand
-        const searchTerms = []
-        
-        // Add specific field searches with prefixes to help the API understand the context
-        if (filters.jobId.trim()) {
-            searchTerms.push(`job_id:${filters.jobId.trim()}`)
-        }
-        if (filters.projectName.trim()) {
-            searchTerms.push(`project:${filters.projectName.trim()}`)
-        }
-        if (filters.clientName.trim()) {
-            searchTerms.push(`client:${filters.clientName.trim()}`)
-        }
-        if (filters.endUser.trim()) {
-            searchTerms.push(`end_user:${filters.endUser.trim()}`)
-        }
-        
-        // Add general query if provided
-        if (filters.query.trim()) {
-            searchTerms.push(filters.query.trim())
-        }
-        
-        const combinedQuery = searchTerms.join(" ")
-        setSearchQuery(combinedQuery)
-        setCurrentPage(1)
-    }, [])
+   
 
     const columns: ColumnDef<Record<string, unknown>>[] = useMemo(() => [
         {
@@ -230,17 +150,8 @@ export default function SampleInformationPage() {
             <div className="flex flex-col md:flex-row items-center gap-10 w-full">
                 <AdvancedSearch
                     onSearch={handleAdvancedSearch}
-                    onClear={handleClearAdvancedSearch}
-                    onSearchChange={handleAdvancedSearchChange}
                     isLoading={isFetching}
                 />
-                    {/* <FilterSearch
-                        placeholder="Search sample information..."
-                        value={searchQuery}
-                        onChange={handleSearchChange}
-                        className="w-full"
-                        inputClassName="max-w-md"
-                    /> */}
                     <div className="flex items-center gap-2 w-full md:w-auto">
                         <DataTableViewOptions table={table} />
                         <Button asChild size="sm">
@@ -249,7 +160,7 @@ export default function SampleInformationPage() {
                     </div>
                 </div>
         )
-    }, [handleAdvancedSearch, handleClearAdvancedSearch, isFetching])
+    }, [handleAdvancedSearch, isFetching])
 
     const footer = useCallback((table: TanstackTable<Record<string, unknown>>) => (
         <ServerPagination
