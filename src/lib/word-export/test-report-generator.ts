@@ -68,16 +68,8 @@ export class TestReportWordGenerator {
 
   async generateWordDocument(): Promise<void> {
     try {
-      console.log('Starting Word document generation...')
-      
       // Pre-load required assets
       const assets = await this.loadAssets()
-      console.log('Assets loaded:', {
-        gripcoLogo: assets.gripcoLogoBase64 ? 'Yes' : 'No',
-        qrCode: assets.qrCodeBase64 ? 'Yes' : 'No',
-        gripcoLength: assets.gripcoLogoBase64?.length || 0,
-        qrCodeLength: assets.qrCodeBase64?.length || 0
-      })
       
       // Generate document content
       const documentHTML = await this.generateDocumentHTML(assets)
@@ -87,7 +79,6 @@ export class TestReportWordGenerator {
       
       // Create and download Word document
       const filename = `Test-Report-${this.certificateData.certificate_id}`
-      console.log('Creating Word document with filename:', filename)
       
       createWordDocument(documentHTML, filename, assets, {
         footerHTML: footerHTML
@@ -109,80 +100,54 @@ export class TestReportWordGenerator {
       qrCodeBase64: ''
     }
 
-    console.log('Starting asset loading...')
-
     // Load Gripco logo with multiple fallback attempts
     try {
-      console.log('Attempting to load Gripco logo...')
       const gripcoPaths = ['/gripco-logo.png', '/gripco-logo.webp', './gripco-logo.png', './gripco-logo.webp']
       
       for (const path of gripcoPaths) {
         try {
-          console.log(`Trying Gripco logo path: ${path}`)
           const logoData = await fetchAsDataURI(path)
           if (logoData && logoData.startsWith('data:image/')) {
             assets.gripcoLogoBase64 = logoData
-            console.log(`Gripco logo loaded successfully from ${path}`)
-            console.log(`Gripco logo data length: ${logoData.length}`)
             break
           }
         } catch (e) {
-          console.warn(`Failed to load Gripco logo from ${path}:`, e)
+          // Continue to next path
         }
       }
-      
-      if (!assets.gripcoLogoBase64) {
-        console.warn('All Gripco logo paths failed, using fallback')
-      }
     } catch (e) {
-      console.error('Gripco logo loading failed:', e)
+      // Continue with other assets
     }
 
     // Load IAS logo with multiple fallback attempts
     try {
-      console.log('Attempting to load IAS logo...')
       const iasPaths = ['/ias-logo-vertical.png', '/ias-logo-vertical.webp', '/iaslogo.png', './ias-logo-vertical.png', './ias-logo-vertical.webp', './iaslogo.png']
       
       for (const path of iasPaths) {
         try {
-          console.log(`Trying IAS logo path: ${path}`)
           const iasLogoData = await fetchAsDataURI(path)
           if (iasLogoData && iasLogoData.startsWith('data:image/')) {
             assets.iasLogoBase64 = iasLogoData
-            console.log(`IAS logo loaded successfully from ${path}`)
-            console.log(`IAS logo data length: ${iasLogoData.length}`)
             break
           }
         } catch (e) {
-          console.warn(`Failed to load IAS logo from ${path}:`, e)
+          // Continue to next path
         }
       }
-      
-      if (!assets.iasLogoBase64) {
-        console.warn('All IAS logo paths failed, using fallback')
-      }
     } catch (e) {
-      console.error('IAS logo loading failed:', e)
+      // Continue with other assets
     }
 
     // Generate QR code
     try {
-      console.log('Generating QR code...')
       const qrCodeText = `Certificate ID: ${this.certificateData.certificate_id}\nJob ID: ${this.certificateData.job_id}\nDate: ${this.certificateData.issue_date}`
       assets.qrCodeBase64 = await generateQRCodeDataURI(qrCodeText, {
         width: 100,
         margin: 2
       })
-      console.log('QR code generated successfully')
     } catch (e) {
-      console.error('Failed to generate QR code:', e)
+      // Continue without QR code
     }
-
-    console.log('Asset loading completed:', {
-      gripcoLogo: assets.gripcoLogoBase64 ? 'Loaded' : 'Failed',
-      iasLogo: assets.iasLogoBase64 ? 'Loaded' : 'Failed',
-      qrCode: assets.qrCodeBase64 ? 'Generated' : 'Failed'
-    })
 
     return assets
   }
@@ -313,7 +278,6 @@ export class TestReportWordGenerator {
                 const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(fullImageUrl)}`
                 fullImageUrl = proxyUrl
               }
-              console.log('Processing image URL:', fullImageUrl)
               
               imagesForEnd.push({
                 imageUrl: fullImageUrl,
@@ -331,8 +295,6 @@ export class TestReportWordGenerator {
         testResultsHTML += '<div class="page-break" style="page-break-before: always; clear: both;"></div>'
         for (const img of imagesForEnd) {
         try {
-          console.log('Loading image:', img.imageUrl)
-          
           // Try multiple approaches to load the image
           let base64 = null
           let imageLoaded = false
@@ -342,10 +304,9 @@ export class TestReportWordGenerator {
             base64 = await fetchAsDataURI(img.imageUrl)
             if (base64 && base64.startsWith('data:image/')) {
               imageLoaded = true
-              console.log('Image loaded successfully via direct fetch')
             }
           } catch (e) {
-            console.warn('Direct fetch failed:', e)
+            // Continue to alternative approaches
           }
           
           // Approach 2: Try with different URL formats
@@ -362,21 +323,19 @@ export class TestReportWordGenerator {
               
               for (const url of possibleUrls) {
                 if (url !== img.imageUrl) {
-                  console.log('Trying alternative URL:', url)
                   try {
                     base64 = await fetchAsDataURI(url)
                     if (base64 && base64.startsWith('data:image/')) {
                       imageLoaded = true
-                      console.log('Image loaded successfully via alternative URL')
                       break
                     }
                   } catch (e) {
-                    console.warn('Alternative URL failed:', e)
+                    // Continue to next URL
                   }
                 }
               }
             } catch (e) {
-              console.warn('Alternative URL approach failed:', e)
+              // Continue without image
             }
           }
           
@@ -388,9 +347,8 @@ export class TestReportWordGenerator {
                 ${img.note && String(img.note).trim() !== '' ? `<p style="font-style: italic; color:#6a7282; margin: 4pt 0;">${img.note}</p>` : ''}
               </div>
             `
-          } else {
-            console.warn('All image loading approaches failed, using fallback')
-            // Create a simple placeholder image using SVG
+            } else {
+              // Create a simple placeholder image using SVG
             const placeholderSvg = `data:image/svg+xml;base64,${btoa(`
               <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
                 <rect width="300" height="200" fill="#f0f0f0" stroke="#ccc" stroke-width="1"/>
@@ -412,7 +370,6 @@ export class TestReportWordGenerator {
             `
           }
         } catch (e) {
-          console.error('Error adding image to Word document:', e)
           // Create a simple placeholder image using SVG
           const placeholderSvg = `data:image/svg+xml;base64,${btoa(`
             <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
@@ -495,7 +452,6 @@ export class TestReportWordGenerator {
 
       return tableHTML
     } catch (error) {
-      console.error('Error generating test results table:', error)
       return ''
     }
   }

@@ -32,9 +32,6 @@ export const fetchAsDataURI = async (url: string): Promise<string> => {
       fullUrl = `${window.location.origin}${url.substring(1)}`;
     }
 
-    console.log("Attempting to load image:", fullUrl);
-    console.log("Original URL:", url);
-    console.log("Window location origin:", window.location.origin);
 
     // Try multiple approaches for loading images
     try {
@@ -71,7 +68,6 @@ export const fetchAsDataURI = async (url: string): Promise<string> => {
           const result = reader.result as string;
           // Validate the data URI
           if (result && result.startsWith("data:image/")) {
-            console.log("Image loaded successfully via CORS");
             resolve(result);
           } else {
             reject(new Error("Invalid image data"));
@@ -81,7 +77,6 @@ export const fetchAsDataURI = async (url: string): Promise<string> => {
         reader.readAsDataURL(blob);
       });
     } catch (corsError) {
-      console.warn("CORS approach failed, trying no-cors:", corsError);
 
       // Approach 2: Try with no-cors mode
       try {
@@ -96,7 +91,6 @@ export const fetchAsDataURI = async (url: string): Promise<string> => {
           reader.onload = () => {
             const result = reader.result as string;
             if (result && result.startsWith("data:image/")) {
-              console.log("Image loaded successfully via no-cors");
               resolve(result);
             } else {
               reject(new Error("Invalid image data"));
@@ -106,7 +100,6 @@ export const fetchAsDataURI = async (url: string): Promise<string> => {
           reader.readAsDataURL(blob);
         });
       } catch (noCorsError) {
-        console.warn("No-cors approach also failed:", noCorsError);
 
         // Approach 3: Try with different headers
         try {
@@ -125,9 +118,6 @@ export const fetchAsDataURI = async (url: string): Promise<string> => {
             reader.onload = () => {
               const result = reader.result as string;
               if (result && result.startsWith("data:image/")) {
-                console.log(
-                  "Image loaded successfully via alternative headers"
-                );
                 resolve(result);
               } else {
                 reject(new Error("Invalid image data"));
@@ -138,7 +128,6 @@ export const fetchAsDataURI = async (url: string): Promise<string> => {
             reader.readAsDataURL(blob);
           });
         } catch (altError) {
-          console.warn("Alternative headers approach also failed:", altError);
           // Create a placeholder image as final fallback
           const placeholderSvg = `data:image/svg+xml;base64,${btoa(`
             <svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
@@ -151,13 +140,11 @@ export const fetchAsDataURI = async (url: string): Promise<string> => {
               </text>
             </svg>
           `)}`;
-          console.log("Using placeholder image as fallback");
           return placeholderSvg;
         }
       }
     }
   } catch (error) {
-    console.error("Error fetching image as data URI:", error);
     // Create a placeholder image as final fallback
     const placeholderSvg = `data:image/svg+xml;base64,${btoa(`
       <svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
@@ -170,7 +157,6 @@ export const fetchAsDataURI = async (url: string): Promise<string> => {
         </text>
       </svg>
     `)}`;
-    console.log("Using placeholder image due to error");
     return placeholderSvg;
   }
 };
@@ -191,7 +177,6 @@ export const generateQRCodeDataURI = async (
       margin: options?.margin || 1,
     });
   } catch (error) {
-    console.error("Error generating QR code:", error);
     throw error;
   }
 };
@@ -211,40 +196,6 @@ export const createWordDocument = (
     extraStyles?: string;
   }
 ): void => {
-  console.log("Creating Word document with assets:", {
-    hasGripcoLogo: assets?.gripcoLogoBase64 ? "Yes" : "No",
-    hasQrCode: assets?.qrCodeBase64 ? "Yes" : "No",
-    gripcoLength: assets?.gripcoLogoBase64?.length || 0,
-    qrCodeLength: assets?.qrCodeBase64?.length || 0,
-    gripcoStartsWith:
-      assets?.gripcoLogoBase64?.startsWith("data:image/") || false,
-    qrCodeStartsWith: assets?.qrCodeBase64?.startsWith("data:image/") || false,
-  });
-
-  // Debug the actual header HTML being generated
-  const headerHTML = `
-    <table style="width: 100%; border: none; border-collapse: collapse;">
-      <tr>
-        <td style="width: 50%; vertical-align: middle; border: none; padding: 0; text-align: left;">
-          ${
-            assets?.gripcoLogoBase64 &&
-            assets.gripcoLogoBase64.startsWith("data:image/")
-              ? `<img src="${assets.gripcoLogoBase64}" style="height: 40pt; width: auto; max-width: 150pt;" alt="Gripco Logo">`
-              : '<div style="font-weight: bold; font-size: 14pt; color: #333;">GRIPCO</div>'
-          }
-        </td>
-        <td style="width: 50%; vertical-align: middle; border: none; padding: 0; text-align: right;">
-          ${
-            assets?.qrCodeBase64 &&
-            assets.qrCodeBase64.startsWith("data:image/")
-              ? `<img src="${assets.qrCodeBase64}" style="height: 30pt; width: 30pt;" alt="QR Code">`
-              : '<div style="font-weight: bold; font-size: 12pt; color: #333;">QR Code</div>'
-          }
-        </td>
-      </tr>
-    </table>
-  `;
-  console.log("Header HTML being generated:", headerHTML);
 
   const wordHTML = `
     <html xmlns:o="urn:schemas-microsoft-com:office:office" 
