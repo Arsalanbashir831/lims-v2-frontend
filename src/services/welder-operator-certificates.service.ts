@@ -154,15 +154,39 @@ export const operatorCertificateService = {
       status: string
       data: Array<{
         id: string
+        welder_card_id: string
+        welder_card_info?: {
+          card_id: string
+          card_no: string
+          company: string
+          welder_info: {
+            welder_id: string
+            operator_name: string
+            operator_id: string
+            iqama: string
+            profile_image?: string
+          }
+        }
         certificate_no: string
-        law_name: string
+        wps_followed_date?: string
+        date_of_issue?: string
         date_of_welding: string
-        tested_by: string
-        witnessed_by: string
         joint_weld_type: string
         base_metal_spec: string
+        base_metal_p_no?: string
+        filler_sfa_spec?: string
+        filler_class_aws?: string
+        test_coupon_size?: string
+        positions?: string
+        testing_variables_and_qualification_limits_automatic?: TestingVariable[]
+        testing_variables_and_qualification_limits_machine?: TestingVariable[]
+        tests?: TestResult[]
+        law_name: string
+        tested_by: string
+        witnessed_by: string
         is_active: boolean
         created_at: string
+        updated_at?: string
       }>
       total: number
       filters_applied: {
@@ -180,8 +204,8 @@ export const operatorCertificateService = {
       // Transform search response to match OperatorCertificate interface
       const transformedData: OperatorCertificate[] = response.data.map(item => ({
         id: item.id,
-        welder_card_id: "",
-        welder_card_info: undefined,
+        welder_card_id: item.welder_card_id || "",
+        welder_card_info: item.welder_card_info,
         certificate_no: item.certificate_no,
         date_of_welding: item.date_of_welding,
         joint_weld_type: item.joint_weld_type,
@@ -191,17 +215,17 @@ export const operatorCertificateService = {
         witnessed_by: item.witnessed_by,
         is_active: item.is_active,
         created_at: item.created_at,
-        wps_followed_date: undefined,
-        date_of_issue: undefined,
-        base_metal_p_no: undefined,
-        filler_sfa_spec: undefined,
-        filler_class_aws: undefined,
-        test_coupon_size: undefined,
-        positions: undefined,
-        testing_variables_and_qualification_limits_automatic: undefined,
-        testing_variables_and_qualification_limits_machine: undefined,
-        tests: undefined,
-        updated_at: undefined,
+        wps_followed_date: item.wps_followed_date,
+        date_of_issue: item.date_of_issue,
+        base_metal_p_no: item.base_metal_p_no,
+        filler_sfa_spec: item.filler_sfa_spec,
+        filler_class_aws: item.filler_class_aws,
+        test_coupon_size: item.test_coupon_size,
+        positions: item.positions,
+        testing_variables_and_qualification_limits_automatic: item.testing_variables_and_qualification_limits_automatic,
+        testing_variables_and_qualification_limits_machine: item.testing_variables_and_qualification_limits_machine,
+        tests: item.tests,
+        updated_at: item.updated_at,
       }))
 
       return {
