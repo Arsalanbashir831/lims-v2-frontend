@@ -329,19 +329,23 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
 
     return (
         <div className="max-w-7xl mx-auto rounded p-2 sm:p-4 md:p-8 print:bg-white print:text-black print:border-0">
-            {/* Header */}
-            <header className="mb-6 flex items-center justify-between sm:mb-8 print:mb-4">
-                <div>
-                    <Image src="/gripco-logo.webp" alt="Logo" width={260} height={50} />
-                </div>
-                {isPublic && (
+            {/* Header - only show in public mode or when explicitly requested */}
+            {isPublic && (
+                <header className="mb-6 flex items-center justify-between sm:mb-8 print:mb-4">
+                    <div>
+                        <Image src="/gripco-logo.webp" alt="Logo" width={260} height={50} />
+                    </div>
                     <div className="flex items-center gap-3">
                         <Image src="/ias-logo-vertical.webp" alt="IAS" width={80} height={60} className="h-24 w-20" />
                         {qr && <Image src={qr} alt="Public Link" width={96} height={96} className="h-24 w-24" />}
                     </div>
-                )}
-                {showButton && (
-                    <div className="space-x-2 flex items-center print:hidden">
+                </header>
+            )}
+            
+            {/* Action buttons - show when not in public mode */}
+            {!isPublic && showButton && (
+                <div className="mb-6 flex justify-end print:hidden">
+                    <div className="space-x-2 flex items-center">
                         <ExportDropdownButton
                             options={[
                                 EXPORT_OPTIONS.WORD(exportToWord),
@@ -352,8 +356,8 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
                         />
                         <BackButton variant="default" label="Back to List" href={ROUTES.APP.TEST_REPORTS.ROOT} />
                     </div>
-                )}
-            </header>
+                </div>
+            )}
 
             {/* Certificate Info */}
             <section className="mb-6 grid grid-cols-12 gap-4 text-sm print:mb-4">
@@ -478,12 +482,14 @@ export default function TestReportPreview({ showButton = true, isPublic = true }
 
             {/* Footer */}
             <footer className="mt-8 border-t pt-3 text-[11px] leading-5 text-muted-foreground print:mt-6 print:border-gray-300 print:text-gray-700">
-                <div>Commercial Registration No: 2015253768</div>
                 <div>
                     All Works and services carried out by GRIPCO Material Testing Saudia are subjected to and conducted with the standard terms and conditions of GRIPCO Material Testing, which are available on the GRIPCO Site or upon request.
                 </div>
                 <div>
-                    These results relate only to the item(s) tested/sampling conducted by the organization indicated. No deviations were observed during the testing process.
+                    The results shown in this certificate relate only to the sample(s) tested. This certificate shall not be reproduced except in full, without the written approval of GRIPCO Material Testing Saudia. The results shown in this certificate are based on the information provided by the client and are subject to GRIPCO Material Testing Saudia's terms and conditions.
+                </div>
+                <div>
+                    For more information, please visit: <a href="https://gripco.com.sa" className="text-blue-600 underline">https://gripco.com.sa</a>
                 </div>
             </footer>
         </div>

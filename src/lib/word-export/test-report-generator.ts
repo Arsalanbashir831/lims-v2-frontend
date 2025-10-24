@@ -82,10 +82,16 @@ export class TestReportWordGenerator {
       // Generate document content
       const documentHTML = await this.generateDocumentHTML(assets)
       
+      // Generate footer content
+      const footerHTML = this.generateDocumentFooter()
+      
       // Create and download Word document
       const filename = `Test-Report-${this.certificateData.certificate_id}`
       console.log('Creating Word document with filename:', filename)
-      createWordDocument(documentHTML, filename, assets)
+      
+      createWordDocument(documentHTML, filename, assets, {
+        footerHTML: footerHTML
+      })
     } catch (error) {
       console.error('Error generating Word document:', error)
       throw error
@@ -160,9 +166,6 @@ export class TestReportWordGenerator {
     
     // Add signatures
     documentHTML += this.generateSignatures()
-    
-    // Add footer
-    documentHTML += this.generateFooter(assets)
 
     documentHTML += `</div>`
     return documentHTML
@@ -470,28 +473,17 @@ export class TestReportWordGenerator {
     `
   }
 
-  private generateFooter(assets: {
-    gripcoLogoBase64: string
-    qrCodeBase64: string
-  }): string {
-    const currentDate = new Date().toLocaleDateString('en-GB')
-    const currentTime = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-    
+  private generateDocumentFooter(): string {
     return `
-      <div style="margin: 24pt 0;">
-        <div style="margin: 16pt 0; font-size: 9pt; color: #666; line-height: 1.4;">
-          <p style="margin: 2pt 0;"><b>Commercial Registration No:</b> 2015253768</p>
-          <p style="margin: 2pt 0;">The results shown in this certificate relate only to the sample(s) tested. This certificate shall not be reproduced except in full, without the written approval of GRIPCO Material Testing Saudia. The results shown in this certificate are based on the information provided by the client and are subject to GRIPCO Material Testing Saudia's terms and conditions.</p>
-          <p style="margin: 2pt 0;">For more information, please visit: <a href="https://gripco.com.sa" style="color: #0066cc;">https://gripco.com.sa</a></p>
-        </div>
-        
-        <div style="margin: 16pt 0; font-size: 9pt; color: #666; text-align: center;">
-          <p style="margin: 2pt 0;">${currentDate}, ${currentTime}</p>
-          <p style="margin: 2pt 0; font-weight: bold;">GRIPCO LIMS</p>
-          <p style="margin: 2pt 0;">These results relate only to the item(s) tested/sampling conducted by the organization indicated. No deviations were observed during the testing process.</p>
-          <p style="margin: 2pt 0; font-weight: bold;">1/2</p>
-        </div>
-      </div>
+      <p class="MsoFooter" style="font-size:9pt;line-height:1.25;margin:0;">
+        All Works and services carried out by GRIPCO Material Testing Saudia are subjected to and conducted with the standard terms and conditions of GRIPCO Material Testing, which are available on the GRIPCO Site or upon request.
+      </p>
+      <p class="MsoFooter" style="font-size:9pt;line-height:1.25;margin:0;">
+        The results shown in this certificate relate only to the sample(s) tested. This certificate shall not be reproduced except in full, without the written approval of GRIPCO Material Testing Saudia. The results shown in this certificate are based on the information provided by the client and are subject to GRIPCO Material Testing Saudia's terms and conditions.
+      </p>
+      <p class="MsoFooter" style="font-size:9pt;line-height:1.25;margin:0;">
+        For more information, please visit: <a href="https://gripco.com.sa">https://gripco.com.sa</a>
+      </p>
     `
   }
 
