@@ -11,7 +11,7 @@ import { ServerPagination } from "@/components/ui/server-pagination";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options";
 import { FilterSearch } from "@/components/ui/filter-search";
-import { AdvancedSearch } from "@/components/sample-preparation/advanced-search";
+import { AdvancedSearch } from "@/components/common";
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table";
 import { ConfirmPopover } from "@/components/ui/confirm-popover";
 import { PencilIcon, TrashIcon } from "lucide-react";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, X } from "lucide-react";
@@ -8,22 +8,24 @@ import { Search, X } from "lucide-react";
 interface AdvancedSearchProps {
   onSearch: (query: string) => void;
   isLoading?: boolean;
+  placeholder?: string;
 }
 
 export function AdvancedSearch({
   onSearch,
   isLoading = false,
+  placeholder = "Search...",
 }: AdvancedSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     onSearch(searchQuery);
-  };
+  }, [searchQuery, onSearch]);
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     setSearchQuery("");
     onSearch(""); // Trigger search with empty query to show all data
-  };
+  }, [onSearch]);
 
   const hasActiveSearch = searchQuery.trim() !== "";
 
@@ -31,7 +33,7 @@ export function AdvancedSearch({
     <>
       <div className="flex items-center w-full gap-2">
         <Input
-          placeholder="Search by Job ID, Project, Client, or Request..."
+          placeholder="Search by Job ID, Project Name, Client Name, or End User..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}

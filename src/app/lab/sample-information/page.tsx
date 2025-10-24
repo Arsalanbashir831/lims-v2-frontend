@@ -17,7 +17,7 @@ import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table";
 import { ConfirmPopover } from "@/components/ui/confirm-popover";
 import { PencilIcon, TrashIcon } from "lucide-react";
 import CompleteDetailsSidebar from "@/components/sample-information/complete-details-sidebar";
-import { AdvancedSearch } from "@/components/sample-information/advanced-search";
+import { AdvancedSearch } from "@/components/common";
 import type { SampleInformationListLike } from "@/services/sample-information.service";
 
 export default function SampleInformationPage() {
@@ -205,6 +205,7 @@ export default function SampleInformationPage() {
           <AdvancedSearch
             onSearch={handleAdvancedSearch}
             isLoading={isFetching}
+            placeholder="Search by Job ID, Project Name, Client Name, or End User..."
           />
           <div className="flex items-center gap-2 w-full md:w-auto">
             <DataTableViewOptions table={table} />
