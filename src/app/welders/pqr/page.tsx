@@ -23,27 +23,20 @@ import { AdvancedSearch } from "@/components/common"
 
 export default function PQRPage() {
   const router = useRouter()
-  const [query, setQuery] = useState("")
-  const [page, setPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
   const limit = 10
 
   // Use the PQR hooks
-  const { data: pqrResponse, isLoading, error } = usePQRs(page, query, limit)
+  const { data: pqrResponse, isLoading, error } = usePQRs(currentPage, searchQuery, limit)
   const deletePQRMutation = useDeletePQR()
 
   const items = pqrResponse?.data || []
 
-  const filtered = useMemo(() => {
-    if (!query.trim()) return items
-    const q = query.toLowerCase()
-    return items.filter((r) =>
-      (r.basic_info?.qualified_by ?? "").toLowerCase().includes(q) ||
-      (r.basic_info?.pqr_number ?? "").toLowerCase().includes(q) ||
-      (r.welder_info?.operator_name ?? "").toLowerCase().includes(q) ||
-      (r.welder_info?.operator_id ?? "").toLowerCase().includes(q) ||
-      (r.basic_info?.approved_by ?? "").toLowerCase().includes(q)
-    )
-  }, [items, query])
+  const handleAdvancedSearch = useCallback((query: string) => {
+    setSearchQuery(query)
+    setCurrentPage(1) // Reset to first page when searching
+  }, [])
 
   const doDelete = useCallback(async (id: string) => {
     try {
@@ -115,7 +108,7 @@ export default function PQRPage() {
     }
     return (
       <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
-        {/* <AdvancedSearch onSearch={handleAdvancedSearch} isLoading={isLoading} placeholder="Search by PQR No., Qualified By, Approved By, Welder Name, or Type..." /> */}
+        <AdvancedSearch onSearch={handleAdvancedSearch} isLoading={isLoading} placeholder="Search by PQR No., Qualified By, Approved By, Welder Name, or Type..." />
         <div className="flex items-center gap-2 w-full md:w-auto">
           <DataTableViewOptions table={table} />
           {hasSelected && (
@@ -127,7 +120,7 @@ export default function PQRPage() {
         </div>
       </div>
     )
-  }, [doDelete, query])
+  }, [doDelete, handleAdvancedSearch, isLoading])
 
   const footerCallback = useCallback((table: TanstackTable<PQR>) => <DataTablePagination table={table} />, [])
 
@@ -143,7 +136,7 @@ export default function PQRPage() {
   return (
     <DataTable
       columns={columns}
-      data={filtered}
+      data={items}
       empty={<span className="text-muted-foreground">No PQRs found</span>}
       pageSize={limit}
       tableKey="pqr"

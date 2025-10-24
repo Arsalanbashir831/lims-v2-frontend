@@ -108,8 +108,8 @@ export const pqrService = {
 
   // Search PQRs
   async search(query: string, page: number = 1, limit: number = 10): Promise<PQRListResponse> {
-    const response = await api.get(API_ROUTES.WELDERS_API.GET_ALL_WELDER_PQRS, {
-      searchParams: { search: query, page, limit }
+    const response = await api.get(API_ROUTES.WELDERS_API.SEARCH_WELDER_PQRS, {
+      searchParams: { q: query, page, limit }
     }).json()
     return response as PQRListResponse
   },
