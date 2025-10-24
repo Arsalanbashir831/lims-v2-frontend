@@ -21,6 +21,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { formatDateSafe } from "@/utils/hydration-fix";
 import ExportExcelButton from "@/components/common/export-excel-button";
+import { AdvancedSearch } from "@/components/common";
 
 export default function ProficiencyTestingPage() {
   const router = useRouter();
@@ -200,14 +201,11 @@ export default function ProficiencyTestingPage() {
 
           return (
             <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
-              <FilterSearch
-                placeholder="Search description..."
-                value={searchQuery}
-                onChange={handleSearchChange}
-                className="w-full"
-                inputClassName="max-w-md"
+              <AdvancedSearch
+                onSearch={handleSearchChange}
+                // isLoading={isFetching}
+                placeholder="Search by Description, Provider 1, Provider 2, Last Test Date, Due Date, Next Scheduled Date, Status, Remarks..."
               />
-
               <div className="flex items-center gap-2 w-full md:w-auto">
                 <DataTableViewOptions table={table} />
                 <ExportExcelButton

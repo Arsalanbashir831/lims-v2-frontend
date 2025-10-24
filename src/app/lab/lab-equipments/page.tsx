@@ -11,13 +11,14 @@ import { FilterSearch } from "@/components/ui/filter-search";
 import { ConfirmPopover } from "@/components/ui/confirm-popover";
 import { Equipment } from "@/services/equipments.service";
 import { toast } from "sonner";
-import { FileSpreadsheetIcon, PencilIcon, TrashIcon } from "lucide-react";
+import {  PencilIcon, TrashIcon } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { useEquipments, useDeleteEquipment } from "@/hooks/use-equipments";
 import { formatDateSafe } from "@/utils/hydration-fix";
 import ExportExcelButton from "@/components/common/export-excel-button";
+import { AdvancedSearch } from "@/components/common";
 
 export default function LabEquipmentsPage() {
   const router = useRouter();
@@ -172,12 +173,10 @@ export default function LabEquipmentsPage() {
 
           return (
             <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
-              <FilterSearch
-                placeholder="Search equipments..."
-                value={searchQuery}
-                onChange={handleSearchChange}
-                className="w-full"
-                inputClassName="max-w-md"
+              <AdvancedSearch
+                onSearch={handleSearchChange}
+                
+                placeholder="Search by Equipment Name, Equipment Serial, Status, Last Verification, Verification Due, Created By, Updated By, Remarks..."
               />
               <div className="flex items-center gap-2 w-full md:w-auto">
                 <DataTableViewOptions table={table} />

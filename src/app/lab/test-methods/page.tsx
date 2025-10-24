@@ -18,6 +18,7 @@ import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { ServerPagination } from "@/components/ui/server-pagination"
 import { useRouter } from "next/navigation"
 import { useTestMethods, useDeleteTestMethod } from "@/hooks/use-test-methods"
+import { AdvancedSearch } from "@/components/common"
 
 export default function TestMethodsPage() {
     const router = useRouter()
@@ -122,12 +123,9 @@ export default function TestMethodsPage() {
             toolbar={useCallback((table: TanstackTable<TestMethodResponse>) => {
                 return (
                     <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
-                        <FilterSearch
-                            placeholder="Search name..."
-                            value={searchQuery}
-                            onChange={handleSearchChange}
-                            className="w-full"
-                            inputClassName="max-w-md"
+                        <AdvancedSearch
+                            onSearch={handleSearchChange}
+                            placeholder="Search by Name..."
                         />
                         <div className="flex items-center gap-2 w-full md:w-auto">
                             <DataTableViewOptions table={table} />
