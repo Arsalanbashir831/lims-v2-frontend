@@ -10,7 +10,7 @@ import { AdvancedSearch } from "@/components/common"
 import { Button } from "@/components/ui/button"
 import { transformJobToTrackingRow, type TrackingRow } from "@/services/tracking.service"
 import { TrackingDrawer } from "@/components/tracking/tracking-drawer"
-import { useJobs, useJobsSearch, useJobsWithCertificates } from "@/hooks/use-jobs"
+import { useJobsWithCertificates, useJobsSearchWithCertificates } from "@/hooks/use-jobs"
 import { ROUTES } from "@/constants/routes"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -24,8 +24,12 @@ export default function TrackingDatabasePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const router = useRouter()
 
-  // Use jobs API with certificates and request numbers
-  const { data: jobsResponse, isLoading, error } = useJobsWithCertificates({ page: currentPage, limit: 20 })
+  // Use jobs API with certificates and request numbers - with backend search
+  const hasSearchQuery = searchQuery?.trim()
+  const { data: jobsResponse, isLoading, error } = hasSearchQuery 
+    ? useJobsSearchWithCertificates(searchQuery, { page: currentPage, limit: 20 })
+    : useJobsWithCertificates({ page: currentPage, limit: 20 })
+
 
   // Handle errors with useEffect
   useEffect(() => {
@@ -37,48 +41,12 @@ export default function TrackingDatabasePage() {
 
   const data = useMemo(() => {
     if (!jobsResponse?.data) return []
-    let transformedData = jobsResponse.data.map(transformJobToTrackingRow)
-    
-    // Apply client-side filtering if there's a search query
-    if (searchQuery.trim()) {
-      const searchTerm = searchQuery.toLowerCase()
-      
-      transformedData = transformedData.filter((item: TrackingRow) => {
-        const jobIdMatch = item.sampleId?.toLowerCase().includes(searchTerm) || false
-        const projectMatch = item.projectName?.toLowerCase().includes(searchTerm) || false
-        const clientMatch = item.clientName?.toLowerCase().includes(searchTerm) || false
-        const requestMatch = item.requestNo?.toLowerCase().includes(searchTerm) || false
-        const certificateMatch = item.certificateId?.toLowerCase().includes(searchTerm) || false
+    return jobsResponse.data.map(transformJobToTrackingRow)
+  }, [jobsResponse])
 
-        // Also try searching for individual words in the query
-        const searchWords = searchTerm.split(/\s+/).filter(word => word.length > 0)
-        let wordMatch = false
-
-        if (searchWords.length > 1) {
-          // If multiple words, check if any word matches any field
-          wordMatch = searchWords.some(word => 
-            item.sampleId?.toLowerCase().includes(word) ||
-            item.projectName?.toLowerCase().includes(word) ||
-            item.clientName?.toLowerCase().includes(word) ||
-            item.requestNo?.toLowerCase().includes(word) ||
-            item.certificateId?.toLowerCase().includes(word)
-          )
-        }
-
-        const isMatch = jobIdMatch || projectMatch || clientMatch || requestMatch || certificateMatch || wordMatch
-        return isMatch
-      })
-    }
-    
-    return transformedData
-  }, [jobsResponse, searchQuery])
-
-  const totalCount = data.length
+  const totalCount = jobsResponse?.pagination?.total_records || 0
   const pageSize = 20
-  const startIndex = (currentPage - 1) * pageSize
-  const endIndex = startIndex + pageSize
-  const paginatedData = data.slice(startIndex, endIndex)
-  const hasNext = endIndex < totalCount
+  const hasNext = jobsResponse?.pagination?.has_next || false
   const hasPrevious = currentPage > 1
 
   const handleSearchChange = useCallback((value: string) => {
@@ -126,6 +94,7 @@ export default function TrackingDatabasePage() {
         <AdvancedSearch
           onSearch={handleAdvancedSearch}
           isLoading={isLoading}
+          placeholder="Search by Job ID, Project Name, Client Name, Request No, or Certificate ID..."
         />
         <div className="flex items-center gap-2 w-full md:w-auto">
           <DataTableViewOptions table={table} />
@@ -160,7 +129,7 @@ export default function TrackingDatabasePage() {
   return (
     <>
       <DataTable
-        data={paginatedData}
+        data={data}
         columns={columns}
         tableKey="tracking-db"
         bodyMaxHeightClassName="max-h-[65vh]"

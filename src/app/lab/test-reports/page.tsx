@@ -76,7 +76,7 @@ export default function TestReportsPage() {
     { 
       accessorKey: "request_info.request_no", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Request No" />,
-      cell: ({ row }) => row.original.request_info?.request_no || "N/A"
+      cell: ({ row }) => row.original.request_no || row.original.request_info?.request_no || "N/A"
     },
     { 
       accessorKey: "customers_name_no", 
@@ -93,13 +93,13 @@ export default function TestReportsPage() {
     { 
       id: "specimens_count", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Specimens" />,
-      cell: ({ row }) => row.original.request_info?.total_specimens || 0,
+      cell: ({ row }) => row.original.request_info?.total_specimens || "N/A",
       accessorFn: (row) => row.request_info?.total_specimens || 0
     },
     { 
       id: "sample_lots_count", 
       header: ({ column }) => <DataTableColumnHeader column={column} title="Sample Lots" />,
-      cell: ({ row }) => row.original.request_info?.sample_lots_count || 0,
+      cell: ({ row }) => row.original.request_info?.sample_lots_count || "N/A",
       accessorFn: (row) => row.request_info?.sample_lots_count || 0
     },
     { 
@@ -197,6 +197,7 @@ export default function TestReportsPage() {
             <AdvancedSearch
               onSearch={handleAdvancedSearch}
               isLoading={isFetching}
+              placeholder="Search by Certificate ID, Request No, Customer, PO...."
             />
             <div className="flex items-center gap-2 w-full md:w-auto">
               <DataTableViewOptions table={table} />

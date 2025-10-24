@@ -18,6 +18,8 @@ export interface TestReport {
   customer_po: string
   tested_by: string
   reviewed_by: string
+  // Direct fields from search endpoint
+  request_no?: string
   request_info?: {
     request_id: string
     request_no: string
@@ -175,43 +177,31 @@ export const testReportsService = {
       return this.getAll(page)
     }
 
-    // For simple search, get all data and filter client-side
-    const allData = await this.getAll(page)
+    // Use backend search endpoint
+    const endpoint = API_ROUTES.Lab_MANAGERS.SEARCH_CERTIFICATES;
+    
+    const response = await api
+      .get(endpoint, { 
+        searchParams: { 
+          q: query.trim(),
+          page: page.toString() 
+        } 
+      })
+      .json<{
+        status: string;
+        data: TestReport[];
+        total: number;
+      }>();
 
-    // Filter the results client-side across all fields
-    const filteredResults = allData.data?.filter((item: TestReport) => {
-      const searchTerm = query.toLowerCase()
-
-      // Search across multiple fields
-      const certificateMatch = item.certificate_id?.toLowerCase().includes(searchTerm) || false
-      const requestMatch = item.request_info?.request_no?.toLowerCase().includes(searchTerm) || false
-      const customerMatch = item.customers_name_no?.toLowerCase().includes(searchTerm) || false
-      const poMatch = item.customer_po?.toLowerCase().includes(searchTerm) || false
-
-      // Also try searching for individual words in the query
-      const searchWords = searchTerm.split(/\s+/).filter(word => word.length > 0)
-      let wordMatch = false
-
-      if (searchWords.length > 1) {
-        // If multiple words, check if any word matches any field
-        wordMatch = searchWords.some(word => 
-          item.certificate_id?.toLowerCase().includes(word) ||
-          item.request_info?.request_no?.toLowerCase().includes(word) ||
-          item.customers_name_no?.toLowerCase().includes(word) ||
-          item.customer_po?.toLowerCase().includes(word)
-        )
-      }
-
-      const isMatch = certificateMatch || requestMatch || customerMatch || poMatch || wordMatch
-
-      return isMatch
-    }) || []
-
-    return {
-      status: allData.status,
-      data: filteredResults,
-      total: filteredResults.length,
+    if (response.status === "success" && response.data) {
+      return {
+        status: response.status,
+        data: response.data,
+        total: response.total,
+      };
     }
+
+    throw new Error("Failed to search test reports");
   },
 
   async getById(id: string): Promise<TestReportResponse> {

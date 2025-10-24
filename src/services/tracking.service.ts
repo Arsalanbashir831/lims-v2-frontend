@@ -82,8 +82,13 @@ export function transformJobToTrackingRow(job: Job): TrackingRow {
     day: '2-digit'
   })
 
-  const requestNo = Array.isArray(job.request_numbers) ? job.request_numbers.join(', ') : job.request_numbers || undefined
-  const certificateId = Array.isArray(job.certificate_numbers) ? job.certificate_numbers.join(', ') : job.certificate_numbers || undefined
+  // Handle both array format (from regular endpoint) and string format (from search endpoint)
+  const requestNo = Array.isArray(job.request_numbers) 
+    ? job.request_numbers.join(', ') 
+    : (job as any).request_no || job.request_numbers || undefined
+  const certificateId = Array.isArray(job.certificate_numbers) 
+    ? job.certificate_numbers.join(', ') 
+    : (job as any).certificate_id || job.certificate_numbers || undefined
 
   return {
     id: job.id,
@@ -146,49 +151,8 @@ export async function fetchTrackingRowsFromAPI(): Promise<TrackingRow[]> {
   }
 }
 
-// Search tracking rows with client-side filtering
-export async function searchTrackingRows(query: string): Promise<TrackingRow[]> {
-  // If no query, return all data
-  if (!query.trim()) {
-    return fetchTrackingRowsFromAPI()
-  }
-
-  // Get all data and filter client-side
-  const allData = await fetchTrackingRowsFromAPI()
-
-  // Filter the results client-side across all fields
-  const filteredResults = allData.filter((item: TrackingRow) => {
-    const searchTerm = query.toLowerCase()
-
-    // Search across multiple fields
-    const jobIdMatch = item.sampleId?.toLowerCase().includes(searchTerm) || false
-    const projectMatch = item.projectName?.toLowerCase().includes(searchTerm) || false
-    const clientMatch = item.clientName?.toLowerCase().includes(searchTerm) || false
-    const requestMatch = item.requestNo?.toLowerCase().includes(searchTerm) || false
-    const certificateMatch = item.certificateId?.toLowerCase().includes(searchTerm) || false
-
-    // Also try searching for individual words in the query
-    const searchWords = searchTerm.split(/\s+/).filter(word => word.length > 0)
-    let wordMatch = false
-
-    if (searchWords.length > 1) {
-      // If multiple words, check if any word matches any field
-      wordMatch = searchWords.some(word => 
-        item.sampleId?.toLowerCase().includes(word) ||
-        item.projectName?.toLowerCase().includes(word) ||
-        item.clientName?.toLowerCase().includes(word) ||
-        item.requestNo?.toLowerCase().includes(word) ||
-        item.certificateId?.toLowerCase().includes(word)
-      )
-    }
-
-    const isMatch = jobIdMatch || projectMatch || clientMatch || requestMatch || certificateMatch || wordMatch
-
-    return isMatch
-  })
-
-  return filteredResults
-}
+// Note: Client-side search has been replaced with backend search
+// The tracking database now uses useJobsSearchWithCertificates hook for backend search
 
 export function computeTrackingRows(): TrackingRow[] {
   // Dummy data for visualization

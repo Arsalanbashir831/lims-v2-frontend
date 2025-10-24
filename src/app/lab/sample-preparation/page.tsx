@@ -245,6 +245,7 @@ export default function SamplePreparationPage() {
           <AdvancedSearch
             onSearch={handleAdvancedSearch}
             isLoading={isFetching}
+            placeholder="Search by Job ID, Project Name, Client Name, or Request #..."
           />
           <div className="flex items-center gap-2 w-full md:w-auto">
             <DataTableViewOptions table={table} />

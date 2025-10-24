@@ -137,65 +137,58 @@ export const samplePreparationService = {
       return this.getAll(page);
     }
 
-    // For simple search, get all data and filter client-side
-    const allData = await this.getAll(page);
+    // Use backend search endpoint
+    const endpoint = API_ROUTES.Lab_MANAGERS.SEARCH_SAMPLE_PREPARATIONS;
+    
+    const response = await api
+      .get(endpoint, { 
+        searchParams: { 
+          q: query.trim(),
+          page: page.toString() 
+        } 
+      })
+      .json<{
+        status: string;
+        data: Array<{
+          id: string;
+          request_no: string;
+          sample_lots: Array<{
+            item_description: string;
+            planned_test_date: string | null;
+            dimension_spec: string | null;
+            request_by: string | null;
+            remarks: string | null;
+            sample_lot_id: string;
+            test_method: {
+              test_method_oid: string;
+              test_name: string;
+            };
+            job_id: string;
+            item_no: string;
+            client_name: string | null;
+            project_name: string | null;
+            specimens: Array<{
+              specimen_oid: string;
+              specimen_id: string;
+            }>;
+            specimens_count: number;
+          }>;
+          sample_lots_count: number;
+          created_at: string;
+          updated_at: string;
+        }>;
+        total: number;
+      }>();
 
-    // Filter the results client-side across all fields
-    const filteredResults =
-      allData.data?.filter((item: any) => {
-        const searchTerm = query.toLowerCase();
+    if (response.status === "success" && response.data) {
+      return {
+        status: response.status,
+        data: response.data,
+        total: response.total,
+      };
+    }
 
-        // Search across multiple fields
-        const requestMatch =
-          item.request_no?.toLowerCase().includes(searchTerm) || false;
-        const jobIdMatch =
-          item.sample_lots?.some((lot: any) =>
-            lot.job_id?.toLowerCase().includes(searchTerm)
-          ) || false;
-        const projectMatch =
-          item.sample_lots?.some((lot: any) =>
-            lot.project_name?.toLowerCase().includes(searchTerm)
-          ) || false;
-        const clientMatch =
-          item.sample_lots?.some((lot: any) =>
-            lot.client_name?.toLowerCase().includes(searchTerm)
-          ) || false;
-
-        // Also try searching for individual words in the query
-        const searchWords = searchTerm
-          .split(/\s+/)
-          .filter((word) => word.length > 0);
-        let wordMatch = false;
-
-        if (searchWords.length > 1) {
-          // If multiple words, check if any word matches any field
-          wordMatch = searchWords.some(
-            (word) =>
-              item.request_no?.toLowerCase().includes(word) ||
-              item.sample_lots?.some(
-                (lot: any) =>
-                  lot.job_id?.toLowerCase().includes(word) ||
-                  lot.project_name?.toLowerCase().includes(word) ||
-                  lot.client_name?.toLowerCase().includes(word)
-              )
-          );
-        }
-
-        const isMatch =
-          requestMatch ||
-          jobIdMatch ||
-          projectMatch ||
-          clientMatch ||
-          wordMatch;
-
-        return isMatch;
-      }) || [];
-
-    return {
-      status: allData.status,
-      data: filteredResults,
-      total: filteredResults.length,
-    };
+    throw new Error("Failed to search sample preparations");
   },
 
   // Specimen CRUD

@@ -33,7 +33,7 @@ export function AdvancedSearch({
     <>
       <div className="flex items-center w-full gap-2">
         <Input
-          placeholder="Search by Job ID, Project Name, Client Name, or End User..."
+          placeholder={placeholder}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}

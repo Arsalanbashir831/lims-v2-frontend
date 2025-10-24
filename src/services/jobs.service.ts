@@ -17,6 +17,13 @@ export interface Job {
   updated_at: string
   request_numbers?: string[]
   certificate_numbers?: string[]
+  // Fields from search endpoint
+  request_no?: string
+  certificate_id?: string
+  customers_name_no?: string
+  issue_date?: string
+  tested_by?: string
+  reviewed_by?: string
 }
 
 export interface JobsResponse {
@@ -63,7 +70,7 @@ class JobsService {
     
     if (params.page) searchParams.append('page', params.page.toString())
     if (params.limit) searchParams.append('limit', params.limit.toString())
-    if (query) searchParams.append('search', query)
+    if (query) searchParams.append('q', query)
 
     const url = `${API_ROUTES.Lab_MANAGERS.JOBS_WITH_CERTIFICATES}?${searchParams.toString()}`
     const response = await api.get(url).json<JobsResponse>()
