@@ -175,7 +175,6 @@ export default function LabEquipmentsPage() {
             <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
               <AdvancedSearch
                 onSearch={handleSearchChange}
-                
                 placeholder="Search by Equipment Name, Equipment Serial, Status, Last Verification, Verification Due, Created By, Updated By, Remarks..."
               />
               <div className="flex items-center gap-2 w-full md:w-auto">

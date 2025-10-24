@@ -110,7 +110,7 @@ export default function TestReportsPage() {
         return testMethods.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {testMethods.map((testMethod: string, index: number) => (
-              <Badge key={index} variant="outline" className="text-xs">
+              <Badge key={index} variant="outline" className="text-xs bg-amber-500 text-black">
                 {testMethod}
               </Badge>
             ))}

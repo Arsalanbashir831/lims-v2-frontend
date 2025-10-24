@@ -17,6 +17,7 @@ import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import ExportExcelButton from "@/components/common/export-excel-button"
+import { AdvancedSearch } from "@/components/common"
 
 export default function CalibrationTestingingPage() {
   const router = useRouter()
@@ -89,12 +90,10 @@ export default function CalibrationTestingingPage() {
 
         return (
           <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
-            <FilterSearch
-              placeholder="Search equipment..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="w-full"
-              inputClassName="max-w-md"
+            <AdvancedSearch
+              onSearch={handleSearchChange}
+              isLoading={isLoading}
+              placeholder="Search by Equipment/Instrument Name, Equipment Serial, Calibration Vendor, Calibration Date, Calibration Due Date, Calibration Certification, Created By, Updated By, Remarks..."
             />
             <div className="flex items-center gap-2 w-full md:w-auto">
               <DataTableViewOptions table={table} />
