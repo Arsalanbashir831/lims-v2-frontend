@@ -77,13 +77,20 @@ export const fetchAsDataURI = async (url: string): Promise<string> => {
         reader.readAsDataURL(blob);
       });
     } catch (corsError) {
+      console.warn('CORS error with direct fetch, trying alternative approaches:', corsError);
 
       // Approach 2: Try with no-cors mode
       try {
+        console.log('Trying no-cors mode for:', fullUrl);
         const response = await fetch(fullUrl, {
           mode: "no-cors",
           credentials: "omit",
         });
+
+        if (response.type === 'opaque') {
+          console.warn('No-cors response is opaque, cannot read body');
+          throw new Error("No-cors response is opaque");
+        }
 
         const blob = await response.blob();
         return new Promise((resolve, reject) => {
@@ -100,6 +107,7 @@ export const fetchAsDataURI = async (url: string): Promise<string> => {
           reader.readAsDataURL(blob);
         });
       } catch (noCorsError) {
+        console.warn('No-cors approach failed:', noCorsError);
 
         // Approach 3: Try with different headers
         try {
@@ -128,6 +136,7 @@ export const fetchAsDataURI = async (url: string): Promise<string> => {
             reader.readAsDataURL(blob);
           });
         } catch (altError) {
+          console.warn('All fetch approaches failed, creating placeholder:', altError);
           // Create a placeholder image as final fallback
           const placeholderSvg = `data:image/svg+xml;base64,${btoa(`
             <svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">

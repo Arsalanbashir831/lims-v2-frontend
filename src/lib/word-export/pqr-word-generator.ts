@@ -104,9 +104,24 @@ export class PqrWordGenerator {
             let right = ''
             if (joints.designPhotoUrl) {
                 try {
+                    console.log('Fetching joint design image from:', joints.designPhotoUrl)
                     const img64 = await fetchAsDataURI(joints.designPhotoUrl)
-                    if (img64) right = `${this.containerOpen}<div style=\"text-align:center;\"><img src=\"${img64}\" style=\"max-width:100%; height:auto; max-height:180pt; object-fit:contain; border:1pt solid #cfcfcf;\" alt=\"Joint Design\"/></div>${this.containerClose}`
-                } catch { }
+                    if (img64 && img64.startsWith('data:image/')) {
+                        right = `${this.containerOpen}<div style="text-align:center;"><img src="${img64}" style="max-width:100%; height:auto; max-height:180pt; object-fit:contain; border:1pt solid #cfcfcf;" alt="Joint Design"/></div>${this.containerClose}`
+                        console.log('Joint design image loaded successfully')
+                    } else if (img64 && img64.startsWith('data:image/svg+xml')) {
+                        // This is a placeholder image from fetchAsDataURI fallback
+                        right = `${this.containerOpen}<div style="text-align:center;"><img src="${img64}" style="max-width:100%; height:auto; max-height:180pt; object-fit:contain; border:1pt solid #cfcfcf;" alt="Joint Design Placeholder"/></div>${this.containerClose}`
+                        console.log('Joint design image placeholder loaded (CORS issue)')
+                    } else {
+                        console.warn('Invalid image data received:', img64?.substring(0, 50))
+                        right = `${this.containerOpen}<div style="text-align:center; padding:20pt; border:1pt solid #cfcfcf; color:#666;">Joint Design Image<br/>(Invalid data)</div>${this.containerClose}`
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch joint design image:', error)
+                    // Add a placeholder if image fails to load
+                    right = `${this.containerOpen}<div style="text-align:center; padding:20pt; border:1pt solid #cfcfcf; color:#666;">Joint Design Image<br/>(Failed to load: ${error instanceof Error ? error.message : 'Unknown error'})</div>${this.containerClose}`
+                }
             }
             bodyHtml += right ? this.renderTwoUp(left, right) : left
         }
@@ -248,6 +263,7 @@ export class PqrWordGenerator {
         const filename = `PQR_${this.pqrId}`
         await createWordDocument(bodyHtml, filename, {
             gripcoLogoBase64,
+            iasLogoBase64: gripcoLogoBase64, // Use gripco logo as fallback
             qrCodeBase64
         }, {
             headerHTML: `
