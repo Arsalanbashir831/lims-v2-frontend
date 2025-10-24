@@ -28,9 +28,13 @@ export const fetchAsDataURI = async (url: string): Promise<string> => {
     let fullUrl = url;
     if (url.startsWith("/")) {
       fullUrl = `${window.location.origin}${url}`;
+    } else if (url.startsWith("./")) {
+      fullUrl = `${window.location.origin}${url.substring(1)}`;
     }
 
     console.log("Attempting to load image:", fullUrl);
+    console.log("Original URL:", url);
+    console.log("Window location origin:", window.location.origin);
 
     // Try multiple approaches for loading images
     try {
@@ -135,13 +139,39 @@ export const fetchAsDataURI = async (url: string): Promise<string> => {
           });
         } catch (altError) {
           console.warn("Alternative headers approach also failed:", altError);
-          throw new Error("All image loading approaches failed");
+          // Create a placeholder image as final fallback
+          const placeholderSvg = `data:image/svg+xml;base64,${btoa(`
+            <svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+              <rect width="200" height="100" fill="#f0f0f0" stroke="#ccc" stroke-width="1"/>
+              <text x="100" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#666">
+                Image Not Found
+              </text>
+              <text x="100" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#999">
+                ${url.split('/').pop() || 'Image'}
+              </text>
+            </svg>
+          `)}`;
+          console.log("Using placeholder image as fallback");
+          return placeholderSvg;
         }
       }
     }
   } catch (error) {
     console.error("Error fetching image as data URI:", error);
-    throw error;
+    // Create a placeholder image as final fallback
+    const placeholderSvg = `data:image/svg+xml;base64,${btoa(`
+      <svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+        <rect width="200" height="100" fill="#f0f0f0" stroke="#ccc" stroke-width="1"/>
+        <text x="100" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#666">
+          Image Error
+        </text>
+        <text x="100" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#999">
+          ${url.split('/').pop() || 'Image'}
+        </text>
+      </svg>
+    `)}`;
+    console.log("Using placeholder image due to error");
+    return placeholderSvg;
   }
 };
 
@@ -172,6 +202,7 @@ export const createWordDocument = (
   filename: string,
   assets?: {
     gripcoLogoBase64: string;
+    iasLogoBase64: string;
     qrCodeBase64: string;
   },
   options?: {
@@ -241,7 +272,16 @@ export const createWordDocument = (
             mso-header: h1;
             mso-footer: f1;
           }
+          @page Section2 {
+            size: 8.5in 11.0in;
+            margin: 1.0in 0.75in 1.0in 0.75in;
+            mso-header-margin: 0.5in;
+            mso-footer-margin: 0.5in;
+            mso-header: none;
+            mso-footer: none;
+          }
           div.Section1 { page: Section1; }
+          div.Section2 { page: Section2; }
           body { 
             font-family: Arial, sans-serif; 
             font-size: 11pt; 
@@ -264,7 +304,6 @@ export const createWordDocument = (
           img { max-width: 100%; height: auto; }
           .page-break { page-break-before: always; }
           .avoid-break { page-break-inside: avoid; }
-          table#hrdftrtbl { display: none !important; position: absolute; top: -1000px; left: -1000px; margin: 0 !important; width: 1px; height: 1px; overflow: hidden; visibility: hidden; }
           div.mso-element\\:header { mso-element: header; }
           p.MsoHeader { margin: 0in; margin-bottom: .0001pt; mso-pagination: widow-orphan; tab-stops: center 3.0in right 6.0in; font-size: 10.0pt; font-family: "Arial", sans-serif; }
           div.mso-element\\:footer { mso-element: footer; }
@@ -283,7 +322,7 @@ export const createWordDocument = (
               `
             <table style="width: 100%; border: none; border-collapse: collapse;">
               <tr>
-                <td style="width: 50%; vertical-align: middle; border: none; padding: 5pt; text-align: left;">
+                <td style="width: 60%; vertical-align: middle; border: none; padding: 5pt; text-align: left;">
                   ${
                     assets?.gripcoLogoBase64 &&
                     assets.gripcoLogoBase64.startsWith("data:image/")
@@ -291,13 +330,27 @@ export const createWordDocument = (
                       : '<div style="font-weight: bold; font-size: 14pt; color: #333;">GRIPCO</div>'
                   }
                 </td>
-                <td style="width: 50%; vertical-align: middle; border: none; padding: 5pt; text-align: right;">
-                  ${
-                    assets?.qrCodeBase64 &&
-                    assets.qrCodeBase64.startsWith("data:image/")
-                      ? `<img src="${assets.qrCodeBase64}" style="height: 40pt; width: 40pt; opacity: 1; filter: contrast(1.2) brightness(0.9);" alt="QR Code">`
-                      : '<div style="font-weight: bold; font-size: 12pt; color: #333;">QR Code</div>'
-                  }
+                <td style="width: 40%; vertical-align: middle; border: none; margin: 0; padding: 0; text-align: right;">
+                  <table style="border: none; border-collapse: collapse; margin: 0; padding: 0; display: inline-block; cellspacing: 0; cellpadding: 0;">
+                    <tr>
+                      <td style="vertical-align: middle; border: none; margin: 0; padding: 0; text-align: center; cellspacing: 0; cellpadding: 0;">
+                        ${
+                          assets?.iasLogoBase64 &&
+                          assets.iasLogoBase64.startsWith("data:image/")
+                            ? `<img src="${assets.iasLogoBase64}" style="height: 45pt; width: auto; max-width: 100pt; opacity: 1; margin: 0; padding: 0; display: block;" alt="IAS Logo">`
+                            : '<div style="font-weight: bold; font-size: 10pt; color: #333; margin: 0; padding: 0;">IAS</div>'
+                        }
+                      </td>
+                      <td style="vertical-align: middle; border: none; margin: 0; padding: 0; text-align: center; cellspacing: 0; cellpadding: 0;">
+                        ${
+                          assets?.qrCodeBase64 &&
+                          assets.qrCodeBase64.startsWith("data:image/")
+                            ? `<img src="${assets.qrCodeBase64}" style="height: 40pt; width: 40pt; opacity: 1; filter: contrast(1.2) brightness(0.9); margin: 0; padding: 0; display: block;" alt="QR Code">`
+                            : '<div style="font-weight: bold; font-size: 12pt; color: #333; margin: 0; padding: 0;">QR Code</div>'
+                        }
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
             </table>
@@ -322,6 +375,12 @@ export const createWordDocument = (
               `
             }
           </div>
+        </div>
+        
+        <!-- Section break to create a section without headers/footers -->
+        <div style="page-break-before: always; mso-break-type: section-break;"></div>
+        <div class="Section2">
+          <!-- Empty section to end the document without headers/footers -->
         </div>
       </body>
     </html>

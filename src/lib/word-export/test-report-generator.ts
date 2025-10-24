@@ -100,55 +100,96 @@ export class TestReportWordGenerator {
 
   private async loadAssets(): Promise<{
     gripcoLogoBase64: string
+    iasLogoBase64: string
     qrCodeBase64: string
   }> {
     const assets = {
       gripcoLogoBase64: '',
+      iasLogoBase64: '',
       qrCodeBase64: ''
     }
 
+    console.log('Starting asset loading...')
+
+    // Load Gripco logo with multiple fallback attempts
     try {
-      // Load logos with retry mechanism
-      try {
-        // Load Gripco logo PNG directly (Word compatible format)
+      console.log('Attempting to load Gripco logo...')
+      const gripcoPaths = ['/gripco-logo.png', '/gripco-logo.webp', './gripco-logo.png', './gripco-logo.webp']
+      
+      for (const path of gripcoPaths) {
         try {
-          const logoData = await fetchAsDataURI('/gripco-logo.png')
+          console.log(`Trying Gripco logo path: ${path}`)
+          const logoData = await fetchAsDataURI(path)
           if (logoData && logoData.startsWith('data:image/')) {
             assets.gripcoLogoBase64 = logoData
-            console.log('Gripco logo loaded successfully from PNG')
+            console.log(`Gripco logo loaded successfully from ${path}`)
             console.log(`Gripco logo data length: ${logoData.length}`)
-          } else {
-            console.warn('Invalid logo data')
+            break
           }
         } catch (e) {
-          console.warn('Failed to load Gripco logo:', e)
+          console.warn(`Failed to load Gripco logo from ${path}:`, e)
         }
-      } catch (e) {
-        console.warn('Gripco logo loading failed:', e)
       }
-
-      try {
-        // Generate QR code for the certificate
-        const qrCodeText = `Certificate ID: ${this.certificateData.certificate_id}\nJob ID: ${this.certificateData.job_id}\nDate: ${this.certificateData.issue_date}`
-        assets.qrCodeBase64 = await generateQRCodeDataURI(qrCodeText, {
-          width: 100,
-          margin: 2
-        })
-        console.log('QR code generated successfully')
-      } catch (e) {
-        console.warn('Failed to generate QR code:', e)
+      
+      if (!assets.gripcoLogoBase64) {
+        console.warn('All Gripco logo paths failed, using fallback')
       }
-
-      // QR code removed - only using logos in header
-    } catch (error) {
-      console.error('Error loading assets:', error)
+    } catch (e) {
+      console.error('Gripco logo loading failed:', e)
     }
+
+    // Load IAS logo with multiple fallback attempts
+    try {
+      console.log('Attempting to load IAS logo...')
+      const iasPaths = ['/ias-logo-vertical.png', '/ias-logo-vertical.webp', '/iaslogo.png', './ias-logo-vertical.png', './ias-logo-vertical.webp', './iaslogo.png']
+      
+      for (const path of iasPaths) {
+        try {
+          console.log(`Trying IAS logo path: ${path}`)
+          const iasLogoData = await fetchAsDataURI(path)
+          if (iasLogoData && iasLogoData.startsWith('data:image/')) {
+            assets.iasLogoBase64 = iasLogoData
+            console.log(`IAS logo loaded successfully from ${path}`)
+            console.log(`IAS logo data length: ${iasLogoData.length}`)
+            break
+          }
+        } catch (e) {
+          console.warn(`Failed to load IAS logo from ${path}:`, e)
+        }
+      }
+      
+      if (!assets.iasLogoBase64) {
+        console.warn('All IAS logo paths failed, using fallback')
+      }
+    } catch (e) {
+      console.error('IAS logo loading failed:', e)
+    }
+
+    // Generate QR code
+    try {
+      console.log('Generating QR code...')
+      const qrCodeText = `Certificate ID: ${this.certificateData.certificate_id}\nJob ID: ${this.certificateData.job_id}\nDate: ${this.certificateData.issue_date}`
+      assets.qrCodeBase64 = await generateQRCodeDataURI(qrCodeText, {
+        width: 100,
+        margin: 2
+      })
+      console.log('QR code generated successfully')
+    } catch (e) {
+      console.error('Failed to generate QR code:', e)
+    }
+
+    console.log('Asset loading completed:', {
+      gripcoLogo: assets.gripcoLogoBase64 ? 'Loaded' : 'Failed',
+      iasLogo: assets.iasLogoBase64 ? 'Loaded' : 'Failed',
+      qrCode: assets.qrCodeBase64 ? 'Generated' : 'Failed'
+    })
 
     return assets
   }
 
   private async generateDocumentHTML(assets: {
     gripcoLogoBase64: string
+    iasLogoBase64: string
     qrCodeBase64: string
   }): Promise<string> {
     let documentHTML = `
@@ -208,6 +249,7 @@ export class TestReportWordGenerator {
 
   private async generateTestResults(assets: {
     gripcoLogoBase64: string
+    iasLogoBase64: string
     qrCodeBase64: string
   }): Promise<string> {
     let testResultsHTML = ''
@@ -460,15 +502,17 @@ export class TestReportWordGenerator {
 
   private generateSignatures(): string {
     return `
-      <div style="margin: 20pt 0;">
-        <div style="display: table; width: 100%; margin: 16pt 0;">
-          <div style="display: table-cell; width: 50%; vertical-align: top; padding: 8pt;">
-            <p style="margin: 2pt 0; font-size: 11pt;"><b>Tested By:</b> ${safeValue(this.certificateData.tested_by)}</p>
-          </div>
-          <div style="display: table-cell; width: 50%; vertical-align: top; padding: 8pt;">
-            <p style="margin: 2pt 0; font-size: 11pt;"><b>Reviewed By:</b> ${safeValue(this.certificateData.reviewed_by)}</p>
-          </div>
-        </div>
+      <div style="margin: 24pt 0 16pt 0;">
+        <table style="width: 100%; border: none; border-collapse: collapse; margin: 0;">
+          <tr>
+            <td style="width: 50%; vertical-align: top; border: none; padding: 8pt 16pt 8pt 0; text-align: left;">
+              <p style="margin: 0 0 8pt 0; font-size: 11pt; font-weight: bold;">Tested By: <span style="font-weight: normal;">${safeValue(this.certificateData.tested_by)}</span></p>
+            </td>
+            <td style="width: 50%; vertical-align: top; border: none; padding: 8pt 0 8pt 16pt; text-align: right;">
+              <p style="margin: 0 0 8pt 0; font-size: 11pt; font-weight: bold;">Reviewed By: <span style="font-weight: normal;">${safeValue(this.certificateData.reviewed_by)}</span></p>
+            </td>
+          </tr>
+        </table>
       </div>
     `
   }
