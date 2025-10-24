@@ -232,16 +232,7 @@ export const createWordDocument = (
             mso-header: h1;
             mso-footer: f1;
           }
-          @page Section2 {
-            size: 8.5in 11.0in;
-            margin: 1.0in 0.75in 1.0in 0.75in;
-            mso-header-margin: 0.5in;
-            mso-footer-margin: 0.5in;
-            mso-header: none;
-            mso-footer: none;
-          }
           div.Section1 { page: Section1; }
-          div.Section2 { page: Section2; }
           body { 
             font-family: Arial, sans-serif; 
             font-size: 11pt; 
@@ -264,10 +255,23 @@ export const createWordDocument = (
           img { max-width: 100%; height: auto; }
           .page-break { page-break-before: always; }
           .avoid-break { page-break-inside: avoid; }
+          /* Hidden header/footer table - positioned off-screen */
+          table#hrdftrtbl { 
+            position: absolute; 
+            top: -1000px; 
+            left: -1000px; 
+            margin: 0in 0in 0in 900in; 
+            width:1px; 
+            height:1px; 
+            overflow:hidden; 
+          }
           div.mso-element\\:header { mso-element: header; }
-          p.MsoHeader { margin: 0in; margin-bottom: .0001pt; mso-pagination: widow-orphan; tab-stops: center 3.0in right 6.0in; font-size: 10.0pt; font-family: "Arial", sans-serif; }
           div.mso-element\\:footer { mso-element: footer; }
-          p.MsoFooter { margin: 0in; margin-bottom: .0001pt; mso-pagination: widow-orphan; tab-stops: center 3.0in right 6.0in; font-size: 10.0pt; font-family: "Arial", sans-serif; }
+          p.MsoFooter, p.MsoHeader { 
+            margin:0in; 
+            font-size:10pt; 
+            font-family: "Arial", sans-serif; 
+          }
           ${options?.extraStyles ?? ""}
         </style>
       </head>
@@ -275,72 +279,66 @@ export const createWordDocument = (
         <div class="Section1">
           ${htmlContent}
           
-          <!-- Header definition -->
-          <div style='mso-element:header' id='h1'>
-            ${
-              options?.headerHTML ??
-              `
-            <table style="width: 100%; border: none; border-collapse: collapse;">
-              <tr>
-                <td style="width: 60%; vertical-align: middle; border: none; padding: 5pt; text-align: left;">
-                  ${
-                    assets?.gripcoLogoBase64 &&
-                    assets.gripcoLogoBase64.startsWith("data:image/")
-                      ? `<img src="${assets.gripcoLogoBase64}" style="height: 50pt; width: auto; max-width: 180pt; opacity: 1; filter: contrast(1.1) brightness(1);" alt="Gripco Logo">`
-                      : '<div style="font-weight: bold; font-size: 14pt; color: #333;">GRIPCO</div>'
-                  }
-                </td>
-                <td style="width: 40%; vertical-align: middle; border: none; margin: 0; padding: 0; text-align: right;">
-                  <table style="border: none; border-collapse: collapse; margin: 0; padding: 0; display: inline-block; cellspacing: 0; cellpadding: 0;">
-                    <tr>
-                      <td style="vertical-align: middle; border: none; margin: 0; padding: 0; text-align: center; cellspacing: 0; cellpadding: 0;">
-                        ${
-                          assets?.iasLogoBase64 &&
-                          assets.iasLogoBase64.startsWith("data:image/")
-                            ? `<img src="${assets.iasLogoBase64}" style="height: 45pt; width: auto; max-width: 100pt; opacity: 1; margin: 0; padding: 0; display: block;" alt="IAS Logo">`
-                            : '<div style="font-weight: bold; font-size: 10pt; color: #333; margin: 0; padding: 0;">IAS</div>'
-                        }
-                      </td>
-                      <td style="vertical-align: middle; border: none; margin: 0; padding: 0; text-align: center; cellspacing: 0; cellpadding: 0;">
-                        ${
-                          assets?.qrCodeBase64 &&
-                          assets.qrCodeBase64.startsWith("data:image/")
-                            ? `<img src="${assets.qrCodeBase64}" style="height: 40pt; width: 40pt; opacity: 1; filter: contrast(1.2) brightness(0.9); margin: 0; padding: 0; display: block;" alt="QR Code">`
-                            : '<div style="font-weight: bold; font-size: 12pt; color: #333; margin: 0; padding: 0;">QR Code</div>'
-                        }
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
-            `
-            }
-          </div>
-          
-          <!-- Footer definition -->
-          <div style='mso-element:footer' id='f1'>
-            ${
-              options?.footerHTML ??
-              `
-              <p class="MsoFooter" style="font-size:9pt;line-height:1.25;margin:0;">
-              All Works and services carried out by GRIPCO Material Testing Saudia are subjected to and conducted with the standard terms and conditions of GRIPCO Material Testing, which are available on the GRIPCO Site or upon request.
-              </p>
-              <p class="MsoFooter" style="font-size:9pt;line-height:1.25;margin:0;">
-              The results shown in this certificate relate only to the sample(s) tested. This certificate shall not be reproduced except in full, without the written approval of GRIPCO Material Testing Saudia. The results shown in this certificate are based on the information provided by the client and are subject to GRIPCO Material Testing Saudia's terms and conditions.
-              </p>
-              <p class="MsoFooter" style="font-size:9pt;line-height:1.25;margin:0;">
-              For more information, please visit: <a href="https://gripco.com.sa">https://gripco.com.sa</a>
-              </p>
-              `
-            }
-          </div>
-        </div>
-        
-        <!-- Section break to create a section without headers/footers -->
-        <div style="page-break-before: always; mso-break-type: section-break;"></div>
-        <div class="Section2">
-          <!-- Empty section to end the document without headers/footers -->
+          <!-- Hidden header/footer table - positioned off-screen -->
+          <table id='hrdftrtbl' border='0' cellspacing='0' cellpadding='0'>
+            <tr>
+              <td>
+                <div style='mso-element:header' id='h1'>
+                  ${options?.headerHTML ?? `
+                    <table style="width: 100%; border: none; border-collapse: collapse;">
+                      <tr>
+                        <td style="width: 60%; vertical-align: middle; border: none; padding: 5pt; text-align: left;">
+                          ${
+                            assets?.gripcoLogoBase64 &&
+                            assets.gripcoLogoBase64.startsWith("data:image/")
+                              ? `<img src="${assets.gripcoLogoBase64}" style="height: 50pt; width: auto; max-width: 180pt; opacity: 1; filter: contrast(1.1) brightness(1);" alt="Gripco Logo">`
+                              : '<div style="font-weight: bold; font-size: 14pt; color: #333;">GRIPCO</div>'
+                          }
+                        </td>
+                        <td style="width: 40%; vertical-align: middle; border: none; margin: 0; padding: 0; text-align: right;">
+                          <table style="border: none; border-collapse: collapse; margin: 0; padding: 0; display: inline-block; cellspacing: 0; cellpadding: 0;">
+                            <tr>
+                              <td style="vertical-align: middle; border: none; margin: 0; padding: 0; text-align: center; cellspacing: 0; cellpadding: 0;">
+                                ${
+                                  assets?.iasLogoBase64 &&
+                                  assets.iasLogoBase64.startsWith("data:image/")
+                                    ? `<img src="${assets.iasLogoBase64}" style="height: 45pt; width: auto; max-width: 100pt; opacity: 1; margin: 0; padding: 0; display: block;" alt="IAS Logo">`
+                                    : '<div style="font-weight: bold; font-size: 10pt; color: #333; margin: 0; padding: 0;">IAS</div>'
+                                }
+                              </td>
+                              <td style="vertical-align: middle; border: none; margin: 0; padding: 0; text-align: center; cellspacing: 0; cellpadding: 0;">
+                                ${
+                                  assets?.qrCodeBase64 &&
+                                  assets.qrCodeBase64.startsWith("data:image/")
+                                    ? `<img src="${assets.qrCodeBase64}" style="height: 40pt; width: 40pt; opacity: 1; filter: contrast(1.2) brightness(0.9); margin: 0; padding: 0; display: block;" alt="QR Code">`
+                                    : '<div style="font-weight: bold; font-size: 12pt; color: #333; margin: 0; padding: 0;">QR Code</div>'
+                                }
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  `}
+                </div>
+              </td>
+              <td>
+                <div style='mso-element:footer' id='f1'>
+                  ${options?.footerHTML ?? `
+                    <p class="MsoFooter" style="font-size:9pt;line-height:1.25;margin:0;">
+                    All Works and services carried out by GRIPCO Material Testing Saudia are subjected to and conducted with the standard terms and conditions of GRIPCO Material Testing, which are available on the GRIPCO Site or upon request.
+                    </p>
+                    <p class="MsoFooter" style="font-size:9pt;line-height:1.25;margin:0;">
+                    The results shown in this certificate relate only to the sample(s) tested. This certificate shall not be reproduced except in full, without the written approval of GRIPCO Material Testing Saudia. The results shown in this certificate are based on the information provided by the client and are subject to GRIPCO Material Testing Saudia's terms and conditions.
+                    </p>
+                    <p class="MsoFooter" style="font-size:9pt;line-height:1.25;margin:0;">
+                    For more information, please visit: <a href="https://gripco.com.sa">https://gripco.com.sa</a>
+                    </p>
+                  `}
+                </div>
+              </td>
+            </tr>
+          </table>
         </div>
       </body>
     </html>
