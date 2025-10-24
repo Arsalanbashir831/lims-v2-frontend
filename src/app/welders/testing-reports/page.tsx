@@ -16,6 +16,7 @@ import { ROUTES } from "@/constants/routes"
 import Link from "next/link"
 import { useWelderTestReports, useDeleteWelderTestReport } from "@/hooks/use-welder-test-reports"
 import { toast } from "sonner"
+import { AdvancedSearch } from "@/components/common"
 
 interface TestingReport {
   id: string
@@ -327,12 +328,10 @@ export default function TestingReportPage() {
         }
         return (
           <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
-            <FilterSearch
-              placeholder="Search testing report..."
-              value={globalFilter}
-              onChange={setGlobalFilter}
-              className="w-full"
-              inputClassName="max-w-md"
+            <AdvancedSearch
+              onSearch={setGlobalFilter}
+              isLoading={isLoading}
+              placeholder="Search by Welder Name, Welder ID, Iqama/Passport, Test Coupon ID, or Result Status..."
             />
             <div className="flex items-center gap-2 w-full md:w-auto">
               <DataTableViewOptions table={table} />

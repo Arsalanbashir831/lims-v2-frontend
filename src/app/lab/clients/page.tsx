@@ -16,6 +16,7 @@ import { ROUTES } from "@/constants/routes"
 import { Client } from "@/services/clients.service"
 import { toast } from "sonner"
 import { useClients, useDeleteClient } from "@/hooks/use-clients"
+import { AdvancedSearch } from "@/components/common"
 
 export default function ClientsPage() {
     const router = useRouter()
@@ -71,12 +72,10 @@ export default function ClientsPage() {
         }
         return (
             <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
-                <FilterSearch
-                    placeholder="Search clients..."
-                    value={searchQuery}
-                    onChange={handleSearch}
-                    className="w-full"
-                    inputClassName="max-w-md"
+                <AdvancedSearch
+                    onSearch={handleSearch}
+                    isLoading={loading}
+                    placeholder="Search by Client Name, Contact Person, Email, Phone..."
                 />
                 <div className="flex items-center gap-2 w-full md:w-auto">
                     <DataTableViewOptions table={table} />

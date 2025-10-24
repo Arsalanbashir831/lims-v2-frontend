@@ -17,6 +17,7 @@ import { WelderCard } from "@/lib/schemas/welder"
 import { useWelderCards, useDeleteWelderCard } from "@/hooks/use-welder-cards"
 import Link from "next/link"
 import { toast } from "sonner"
+import { AdvancedSearch } from "@/components/common"
 
 
 export default function WelderCardPage() {
@@ -217,12 +218,10 @@ export default function WelderCardPage() {
         }
         return (
           <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
-            <FilterSearch
-              placeholder="Search welder cards..."
-              value={searchQuery}
-              onChange={setSearchQuery}
-              className="w-full"
-              inputClassName="max-w-md"
+            <AdvancedSearch
+              onSearch={setSearchQuery}
+              isLoading={isLoading}
+              placeholder="Search by Card No, Company, Welder Name, Welder ID, or Authorized By..."
             />
             <div className="flex items-center gap-2 w-full md:w-auto">
               <DataTableViewOptions table={table} />
