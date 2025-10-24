@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useCallback, useMemo, useState, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   useSampleInformation,
   useDeleteSampleInformation,
@@ -12,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 import { toast } from "sonner";
 import { ServerPagination } from "@/components/ui/server-pagination";
-import { FilterSearch } from "@/components/ui/filter-search";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options";
 import { ColumnDef, Table as TanstackTable } from "@tanstack/react-table";
@@ -31,7 +29,8 @@ export default function SampleInformationPage() {
   // Fetch data using caching hooks
   const { data, error, isFetching } = useSampleInformation(
     currentPage,
-    searchQuery
+    searchQuery,
+    true // enabled
   );
 
   // Handle errors with useEffect

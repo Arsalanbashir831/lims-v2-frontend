@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, X } from "lucide-react";
@@ -16,14 +16,14 @@ export function AdvancedSearch({
 }: AdvancedSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     onSearch(searchQuery);
-  };
+  }, [searchQuery, onSearch]);
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     setSearchQuery("");
     onSearch(""); // Trigger search with empty query to show all data
-  };
+  }, [onSearch]);
 
   const hasActiveSearch = searchQuery.trim() !== "";
 

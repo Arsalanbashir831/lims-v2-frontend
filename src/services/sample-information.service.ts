@@ -206,56 +206,42 @@ export const sampleInformationService = {
       return this.getAll(page);
     }
 
-    // For simple search, get all data and filter client-side
-    const allData = await this.getAll(page);
+    // Use backend search endpoint
+    const endpoint = API_ROUTES.Lab_MANAGERS.SEARCH_SAMPLE_INFORMATION;
+    
+    const response = await api
+      .get(endpoint, { 
+        searchParams: { 
+          q: query.trim(),
+          page: page.toString() 
+        } 
+      })
+      .json<{
+        status: string;
+        data: Record<string, unknown>[];
+        pagination: {
+          current_page: number;
+          limit: number;
+          total_records: number;
+          total_pages: number;
+          has_next: boolean;
+        };
+      }>();
 
-    // Filter the results client-side across all fields
-    const filteredResults =
-      allData.results?.filter((item: any) => {
-        const searchTerm = query.toLowerCase();
+    // Extract the data field from Django response
+    if (response.status === "success" && response.data) {
+      return {
+        results: response.data.map((item: Record<string, unknown>) => ({
+          ...mapToUi(item as any),
+          id: (item.id || item._id) as string, // Ensure id field is included
+        })) as any,
+        count: response.pagination.total_records,
+        next: response.pagination.has_next ? "next" : null,
+        previous: response.pagination.current_page > 1 ? "prev" : null,
+      };
+    }
 
-        // Search across multiple fields
-        const jobIdMatch =
-          item.job_id?.toLowerCase().includes(searchTerm) || false;
-        const projectMatch =
-          item.project_name?.toLowerCase().includes(searchTerm) || false;
-        const clientMatch =
-          item.client_name?.toLowerCase().includes(searchTerm) || false;
-        const endUserMatch =
-          item.received_by?.toLowerCase().includes(searchTerm) || false;
-
-        // Also try searching for individual words in the query
-        const searchWords = searchTerm
-          .split(/\s+/)
-          .filter((word) => word.length > 0);
-        let wordMatch = false;
-
-        if (searchWords.length > 1) {
-          // If multiple words, check if any word matches any field
-          wordMatch = searchWords.some(
-            (word) =>
-              item.job_id?.toLowerCase().includes(word) ||
-              item.project_name?.toLowerCase().includes(word) ||
-              item.client_name?.toLowerCase().includes(word) ||
-              item.received_by?.toLowerCase().includes(word)
-          );
-        }
-
-        const isMatch =
-          jobIdMatch ||
-          projectMatch ||
-          clientMatch ||
-          endUserMatch ||
-          wordMatch;
-
-        return isMatch;
-      }) || [];
-
-    return {
-      ...allData,
-      results: filteredResults,
-      count: filteredResults.length,
-    };
+    throw new Error("Failed to search sample information");
   },
 
   async getCompleteSampleInformation(id: string): Promise<{
