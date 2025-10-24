@@ -17,14 +17,16 @@ import Link from "next/link"
 import { useWelderCertificates, useDeleteWelderCertificate } from "@/hooks/use-welder-certificates"
 import { WelderCertificate } from "@/lib/schemas/welder"
 import { toast } from "sonner"
+import { AdvancedSearch } from "@/components/common"
 
 
 export default function WelderQualificationPage() {
   const router = useRouter()
-  const [globalFilter, setGlobalFilter] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
   
-  // Use API hooks
-  const { data: welderCertificatesData, isLoading, error } = useWelderCertificates(1, globalFilter, 50)
+  // Use API hooks with backend search
+  const { data: welderCertificatesData, isLoading, error } = useWelderCertificates(currentPage, searchQuery, 50)
   const deleteWelderCertificate = useDeleteWelderCertificate()
   
   const data = welderCertificatesData?.results || []
@@ -71,10 +73,11 @@ export default function WelderQualificationPage() {
       },
     },
     {
-      accessorKey: "company",
+      id: "company",
+      accessorFn: (row) => row.welder_card_info?.company || row.company || "N/A",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Company" />,
       cell: ({ row }) => {
-        const company = row.getValue("company") as string
+        const company = row.original.welder_card_info?.company || row.original.company
         return (
           <div className="max-w-[150px] truncate font-medium" title={company}>
             {company || "N/A"}
@@ -171,20 +174,10 @@ export default function WelderQualificationPage() {
     },
   ]
 
-  const filteredData = useMemo(() => {
-    if (!globalFilter) return data
-
-    return data.filter((certificate) => {
-      const searchTerm = globalFilter.toLowerCase()
-      return (
-        certificate.certificate_no?.toLowerCase().includes(searchTerm) ||
-        certificate.welder_card_info?.card_no?.toLowerCase().includes(searchTerm) ||
-        certificate.welder_card_info?.welder_info?.operator_id?.toLowerCase().includes(searchTerm) ||
-        certificate.welder_card_info?.welder_info?.operator_name?.toLowerCase().includes(searchTerm) ||
-        certificate.date_of_test.toLowerCase().includes(searchTerm)
-      )
-    })
-  }, [data, globalFilter])
+  const handleAdvancedSearch = (query: string) => {
+    setSearchQuery(query)
+    setCurrentPage(1)
+  }
 
   if (isLoading) {
     return (
@@ -208,7 +201,7 @@ export default function WelderQualificationPage() {
 
   return (
     <DataTable
-      data={filteredData}
+      data={data}
       columns={columns}
       tableKey="welder-qualification"
       onRowClick={(row) => router.push(ROUTES.APP.WELDERS.WELDER_QUALIFICATION.VIEW(row.original.id!))}
@@ -228,12 +221,10 @@ export default function WelderQualificationPage() {
         }
         return (
           <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
-            <FilterSearch
-              placeholder="Search certificates..."
-              value={globalFilter}
-              onChange={setGlobalFilter}
-              className="w-full"
-              inputClassName="max-w-md"
+            <AdvancedSearch
+              onSearch={handleAdvancedSearch}
+              isLoading={isLoading}
+              placeholder="Search by Certificate No, Company, Card No, Operator ID, or Operator Name..."
             />
             <div className="flex items-center gap-2 w-full md:w-auto">
               <DataTableViewOptions table={table} />

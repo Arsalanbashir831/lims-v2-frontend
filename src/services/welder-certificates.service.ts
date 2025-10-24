@@ -79,7 +79,7 @@ export const welderCertificateService = {
   async search(query: string, page: number = 1, limit: number = 10): Promise<WelderCertificateListResponse> {
     const response = await api.get(API_ROUTES.WELDERS_API.SEARCH_WELDER_CERTIFICATES, {
       searchParams: {
-        certificate_no: query,
+        q: query,
         page: page.toString(),
         limit: limit.toString(),
       }
@@ -91,6 +91,7 @@ export const welderCertificateService = {
         certificate_no: string
         company: string
         card_no: string
+        q: string
       }
     }>()
 
