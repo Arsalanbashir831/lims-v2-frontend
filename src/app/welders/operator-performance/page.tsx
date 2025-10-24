@@ -8,7 +8,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 import { DataTablePagination } from "@/components/ui/data-table-pagination"
-import { FilterSearch } from "@/components/ui/filter-search"
+import { AdvancedSearch } from "@/components/common/advanced-search"
 import { ConfirmPopover } from "@/components/ui/confirm-popover"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ColumnDef } from "@tanstack/react-table"
@@ -41,10 +41,11 @@ const transformApiDataToTable = (apiData: OperatorCertificate[]): OperatorPerfor
 
 export default function OperatorPerformancePage() {
   const router = useRouter()
-  const [globalFilter, setGlobalFilter] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
   
   // Use API hooks
-  const { data: apiData, isLoading, error } = useOperatorCertificates(1, globalFilter, 10)
+  const { data: apiData, isLoading, error } = useOperatorCertificates(currentPage, searchQuery, 50)
   const deleteOperatorCertificate = useDeleteOperatorCertificate()
   
   // Transform API data for table
@@ -52,6 +53,11 @@ export default function OperatorPerformancePage() {
     if (!apiData?.results) return []
     return transformApiDataToTable(apiData.results)
   }, [apiData])
+
+  const handleAdvancedSearch = (query: string) => {
+    setSearchQuery(query)
+    setCurrentPage(1)
+  }
 
   const columns: ColumnDef<OperatorPerformance>[] = [
     {
@@ -176,21 +182,10 @@ export default function OperatorPerformancePage() {
     },
   ]
 
-  const filteredData = useMemo(() => {
-    if (!globalFilter) return data
-    const searchTerm = globalFilter.toLowerCase()
-    return data.filter((item) =>
-      item.certificateNumber.toLowerCase().includes(searchTerm) ||
-      item.cardNumber.toLowerCase().includes(searchTerm) ||
-      item.welderId.toLowerCase().includes(searchTerm) ||
-      item.operatorName.toLowerCase().includes(searchTerm) ||
-      item.createdAt.toLowerCase().includes(searchTerm)
-    )
-  }, [data, globalFilter])
 
   return (
     <DataTable
-      data={filteredData}
+      data={data}
       columns={columns}
       tableKey="operator-performance"
       onRowClick={(row) => router.push(ROUTES.APP.WELDERS.OPERATOR_PERFORMANCE.VIEW(row.original.id))}
@@ -211,12 +206,10 @@ export default function OperatorPerformancePage() {
         }
         return (
           <div className="flex flex-col md:flex-row items-center gap-2.5 w-full">
-            <FilterSearch
-              placeholder="Search operator performance..."
-              value={globalFilter}
-              onChange={setGlobalFilter}
-              className="w-full"
-              inputClassName="max-w-md"
+            <AdvancedSearch
+              onSearch={handleAdvancedSearch}
+              isLoading={isLoading}
+              placeholder="Search by Certificate No, Card No, Welder ID, Operator Name, or Issue Date..."
             />
             <div className="flex items-center gap-2 w-full md:w-auto">
               <DataTableViewOptions table={table} />

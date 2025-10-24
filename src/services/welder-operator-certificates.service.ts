@@ -5,7 +5,7 @@ import { api } from "@/lib/api/api"
 export interface OperatorCertificate {
   id: string
   welder_card_id: string
-  welder_card_info: {
+  welder_card_info?: {
     card_id: string
     card_no: string
     company: string
@@ -18,25 +18,25 @@ export interface OperatorCertificate {
     }
   }
   certificate_no: string
-  wps_followed_date: string
-  date_of_issue: string
+  wps_followed_date?: string
+  date_of_issue?: string
   date_of_welding: string
   joint_weld_type: string
   base_metal_spec: string
-  base_metal_p_no: string
-  filler_sfa_spec: string
-  filler_class_aws: string
-  test_coupon_size: string
-  positions: string
-  testing_variables_and_qualification_limits_automatic: TestingVariable[]
-  testing_variables_and_qualification_limits_machine: TestingVariable[]
-  tests: TestResult[]
+  base_metal_p_no?: string
+  filler_sfa_spec?: string
+  filler_class_aws?: string
+  test_coupon_size?: string
+  positions?: string
+  testing_variables_and_qualification_limits_automatic?: TestingVariable[]
+  testing_variables_and_qualification_limits_machine?: TestingVariable[]
+  tests?: TestResult[]
   law_name: string
   tested_by: string
   witnessed_by: string
   is_active: boolean
   created_at: string
-  updated_at: string
+  updated_at?: string
 }
 
 export interface TestingVariable {
@@ -147,16 +147,23 @@ export const operatorCertificateService = {
     await api.delete(API_ROUTES.WELDERS_API.DELETE_WELDER_OPERATOR_PERFORMANCE(id))
   },
 
-  async search(welderId: string, page: number = 1, limit: number = 10): Promise<OperatorCertificateListResponse> {
-    const response = await api.get(API_ROUTES.WELDERS_API.SEARCH_WELDER_OPERATOR_PERFORMANCE, {
-      searchParams: {
-        welder_id: welderId,
-        page: page.toString(),
-        limit: limit.toString(),
-      }
-    }).json<{
+  async search(query: string, page: number = 1, limit: number = 10): Promise<OperatorCertificateListResponse> {
+    // Use the search endpoint directly
+    const searchUrl = `${API_ROUTES.WELDERS_API.SEARCH_WELDER_OPERATOR_PERFORMANCE}?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`
+    const response = await api.get(searchUrl).json<{
       status: string
-      data: OperatorCertificate[]
+      data: Array<{
+        id: string
+        certificate_no: string
+        law_name: string
+        date_of_welding: string
+        tested_by: string
+        witnessed_by: string
+        joint_weld_type: string
+        base_metal_spec: string
+        is_active: boolean
+        created_at: string
+      }>
       total: number
       filters_applied: {
         certificate_no: string
@@ -170,8 +177,35 @@ export const operatorCertificateService = {
     }>()
 
     if (response.status === "success" && response.data) {
+      // Transform search response to match OperatorCertificate interface
+      const transformedData: OperatorCertificate[] = response.data.map(item => ({
+        id: item.id,
+        welder_card_id: "",
+        welder_card_info: undefined,
+        certificate_no: item.certificate_no,
+        date_of_welding: item.date_of_welding,
+        joint_weld_type: item.joint_weld_type,
+        base_metal_spec: item.base_metal_spec,
+        law_name: item.law_name,
+        tested_by: item.tested_by,
+        witnessed_by: item.witnessed_by,
+        is_active: item.is_active,
+        created_at: item.created_at,
+        wps_followed_date: undefined,
+        date_of_issue: undefined,
+        base_metal_p_no: undefined,
+        filler_sfa_spec: undefined,
+        filler_class_aws: undefined,
+        test_coupon_size: undefined,
+        positions: undefined,
+        testing_variables_and_qualification_limits_automatic: undefined,
+        testing_variables_and_qualification_limits_machine: undefined,
+        tests: undefined,
+        updated_at: undefined,
+      }))
+
       return {
-        results: response.data,
+        results: transformedData,
         count: response.total,
         next: null,
         previous: null,
